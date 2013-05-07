@@ -1,0 +1,4 @@
+BINARIES += src/nuci
+
+nuci_MODULES := main
+nuci_SYSTEM_LIBS := netconf

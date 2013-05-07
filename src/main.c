@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "main.h"
-
 //LIBs
-#include "../headers/libnetconf/libnetconf.h"
+#include <libnetconf.h>
 /*
  * nuci skeleton
  * 
@@ -16,9 +14,9 @@
  * 
  */
 
-static const char *DATASTORE_MODEL_PATH = "datastore.yin";
-static const char *DATASTORE_CALLBACKS_PATH = "datastore.so";
-static const char *DATASTORE_FILE_PATH = "datastore.xml";
+static const char *DATASTORE_MODEL_PATH = SOURCE_DIRECTORY "/src/datastore.yin";
+static const char *DATASTORE_CALLBACKS_PATH = OUTPUT_DIRECTORY "/src/datastore.so";
+static const char *DATASTORE_FILE_PATH = OUTPUT_DIRECTORY "/src/datastore.xml";
 
 struct srv_config {
 	struct nc_session *session; ///<Session ID
@@ -40,7 +38,6 @@ int main(int argc, char **argv) {
 	struct nc_cpblts *my_capabilities; ///< Server's capabilities 
 	int init;
 	int loop = 1;
-	
 
 	/* set verbosity and function to print libnetconf's messages */
 	nc_verbosity(NC_VERB_DEBUG);
@@ -60,21 +57,19 @@ int main(int argc, char **argv) {
 		callback_print(NC_VERB_ERROR, "Datastore preparing failed.");
 		return 1;
 	}
-	
+
 	// 2/3 - Assign file to datastore
 	if (ncds_file_set_path(datastore, DATASTORE_FILE_PATH) != 0) {
 		callback_print(NC_VERB_ERROR, "Linking datastore to a file failed.");
 		return 1;
 	}
-	
+
 	// 3/3 (Init datastore)
 	// Activate datastore structure for use. 
 	// The datastore configuration is checked and if everything is correct, datastore gets its unique ID to be used for datastore operations (ncds_apply_rpc()).
 	config.dsid = ncds_init(datastore);
 	if (config.dsid <= 0) {
 		ncds_free(datastore);
-		callback_print(NC_VERB_ERROR, "Initiating datastore failed.");
-		return 1;
 	}
 
 	//device initialization
