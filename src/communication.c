@@ -1,19 +1,38 @@
+#include "stdio.h"
+
 #include "main.h"
 #include "communication.h"
 
 //LIBs
 #include <libnetconf.h>
 
+static void(*clb_print)(const char *message) = NULL;
+
+static void clb_print_default(const char *message) {
+	fprintf(stderr, "Module Communication Error:\n %s\n", message);
+}
+
+void comm_set_callback(void(*clb)(const char *message)) {
+	clb_print = clb;
+}
+
+static void comm_test_values(void) {
+	if (clb_print == NULL) {
+		clb_print = clb_print_default;
+	}
+}
 
 int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, struct srv_config *config_out) {
 	struct srv_config config; ///< Server configuration 
 	struct nc_cpblts *my_capabilities; ///< Server's capabilities 
 	int init;
 
+	comm_test_values();
+	
 	//Initialize libnetconf for system-wide usage. This initialization is shared across all the processes.
 	init = nc_init(NC_INIT_NOTIF | NC_INIT_NACM);
 	if (init == -1) {
-		callback_print(NC_VERB_ERROR, "libnetconf initiation failed.");
+		clb_print("libnetconf initiation failed.");
 		return 0;
 	}
 
@@ -27,13 +46,13 @@ int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, str
 		//data model in YIN format and the current content of the running datastore.
 		//If NULL is set, <get> operation is performed in the same way as <get-config>.
 	if (config.datastore == NULL) {
-		callback_print(NC_VERB_ERROR, "Datastore preparing failed.");
+		clb_print("Datastore preparing failed.");
 		return 0;
 	}
 
 	// 2/3 - Assign file to datastore
 	if (ncds_file_set_path(config.datastore, datastoreFilePaht) != 0) {
-		callback_print(NC_VERB_ERROR, "Linking datastore to a file failed.");
+		clb_print("Linking datastore to a file failed.");
 		return 0;
 	}
 
@@ -51,7 +70,7 @@ int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, str
 	//Accept NETCONF session from a client.
 	config.session = nc_session_accept(my_capabilities);
 	if (config.session == NULL) {
-		callback_print(NC_VERB_ERROR, "Session not established.\n");
+		clb_print("Session not established.\n");
 		nc_cpblts_free(my_capabilities);
 		return 0;
 	}
@@ -78,7 +97,7 @@ void comm_start_loop(struct srv_config config) {
 	NC_MSG_TYPE msg_type;
 	const nc_msgid msgid;
 	NC_SESSION_STATUS session_status;
-	 
+	
 	while (loop) {
 		session_status = nc_session_get_status(config.session);
 		if (session_status == NC_SESSION_STATUS_CLOSING  || session_status == NC_SESSION_STATUS_CLOSED || session_status == NC_SESSION_STATUS_ERROR) {
@@ -96,7 +115,7 @@ void comm_start_loop(struct srv_config config) {
 		msg_type = nc_session_recv_rpc(config.session, -1, &communication.msg);
 			//[in]	timeout	Timeout in milliseconds, -1 for infinite timeout, 0 for non-blocking 
 		if (msg_type == NC_MSG_UNKNOWN) {
-			callback_print(NC_VERB_ERROR, "Broken message recieved");
+			clb_print("Broken message recieved");
 			nc_rpc_free(communication.msg);
 			continue;
 		}
@@ -112,7 +131,7 @@ void comm_start_loop(struct srv_config config) {
 		
 		msgid = nc_session_send_reply(config.session, communication.msg, communication.reply);
 		if (msgid == 0) {
-			callback_print(NC_VERB_ERROR, "I can't send reply");
+			clb_print("I can't send reply");
 			//continue is not necessary
 			//messages are freed at end of loop 
 		}

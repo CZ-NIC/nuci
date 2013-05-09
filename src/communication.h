@@ -20,10 +20,11 @@ struct rpc_communication {
 };
 
 
-int comm_init(); 
+void comm_set_callback();
+int comm_init();
 void comm_start_loop();
 void comm_cleanup();
-
+void comm_print_callback();
 
 
 
