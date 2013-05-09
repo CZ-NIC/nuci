@@ -20,7 +20,7 @@ void comm_set_callback(void(*clb)(const char *message)) {
 	clb_print = clb;
 }
 
-bool comm_init(const char* datastore_model_path, const char* datastore_file_path, struct srv_config *config_out) {
+bool comm_init(const char *datastore_model_path, const char *datastore_file_path, struct srv_config *config_out) {
 	struct srv_config config; // Server configuration
 	struct nc_cpblts *my_capabilities; // Server's capabilities
 	int init;
@@ -89,7 +89,7 @@ bool comm_init(const char* datastore_model_path, const char* datastore_file_path
 	 return true;
 }
 
-void comm_start_loop(struct srv_config config) {
+void comm_start_loop(const struct srv_config *config) {
 	int loop = 1;
 	struct rpc_communication communication;
 	NC_MSG_TYPE msg_type;
@@ -97,7 +97,7 @@ void comm_start_loop(struct srv_config config) {
 	NC_SESSION_STATUS session_status;
 
 	while (loop) {
-		session_status = nc_session_get_status(config.session);
+		session_status = nc_session_get_status(config->session);
 		if (session_status == NC_SESSION_STATUS_CLOSING  || session_status == NC_SESSION_STATUS_CLOSED || session_status == NC_SESSION_STATUS_ERROR) {
 			loop = 0;
 			continue;
@@ -110,7 +110,7 @@ void comm_start_loop(struct srv_config config) {
 
 
 		// 1/3 - Process incoming requests
-		msg_type = nc_session_recv_rpc(config.session, -1, &communication.msg);
+		msg_type = nc_session_recv_rpc(config->session, -1, &communication.msg);
 			//[in]	timeout	Timeout in milliseconds, -1 for infinite timeout, 0 for non-blocking
 		if (msg_type == NC_MSG_UNKNOWN) {
 			clb_print("Broken message recieved");
@@ -119,7 +119,7 @@ void comm_start_loop(struct srv_config config) {
 		}
 
 		// 2/3 - Reply to the client's request
-		communication.reply = ncds_apply_rpc(config.dsid, config.session, communication.msg);
+		communication.reply = ncds_apply_rpc(config->dsid, config->session, communication.msg);
 
 		if (communication.reply == NULL) {
 			//nothing to do
@@ -127,7 +127,7 @@ void comm_start_loop(struct srv_config config) {
 			continue;
 		}
 
-		msgid = nc_session_send_reply(config.session, communication.msg, communication.reply);
+		msgid = nc_session_send_reply(config->session, communication.msg, communication.reply);
 		if (msgid == 0) {
 			clb_print("I can't send reply");
 			//continue is not necessary
@@ -140,20 +140,19 @@ void comm_start_loop(struct srv_config config) {
 	}
 }
 
-void comm_cleanup(struct srv_config config) {
-	if (nc_session_get_status(config.session) == NC_SESSION_STATUS_WORKING) {
+void comm_cleanup(const struct srv_config *config) {
+	if (nc_session_get_status(config->session) == NC_SESSION_STATUS_WORKING) {
 		//Close NETCONF connection with the server
-		nc_session_close(config.session, NC_SESSION_TERM_CLOSED);
+		nc_session_close(config->session, NC_SESSION_TERM_CLOSED);
 		//WARNING!!! - Only nc_session_free() and nc_session_get_status() functions are allowed after this call.
 	}
 
 	//Cleanup the session structure and free all the allocated resources
-	nc_session_free(config.session);
+	nc_session_free(config->session);
 
 	//Close the specified datastore and free all the resources
-	ncds_free(config.datastore);
+	ncds_free(config->datastore);
 
 	//Close internal libnetconf structures and subsystems
 	nc_close(0);
 }
-
