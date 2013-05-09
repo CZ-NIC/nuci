@@ -1,7 +1,9 @@
 #ifndef __communication_h__
 #define __communication_h__
 
+#include <stdbool.h>
 #include <libnetconf.h>
+
 /**
  * @brief Holds server configuration
  */
@@ -21,7 +23,7 @@ struct rpc_communication {
 
 
 void comm_set_callback();
-int comm_init();
+bool comm_init();
 void comm_start_loop();
 void comm_cleanup();
 void comm_print_callback();

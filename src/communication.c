@@ -12,17 +12,17 @@ static void clb_print_default(const char *message) {
 	fprintf(stderr, "Module Communication Error:\n %s\n", message);
 }
 
-void comm_set_callback(void(*clb)(const char *message)) {
-	clb_print = clb;
-}
-
 static void comm_test_values(void) {
 	if (clb_print == NULL) {
 		clb_print = clb_print_default;
 	}
 }
 
-int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, struct srv_config *config_out) {
+void comm_set_callback(void(*clb)(const char *message)) {
+	clb_print = clb;
+}
+
+bool comm_init(const char* datastore_model_path, const char* datastore_file_path, struct srv_config *config_out) {
 	struct srv_config config; ///< Server configuration 
 	struct nc_cpblts *my_capabilities; ///< Server's capabilities 
 	int init;
@@ -33,12 +33,12 @@ int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, str
 	init = nc_init(NC_INIT_NOTIF | NC_INIT_NACM);
 	if (init == -1) {
 		clb_print("libnetconf initiation failed.");
-		return 0;
+		return false;
 	}
 
 	//Create new datastore structure with transaction API support.
 	// 1/3 - Create new
-	config.datastore = ncds_new(NCDS_TYPE_FILE, datastoreModelPath, NULL);
+	config.datastore = ncds_new(NCDS_TYPE_FILE, datastore_model_path, NULL);
 		//3th parameter is: char *(*)(const char *model, const char *running, struct nc_err **e) get_state
 		//------------------------------------------------------------------------------------------------
 		//Pointer to a callback function that returns a serialized XML document containing the state
@@ -47,13 +47,13 @@ int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, str
 		//If NULL is set, <get> operation is performed in the same way as <get-config>.
 	if (config.datastore == NULL) {
 		clb_print("Datastore preparing failed.");
-		return 0;
+		return false;
 	}
 
 	// 2/3 - Assign file to datastore
-	if (ncds_file_set_path(config.datastore, datastoreFilePaht) != 0) {
+	if (ncds_file_set_path(config.datastore, datastore_file_path) != 0) {
 		clb_print("Linking datastore to a file failed.");
-		return 0;
+		return false;
 	}
 
 	// 3/3 (Init datastore)
@@ -72,7 +72,7 @@ int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, str
 	if (config.session == NULL) {
 		clb_print("Session not established.\n");
 		nc_cpblts_free(my_capabilities);
-		return 0;
+		return false;
 	}
 	
 	nc_cpblts_free(my_capabilities);
@@ -88,7 +88,7 @@ int comm_init(const char* datastoreModelPath, const char* datastoreFilePaht, str
 	 */ 
 	 
 	 *config_out = config;
-	 return 1;
+	 return true;
  }
  
 void comm_start_loop(struct srv_config config) {
