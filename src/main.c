@@ -11,10 +11,27 @@ static const char *DATASTORE_MODEL_PATH = SOURCE_DIRECTORY "/src/datastore.yin";
 static const char *DATASTORE_FILE_PATH = OUTPUT_DIRECTORY "/src/datastore.xml";
 
 void callback_print(NC_VERB_LEVEL level, const char *msg) {
-	fprintf(stderr, "Message:\n %s\n", msg);
+	const char *level_message = "<UNKNOWN>";
+	switch (level) {
+		case NC_VERB_ERROR:
+			level_message = "ERROR";
+			break;
+		case NC_VERB_WARNING:
+			level_message = "WARNING";
+			break;
+		case NC_VERB_VERBOSE:
+			level_message = "VERBOSE";
+			break;
+		case NC_VERB_DEBUG:
+			level_message = "DEBUG";
+			break;
+	}
+	fprintf(stderr, "%s\t%s\n", level_message, msg);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char *argv[]) {
+	(void) argc;
+	(void) argv;
 	struct srv_config config;
 	bool init;
 
