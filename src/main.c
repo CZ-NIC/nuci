@@ -3,19 +3,8 @@
 
 //LIBs
 #include <libnetconf.h>
-/*
- * nuci skeleton
- * 
- * Tohle se skoro blizi fungujicimu zakladu. Jedina nevyresena vec je,
- * jak zavirat session. Aktualne se to nechava na klientovi.
- * Jakmile klient zavre spojeni, ja to zdetekuji, uvolnim zpravy,
- * vyskocim ze smycky. Netusim jak - a jestli je potreba - iniciovat
- * uzavreni spojeni ze strany serveru.
- * 
- */
 
 static const char *DATASTORE_MODEL_PATH = SOURCE_DIRECTORY "/src/datastore.yin";
-static const char *DATASTORE_CALLBACKS_PATH = OUTPUT_DIRECTORY "/src/datastore.so";
 static const char *DATASTORE_FILE_PATH = OUTPUT_DIRECTORY "/src/datastore.xml";
 
 struct srv_config {
@@ -23,23 +12,24 @@ struct srv_config {
 	ncds_id dsid; ///< Working Datastore's datastore ID
 };
 
+//Message & Reply struct
 struct rpc_communication {
 	nc_rpc *msg;
 	nc_rpc *reply;
 };
 
-void callback_print(NC_VERB_LEVEL level, const char* msg) {
+void callback_print(NC_VERB_LEVEL level, const char *msg) {
 	fprintf(stderr, "Message: %s\n", msg);
 }
 
 int main(int argc, char **argv) {
 	struct srv_config config; ///< Server configuration 
-	struct ncds_ds* datastore; ///< Datastore handler
+	struct ncds_ds *datastore; ///< Datastore handler
 	struct nc_cpblts *my_capabilities; ///< Server's capabilities 
 	int init;
 	int loop = 1;
 
-	/* set verbosity and function to print libnetconf's messages */
+	//Set verbosity and function to print libnetconf's messages
 	nc_verbosity(NC_VERB_DEBUG);
 	nc_callback_print(callback_print);
 
@@ -52,7 +42,13 @@ int main(int argc, char **argv) {
 
 	//Create new datastore structure with transaction API support.
 	// 1/3 - Create new
-	datastore = ncds_new_transapi(NCDS_TYPE_FILE, DATASTORE_MODEL_PATH, DATASTORE_CALLBACKS_PATH);
+	datastore = ncds_new(NCDS_TYPE_FILE, DATASTORE_MODEL_PATH, NULL);
+		//3th parameter is: char *(*)(const char *model, const char *running, struct nc_err **e) get_state
+		//------------------------------------------------------------------------------------------------
+		//Pointer to a callback function that returns a serialized XML document containing the state
+		//configuration data of the device. The parameters it receives are a serialized configuration
+		//data model in YIN format and the current content of the running datastore.
+		//If NULL is set, <get> operation is performed in the same way as <get-config>.
 	if (datastore == NULL) {
 		callback_print(NC_VERB_ERROR, "Datastore preparing failed.");
 		return 1;
@@ -68,31 +64,22 @@ int main(int argc, char **argv) {
 	// Activate datastore structure for use. 
 	// The datastore configuration is checked and if everything is correct, datastore gets its unique ID to be used for datastore operations (ncds_apply_rpc()).
 	config.dsid = ncds_init(datastore);
-	if (config.dsid <= 0) {
+	if (config.dsid <= 0) { //Optionally: ncds_init has 4 different error return types
 		ncds_free(datastore);
-	}
-
-	//device initialization
-	//If init == 1 - someone else already called nc_init() since last system-wide nc_close() or system reboot
-	if (init == 0) {
-		/*
-		 * Asi nic
-		 * Pokud jsem se neztratil v tom examplu, tak vsechno co se tady delo
-		 * melo souvislost jen a pouze s modelem agent-server.
-		 * 
-		 */
 	}
 
 	//Prepare capabilities configuration
 	my_capabilities = nc_session_get_cpblts_default();
-	nc_cpblts_free(my_capabilities);
 
 	//Accept NETCONF session from a client.
 	config.session = nc_session_accept(my_capabilities);
 	if (config.session == NULL) {
 		callback_print(NC_VERB_ERROR, "Session not established.\n");
+		nc_cpblts_free(my_capabilities);
 		return 1;
 	}
+	
+	nc_cpblts_free(my_capabilities);
 
 	//REQUESTED by RFC 6022
 	//Add the session into the internal list of monitored sessions that 
@@ -104,7 +91,7 @@ int main(int argc, char **argv) {
 	 * libevent is used only for example server
 	 */ 
 	 
-	 struct rpc_communication communication; ///< Message & Reply struct
+	 struct rpc_communication communication;
 	 NC_MSG_TYPE msg_type;
 	 const nc_msgid msgid;
 	 NC_SESSION_STATUS session_status;
@@ -116,14 +103,12 @@ int main(int argc, char **argv) {
 			continue;
 		}
 		
-		//if (session_status == NC_SESSION_STATUS_WORKING || session_status == NC_SESSION_STATUS_STARTUP) {
-			//all is OK
-		//}
-		
-		////////////////////////////////////////////////////////////////
-		////////////////////////////////////////////////////////////////
-		////////////////////////////////////////////////////////////////
-		
+		//Another NC_SESSION_STATUS option are:
+		//if (session_status == NC_SESSION_STATUS_DUMMY) //Not our case
+		//if (session_status == NC_SESSION_STATUS_WORKING) //All is OK, go ahead
+		//if (session_status == NC_SESSION_STATUS_STARTUP) //All is OK, go ahead
+
+
 		// 1/3 - Process incoming requests
 		msg_type = nc_session_recv_rpc(config.session, -1, &communication.msg);
 			//[in]	timeout	Timeout in milliseconds, -1 for infinite timeout, 0 for non-blocking 
@@ -145,15 +130,14 @@ int main(int argc, char **argv) {
 		msgid = nc_session_send_reply(config.session, communication.msg, communication.reply);
 		if (msgid == 0) {
 			callback_print(NC_VERB_ERROR, "I can't send reply");
-			//zadne continue - stejne uz neni co delat
-			//uvolneni messages se provede stejne na konci smycky!!!!
+			//continue is not necessary
+			//messages are freed at end of loop 
 		}
 		
 		// 3/3 - Free all unused objects
 		nc_rpc_free(communication.msg);
 		nc_reply_free(communication.reply);
-	 }
-	 
+	}
 
 	if (nc_session_get_status(config.session) == NC_SESSION_STATUS_WORKING) {
 		//Close NETCONF connection with the server
