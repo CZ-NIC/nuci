@@ -1,5 +1,5 @@
-#ifndef __communication_h__
-#define __communication_h__
+#ifndef COMMUNICATION_H
+#define COMMUNICATION_H
 
 #include <stdbool.h>
 #include <libnetconf.h>
@@ -27,4 +27,4 @@ bool comm_init(const char *datastore_model_path, const char *datastore_file_path
 void comm_start_loop(const struct srv_config *config);
 void comm_cleanup(const struct srv_config *config);
 
-#endif //__netconf_h__
+#endif // COMMUNICATION_H
