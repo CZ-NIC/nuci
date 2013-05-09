@@ -21,14 +21,10 @@ struct rpc_communication {
 	nc_rpc *reply; ///<Generated reply
 };
 
-
 void comm_set_callback();
 bool comm_init();
 void comm_start_loop();
 void comm_cleanup();
 void comm_print_callback();
 
-
-
 #endif //__netconf_h__
-
