@@ -17,5 +17,5 @@ src/nuci
 #Link to documentation output in build
 build/buildsystem.html
 
-
-
+# Created by the binary at run time.
+src/datastore.xml
