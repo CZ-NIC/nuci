@@ -1,8 +1,7 @@
-#include "stdio.h"
-
 #include "communication.h"
 
-//LIBs
+#include <stdio.h>
+
 #include <libnetconf.h>
 
 static void(*clb_print)(const char *message) = NULL;
