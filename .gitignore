@@ -1,0 +1,21 @@
+#Ignore:
+#Build system's dependencies
+.deps/
+
+#Object files
+.objs/
+
+#Binary output
+bin/
+
+#Documentation output
+docs/
+
+#Link to binary output in src
+src/nuci
+
+#Link to documentation output in build
+build/buildsystem.html
+
+
+
