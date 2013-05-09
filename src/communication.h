@@ -21,10 +21,10 @@ struct rpc_communication {
 	nc_rpc *reply; ///<Generated reply
 };
 
-void comm_set_callback();
-bool comm_init();
-void comm_start_loop();
-void comm_cleanup();
-void comm_print_callback();
+// FIXME: Which callback? This library will be full of callbacks.
+void comm_set_callback(void(*clb)(const char *message));
+bool comm_init(const char* datastore_model_path, const char* datastore_file_path, struct srv_config *config_out);
+void comm_start_loop(struct srv_config config);
+void comm_cleanup(struct srv_config config);
 
 #endif //__netconf_h__
