@@ -1,4 +1,4 @@
 BINARIES += src/nuci
 
-nuci_MODULES := main communication interpreter
+nuci_MODULES := main communication interpreter register
 nuci_SYSTEM_LIBS := netconf lua

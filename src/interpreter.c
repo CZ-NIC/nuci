@@ -1,4 +1,5 @@
 #include "interpreter.h"
+#include "register.h"
 
 #include <lua.h>
 #include <lualib.h>
@@ -12,6 +13,17 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+static int register_capability_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count != 1)
+		luaL_error(lua, "register_capability expects 1 parameter, %d given", param_count);
+	const char *capability = lua_tostring(lua, 1);
+	if (!capability)
+		luaL_error(lua, "A non-string parameter passed to register_capability");
+	register_capability(capability);
+	return 0; // No results from this function
+}
+
 static void error(const char *format, ...) {
 	// TODO: Unify logging
 	va_list args;
@@ -24,12 +36,18 @@ struct interpreter {
 	lua_State *state;
 };
 
+static void add_func(struct interpreter *interpreter, const char *name, lua_CFunction function) {
+	lua_pushcfunction(interpreter->state, function);
+	lua_setglobal(interpreter->state, name);
+}
+
 struct interpreter *interpreter_create(void) {
 	struct interpreter *result = malloc(sizeof *result);
 	*result = (struct interpreter) {
 		.state = luaL_newstate()
 	};
 	luaL_openlibs(result->state);
+	add_func(result, "register_capability", register_capability_lua);
 	return result;
 }
 
