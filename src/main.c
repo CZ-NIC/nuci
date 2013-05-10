@@ -41,6 +41,8 @@ int main(int argc, const char *argv[]) {
 
 	struct srv_config config;
 	struct interpreter *interpreter = interpreter_create();
+	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
+		return 1;
 
 	bool init = comm_init(DATASTORE_MODEL_PATH, DATASTORE_FILE_PATH, &config);
 	// FIXME: ? So, is true success or failure? Should we abort on failure?

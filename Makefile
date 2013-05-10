@@ -9,4 +9,6 @@ AR := ar
 MAX_LOG_LEVEL := LOG_DEBUG_VERBOSE
 PAGE_SIZE := $(shell getconf PAGE_SIZE)
 
+PLUGIN_PATH := $(abspath $(S)/src/lua_plugins)
+
 include $(S)/Makefile.dir
