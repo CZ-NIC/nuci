@@ -1,4 +1,4 @@
 BINARIES += src/nuci
 
-nuci_MODULES := main communication
+nuci_MODULES := main communication nuci_datastore
 nuci_SYSTEM_LIBS := netconf
