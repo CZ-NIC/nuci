@@ -19,6 +19,8 @@ struct ncds_custom_funcs *nuci_ds_fill_callbacks(void) {
 	cb->copyconfig = nuci_ds_copyconfig;
 	cb->deleteconfig = nuci_ds_deleteconfig;
 	cb->editconfig = nuci_ds_editconfig;
+
+	return cb;
 }
 
 int nuci_ds_init(void *data, struct ncds_ds* ds) {
