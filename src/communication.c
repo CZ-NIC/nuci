@@ -1,4 +1,5 @@
 #include "communication.h"
+#include "nuci_datastore.h"
 
 #include <stdio.h>
 
@@ -20,7 +21,7 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
-bool comm_init(const char *datastore_model_path, const char *datastore_file_path, struct srv_config *config_out) {
+bool comm_init(const char *datastore_model_path, struct srv_config *config_out) {
 	struct srv_config config; // Server configuration
 	struct nc_cpblts *my_capabilities; // Server's capabilities
 	int init;
@@ -36,7 +37,7 @@ bool comm_init(const char *datastore_model_path, const char *datastore_file_path
 
 	//Create new datastore structure with transaction API support.
 	// 1/3 - Create new
-	config.datastore = ncds_new(NCDS_TYPE_FILE, datastore_model_path, NULL);
+	config.datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
 		//3th parameter is: char *(*)(const char *model, const char *running, struct nc_err **e) get_state
 		//------------------------------------------------------------------------------------------------
 		//Pointer to a callback function that returns a serialized XML document containing the state
@@ -49,7 +50,7 @@ bool comm_init(const char *datastore_model_path, const char *datastore_file_path
 	}
 
 	// 2/3 - Assign file to datastore
-	if (ncds_file_set_path(config.datastore, datastore_file_path) != 0) {
+	if (ncds_custom_set_data(config.datastore, NULL, nuci_ds_fill_callbacks()) != 0) {
 		clb_print_error("Linking datastore to a file failed.");
 		return false;
 	}
