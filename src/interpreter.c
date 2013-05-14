@@ -41,6 +41,15 @@ static int register_stat_generator_lua(lua_State *lua) {
 	return 0; // No results
 }
 
+static int register_datastore_provider_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count != 2)
+		luaL_error(lua, "register_datastore_provider expects 2 parameter, %d given", param_count);
+	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry
+	register_datastore_provider(lua_tostring(lua, 1), datastore);
+	return 0; // No results
+}
+
 static void error(const char *format, ...) {
 	// TODO: Unify logging
 	va_list args;
@@ -67,6 +76,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "register_capability", register_capability_lua);
 	add_func(result, "register_submodel", register_submodel_lua);
 	add_func(result, "register_stat_generator", register_stat_generator_lua);
+	add_func(result, "register_datastore_provider", register_datastore_provider_lua);
 	return result;
 }
 
