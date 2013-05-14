@@ -55,8 +55,8 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
  *
  * The error may disappear any time more lua code is called.
  *
- * TODO: Some way to pass the default operation and error handling.
+ * TODO: Some way to pass the default operation and error handling. Also, maybe already parsed xml?
  */
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char **error);
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char **error);
 
 #endif

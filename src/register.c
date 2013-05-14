@@ -27,6 +27,9 @@ void register_datastore_provider(const char *ns, lua_datastore datastore) {
 	fprintf(stderr, "Registering new data store part %d for ns %s\n", datastore, ns);
 	if (test_interpreter) {
 		const char *error = NULL;
+		interpreter_set_config(test_interpreter, datastore, "Test config", &error);
+		fprintf(stderr, "Set congig: %s\n", error);
+		error = NULL;
 		const char *getconfig = interpreter_get_config(test_interpreter, datastore, &error);
 		fprintf(stderr, "Get congig: %s/%s\n", getconfig, error);
 	}

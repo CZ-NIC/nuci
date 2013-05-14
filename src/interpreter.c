@@ -127,6 +127,7 @@ const char *interpreter_call_str(struct interpreter *interpreter, lua_callback c
 }
 
 const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore, const char **error) {
+	assert(error);
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Pick up the data store
@@ -143,4 +144,20 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 		return NULL;
 	else
 		return lua_tostring(lua, -2);
+}
+
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char **error) {
+	assert(error);
+	lua_State *lua = interpreter->state;
+	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
+	// Pick up the data store
+	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore);
+	lua_getfield(lua, -1, "set_config"); // The function
+	lua_pushvalue(lua, -2); // The datastore is the first parameter
+	lua_pushstring(lua, config);
+	// Two parameters - the object and the config
+	// Single result, if set, it is the error
+	lua_call(lua, 2, 1);
+	if (!lua_isnil(lua, -1))
+		*error = lua_tostring(lua, -1);
 }
