@@ -5,31 +5,13 @@
 
 #include <libnetconf.h>
 
-
-struct ncds_custom_funcs *nuci_ds_fill_callbacks(void) {
-	struct ncds_custom_funcs *cb = (struct ncds_custom_funcs *)calloc(1, sizeof(struct ncds_custom_funcs));
-	
-	//cb->init = nuci_ds_init;
-	cb->free = nuci_ds_free;
-	//cb->was_changed = nuci_ds_was_changed;
-	//cb->rollback = nuci_ds_rollback;
-	//cb->get_lockinfo = nuci_ds_get_lockinfo;
-	//cb->lock = nuci_ds_lock;
-	//cb->unlock = nuci_ds_unlock;
-	cb->getconfig = nuci_ds_getconfig;
-	//cb->copyconfig = nuci_ds_copyconfig;
-	//cb->deleteconfig = nuci_ds_deleteconfig;
-	cb->editconfig = nuci_ds_editconfig;
-
-	return cb;
-}
 /*
 int nuci_ds_init(void *data, struct ncds_ds* ds) {
 	fprintf(stderr, "CALLBACKS_DEBUG: \"init\" called\n");
 	return 0; //on success, non-zero else
 }
 */
-void nuci_ds_free(void *data) {
+static void nuci_ds_free(void *data) {
 	fprintf(stderr, "CALLBACKS_DEBUG: I had chance to free custom data.\n");
 	free(data);
 }
@@ -59,7 +41,7 @@ int nuci_ds_unlock(void *data, struct ncds_ds* ds, const struct nc_session* sess
 	return 0;
 }
 */
-char* nuci_ds_getconfig(void *data, NC_DATASTORE target) {
+static char* nuci_ds_getconfig(void *data, NC_DATASTORE target) {
 	fprintf(stderr, "CALLBACKS_DEBUG: \"getconfig\" called\n");
 	return (char *)"xyz";
 }
@@ -74,8 +56,25 @@ int nuci_ds_deleteconfig(void *data, struct ncds_ds* ds, const struct nc_session
 	return 0;
 }
 */	//zjistit co vraci const char *config
-int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop) {
+static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop) {
 	fprintf(stderr, "CALLBACKS_DEBUG: \"editconfig\" called\n");
 	return 0;
 }
 
+struct ncds_custom_funcs *nuci_ds_fill_callbacks(void) {
+	struct ncds_custom_funcs *cb = (struct ncds_custom_funcs *)calloc(1, sizeof(struct ncds_custom_funcs));
+
+	//cb->init = nuci_ds_init;
+	cb->free = nuci_ds_free;
+	//cb->was_changed = nuci_ds_was_changed;
+	//cb->rollback = nuci_ds_rollback;
+	//cb->get_lockinfo = nuci_ds_get_lockinfo;
+	//cb->lock = nuci_ds_lock;
+	//cb->unlock = nuci_ds_unlock;
+	cb->getconfig = nuci_ds_getconfig;
+	//cb->copyconfig = nuci_ds_copyconfig;
+	//cb->deleteconfig = nuci_ds_deleteconfig;
+	cb->editconfig = nuci_ds_editconfig;
+
+	return cb;
+}
