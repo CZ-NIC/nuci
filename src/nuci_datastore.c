@@ -5,6 +5,7 @@
 
 #include <libnetconf.h>
 
+
 struct ncds_custom_funcs *nuci_ds_fill_callbacks(void) {
 	struct ncds_custom_funcs *cb = (struct ncds_custom_funcs *)calloc(1, sizeof(struct ncds_custom_funcs));
 	
@@ -29,6 +30,7 @@ int nuci_ds_init(void *data, struct ncds_ds* ds) {
 }
 */
 void nuci_ds_free(void *data) {
+	fprintf(stderr, "CALLBACKS_DEBUG: I had chance to free custom data.\n");
 	free(data);
 }
 /*
