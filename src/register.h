@@ -13,4 +13,11 @@
  */
 void register_capability(const char *cap_uri);
 
+/*
+ * Register a path to file containing submodule definition.
+ *
+ * It'll be incorporated into the main XML file.
+ */
+void register_submodel(const char *path);
+
 #endif

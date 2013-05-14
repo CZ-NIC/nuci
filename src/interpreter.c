@@ -13,15 +13,23 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-static int register_capability_lua(lua_State *lua) {
+static int register_string(lua_State *lua, void (*function)(const char*), const char *name) {
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)
-		luaL_error(lua, "register_capability expects 1 parameter, %d given", param_count);
+		luaL_error(lua, "%s expects 1 parameter, %d given", name, param_count);
 	const char *capability = lua_tostring(lua, 1);
 	if (!capability)
-		luaL_error(lua, "A non-string parameter passed to register_capability");
-	register_capability(capability);
+		luaL_error(lua, "A non-string parameter passed to %s", name);
+	function(capability);
 	return 0; // No results from this function
+}
+
+static int register_capability_lua(lua_State *lua) {
+	return register_string(lua, register_capability, "register_capability");
+}
+
+static int register_submodel_lua(lua_State *lua) {
+	return register_string(lua, register_submodel, "register_submodel");
 }
 
 static void error(const char *format, ...) {
@@ -48,6 +56,7 @@ struct interpreter *interpreter_create(void) {
 	};
 	luaL_openlibs(result->state);
 	add_func(result, "register_capability", register_capability_lua);
+	add_func(result, "register_submodel", register_submodel_lua);
 	return result;
 }
 
