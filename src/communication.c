@@ -21,15 +21,16 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
-bool comm_init(const char *datastore_model_path, struct srv_config *config_out) {
+bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 	//Fill with real values!!
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	char *const srv_cpblts[] = {
+		"urn:ietf:params:netconf:base:1.0",
 		"urn:ietf:params:netconf:base:1.1",
+		"urn:ietf:params:netconf:capability:writable-running:1.0",
 		NULL
 	};
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct srv_config config; // Server configuration
 	struct nc_cpblts *my_capabilities; // Server's capabilities
 	int init;
 
@@ -44,20 +45,20 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config_out) 
 
 	//Create new datastore structure with transaction API support.
 	// 1/3 - Create new
-	config.datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
+	config->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
 		//3th parameter is: char *(*)(const char *model, const char *running, struct nc_err **e) get_state
 		//------------------------------------------------------------------------------------------------
 		//Pointer to a callback function that returns a serialized XML document containing the state
 		//configuration data of the device. The parameters it receives are a serialized configuration
 		//data model in YIN format and the current content of the running datastore.
 		//If NULL is set, <get> operation is performed in the same way as <get-config>.
-	if (config.datastore == NULL) {
+	if (config->datastore == NULL) {
 		clb_print_error("Datastore preparing failed.");
 		return false;
 	}
 
 	// 2/3 - Assign file to datastore
-	if (ncds_custom_set_data(config.datastore, NULL, nuci_ds_fill_callbacks()) != 0) {
+	if (ncds_custom_set_data(config->datastore, NULL, nuci_ds_fill_callbacks()) != 0) {
 		clb_print_error("Linking datastore to a file failed.");
 		return false;
 	}
@@ -65,9 +66,11 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config_out) 
 	// 3/3 (Init datastore)
 	// Activate datastore structure for use.
 	// The datastore configuration is checked and if everything is correct, datastore gets its unique ID to be used for datastore operations (ncds_apply_rpc()).
-	config.dsid = ncds_init(config.datastore);
-	if (config.dsid <= 0) { //Optionally: ncds_init has 4 different error return types
-		ncds_free(config.datastore);
+	config->dsid = ncds_init(config->datastore);
+	//config.dsid = 1;
+	if (config->dsid <= 0) { //Optionally: ncds_init has 4 different error return types
+		ncds_free(config->datastore);
+		return false;
 	}
 
 	//Prepare capabilities configuration
@@ -75,8 +78,8 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config_out) 
 	my_capabilities = nc_cpblts_new(srv_cpblts);
 
 	//Accept NETCONF session from a client.
-	config.session = nc_session_accept(my_capabilities);
-	if (config.session == NULL) {
+	config->session = nc_session_accept(my_capabilities);
+	if (config->session == NULL) {
 		clb_print_error("Session not established.\n");
 		nc_cpblts_free(my_capabilities);
 		return false;
@@ -87,14 +90,13 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config_out) 
 	//REQUESTED by RFC 6022
 	//Add the session into the internal list of monitored sessions that
 	//are returned as part of netconf-state information defined in RFC 6022.
-	nc_session_monitor(config.session);
+	nc_session_monitor(config->session);
 
 	/*
 	 * According to http://code.google.com/p/libnetconf/source/detail?r=459b9c17508e3b2d5aee5e29cd43aa236795d531
 	 * libevent is used only for example server
 	 */
 
-	 *config_out = config;
 	 return true;
 }
 
