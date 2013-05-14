@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include <libnetconf.h>
+#include <libnetconf/datastore_custom_public.h>
 
 static void(*clb_print_error)(const char *message) = NULL;
 

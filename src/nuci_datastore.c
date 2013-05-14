@@ -4,6 +4,10 @@
 #include <stdlib.h>
 
 #include <libnetconf.h>
+#include <libnetconf/datastore_custom_public.h>
+
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
 
 /*
 int nuci_ds_init(void *data, struct ncds_ds* ds) {
