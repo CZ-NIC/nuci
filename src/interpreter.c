@@ -32,6 +32,15 @@ static int register_submodel_lua(lua_State *lua) {
 	return register_string(lua, register_submodel, "register_submodel");
 }
 
+static int register_stat_generator_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count != 1)
+		luaL_error(lua, "register_stat_generator expects 1 parameter, %d given", param_count);
+	lua_callback callback = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the function to the registry
+	register_stat_generator(callback);
+	return 0; // No results
+}
+
 static void error(const char *format, ...) {
 	// TODO: Unify logging
 	va_list args;
@@ -57,6 +66,7 @@ struct interpreter *interpreter_create(void) {
 	luaL_openlibs(result->state);
 	add_func(result, "register_capability", register_capability_lua);
 	add_func(result, "register_submodel", register_submodel_lua);
+	add_func(result, "register_stat_generator", register_stat_generator_lua);
 	return result;
 }
 
