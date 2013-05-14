@@ -42,4 +42,21 @@ typedef int lua_datastore;
  */
 const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback);
 
+/*
+ * Call the get_config method of the data store, returning the result and storing the error into
+ * error.
+ *
+ * Both the result and the error string may disappear any time more lua code is called.
+ */
+const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore, const char **error);
+
+/*
+ * Call the set_config method of the data store, possibly storing the data there.
+ *
+ * The error may disappear any time more lua code is called.
+ *
+ * TODO: Some way to pass the default operation and error handling.
+ */
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char **error);
+
 #endif

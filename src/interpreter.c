@@ -117,10 +117,30 @@ void interpreter_destroy(struct interpreter *interpreter) {
 
 const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback) {
 	lua_State *lua = interpreter->state;
+	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Copy the function to the stack
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, callback);
 	// No parameters for the callback functions, none pushed. We want 1 result.
 	// TODO: Handle failure somehow? lua_pcall?
 	lua_call(lua, 0, 1);
 	return lua_tostring(lua, -1); // The thing on top is the string. Hopefuly.
+}
+
+const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore, const char **error) {
+	lua_State *lua = interpreter->state;
+	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
+	// Pick up the data store
+	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore);
+	lua_getfield(lua, -1, "get_config"); // The function
+	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
+	// Single parameter - the object.
+	// Two results - the string and error. In case of success, the second is nil.
+	lua_call(lua, 1, 2);
+	// Convert the error only if there's one.
+	if (!lua_isnil(lua, -1))
+		*error = lua_tostring(lua, -1);
+	if (lua_isnil(lua, -2))
+		return NULL;
+	else
+		return lua_tostring(lua, -2);
 }

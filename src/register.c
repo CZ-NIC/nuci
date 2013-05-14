@@ -25,4 +25,9 @@ void register_stat_generator(lua_callback callback) {
 void register_datastore_provider(const char *ns, lua_datastore datastore) {
 	// TODO: Strdup the data store
 	fprintf(stderr, "Registering new data store part %d for ns %s\n", datastore, ns);
+	if (test_interpreter) {
+		const char *error = NULL;
+		const char *getconfig = interpreter_get_config(test_interpreter, datastore, &error);
+		fprintf(stderr, "Get congig: %s/%s\n", getconfig, error);
+	}
 }
