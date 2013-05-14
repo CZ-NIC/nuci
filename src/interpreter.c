@@ -104,3 +104,13 @@ void interpreter_destroy(struct interpreter *interpreter) {
 	lua_close(interpreter->state);
 	free(interpreter);
 }
+
+const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback) {
+	lua_State *lua = interpreter->state;
+	// Copy the function to the stack
+	lua_rawgeti(lua, LUA_REGISTRYINDEX, callback);
+	// No parameters for the callback functions, none pushed. We want 1 result.
+	// TODO: Handle failure somehow? lua_pcall?
+	lua_call(lua, 0, 1);
+	return lua_tostring(lua, -1); // The thing on top is the string. Hopefuly.
+}

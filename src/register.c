@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+struct interpreter *test_interpreter;
+
 void register_capability(const char *cap_uri) {
 	// TODO: Implement the function. This is just a dummy function to check it is called.
 	// TODO: Strdup the uri
@@ -16,6 +18,8 @@ void register_submodel(const char *path) {
 
 void register_stat_generator(lua_callback callback) {
 	fprintf(stderr, "Registering new stat generator %d\n", callback);
+	if (test_interpreter)
+		fprintf(stderr, "Testing callback: %s\n", interpreter_call_str(test_interpreter, callback));
 }
 
 void register_datastore_provider(const char *ns, lua_datastore datastore) {

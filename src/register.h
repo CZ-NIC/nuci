@@ -1,6 +1,10 @@
 #ifndef REGISTER_H
 #define REGISTER_H
 
+#include "interpreter.h"
+
+extern struct interpreter *test_interpreter;
+
 /*
  * Interface to register stuff for the lua plugins. Capabilities,
  * namespaces and callbacks.
@@ -19,17 +23,6 @@ void register_capability(const char *cap_uri);
  * It'll be incorporated into the main XML file.
  */
 void register_submodel(const char *path);
-
-/*
- * Every function in lua can be encoded into single int. Neat, isn't it?
- */
-typedef int lua_callback;
-
-/*
- * And, with the right tricks, we can even compress the whole datastore
- * lua object into a single int!
- */
-typedef int lua_datastore;
 
 /*
  * Register a function that is called to produce the XML statistics.
