@@ -6,6 +6,14 @@
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom_public.h>
 
+/**
+ * @brief Message & reply
+ */
+struct rpc_communication {
+	nc_rpc *msg; ///<Incoming message
+	nc_rpc *reply; ///<Generated reply
+};
+
 static void(*clb_print_error)(const char *message) = NULL;
 
 static void clb_print_error_default(const char *message) {

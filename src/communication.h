@@ -13,14 +13,6 @@ struct srv_config {
 	struct ncds_ds *datastore; ///<Datastore handler
 };
 
-/**
- * @brief Message & reply
- */
-struct rpc_communication {
-	nc_rpc *msg; ///<Incoming message
-	nc_rpc *reply; ///<Generated reply
-};
-
 void comm_set_print_error_callback(void(*clb)(const char *message));
 bool comm_init(const char *datastore_model_path, struct srv_config *config_out);
 void comm_start_loop(const struct srv_config *config);
