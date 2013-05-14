@@ -22,6 +22,13 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 }
 
 bool comm_init(const char *datastore_model_path, struct srv_config *config_out) {
+	//Fill with real values!!
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	char *const srv_cpblts[] = {
+		"urn:ietf:params:netconf:base:1.1",
+		NULL
+	};
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	struct srv_config config; // Server configuration
 	struct nc_cpblts *my_capabilities; // Server's capabilities
 	int init;
@@ -64,7 +71,8 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config_out) 
 	}
 
 	//Prepare capabilities configuration
-	my_capabilities = nc_session_get_cpblts_default();
+	//my_capabilities = nc_session_get_cpblts_default();
+	my_capabilities = nc_cpblts_new(srv_cpblts);
 
 	//Accept NETCONF session from a client.
 	config.session = nc_session_accept(my_capabilities);
