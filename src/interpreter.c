@@ -71,12 +71,12 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 	struct dirent *ent;
 	while ((ent = readdir(dir))) {
 		// First, check if it ends with .lua
-		size_t len = strlen(ent->d_name);
-		if (len < 4 || strcmp(".lua", ent->d_name + len - 4) != 0)
-			// Too short or different last 4 leters.
+		const char *dot = rindex(ent->d_name, '.');
+		// Either no file extention, or the extention is not lua nor luac
+		if (!dot || (strcmp(dot, ".lua") != 0 && strcmp(dot, ".luac") != 0))
 			continue;
 
-		size_t complete_len = len + path_len + 2; // 1 for '\0', 1 for '/'
+		size_t complete_len = strlen(ent->d_name) + path_len + 2; // 1 for '\0', 1 for '/'
 		char filename[complete_len];
 		assert((size_t ) snprintf(filename, complete_len, "%s/%s", path, ent->d_name) == complete_len - 1);
 		if (luaL_dofile(interpreter->state, filename) != 0) {
