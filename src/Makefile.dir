@@ -1,4 +1,8 @@
 BINARIES += src/nuci
 
-nuci_MODULES := main communication nuci_datastore
-nuci_SYSTEM_LIBS := netconf
+nuci_MODULES := main \
+	communication \
+	nuci_datastore \
+	interpreter \
+	register
+nuci_SYSTEM_LIBS := netconf lua
