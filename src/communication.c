@@ -110,17 +110,15 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 }
 
 void comm_start_loop(const struct srv_config *config) {
-	int loop = 1;
 	struct rpc_communication communication;
 	NC_MSG_TYPE msg_type;
 	const nc_msgid msgid;
 	NC_SESSION_STATUS session_status;
 
-	while (loop) {
+	while (true) {
 		session_status = nc_session_get_status(config->session);
 		if (session_status == NC_SESSION_STATUS_CLOSING  || session_status == NC_SESSION_STATUS_CLOSED || session_status == NC_SESSION_STATUS_ERROR) {
-			loop = 0;
-			continue;
+			break;
 		}
 
 		//Another NC_SESSION_STATUS option are:
