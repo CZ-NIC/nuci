@@ -1,13 +1,31 @@
 #include "register.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct interpreter *test_interpreter;
 
+// List containing just NULL
+static const char **capabilities = NULL;
+static size_t capability_used = 1, capability_capacity = 1;
+
+static void check_capabilities() {
+	if (!capabilities)
+		capabilities = calloc(1, capability_capacity * sizeof *capabilities);
+}
+
 void register_capability(const char *cap_uri) {
-	// TODO: Implement the function. This is just a dummy function to check it is called.
-	// TODO: Strdup the uri
 	fprintf(stderr, "Registering capability: %s\n", cap_uri);
+	check_capabilities();
+	if (capability_used == capability_capacity)
+		capabilities = realloc(capabilities, (capability_capacity *= 2) * sizeof *capabilities);
+	capabilities[capability_used - 1] = strdup(cap_uri);
+	capabilities[capability_used ++] = NULL;
+}
+
+const char *const *get_capabilities() {
+	return capabilities;
 }
 
 void register_submodel(const char *path) {

@@ -18,6 +18,13 @@ extern struct interpreter *test_interpreter;
 void register_capability(const char *cap_uri);
 
 /*
+ * Return the complete list of all registered capabilities.
+ *
+ * An array of strings is returned, NULL terminated.
+ */
+const char *const *get_capabilities();
+
+/*
  * Register a path to file containing submodule definition.
  *
  * It'll be incorporated into the main XML file.

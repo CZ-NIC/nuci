@@ -1,5 +1,6 @@
 #include "communication.h"
 #include "nuci_datastore.h"
+#include "register.h"
 
 #include <stdio.h>
 
@@ -31,22 +32,10 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 }
 
 bool comm_init(const char *datastore_model_path, struct srv_config *config) {
-	//Fill with real values!!
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	char *const srv_cpblts[] = {
-		"urn:ietf:params:netconf:base:1.0",
-		"urn:ietf:params:netconf:base:1.1",
-		"urn:ietf:params:netconf:capability:writable-running:1.0",
-		NULL
-	};
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	struct nc_cpblts *my_capabilities; // Server's capabilities
-	int init;
-
 	comm_test_values();
 
 	//Initialize libnetconf for system-wide usage. This initialization is shared across all the processes.
-	init = nc_init(NC_INIT_NOTIF | NC_INIT_NACM);
+	int init = nc_init(NC_INIT_NOTIF | NC_INIT_NACM);
 	if (init == -1) {
 		clb_print_error("libnetconf initiation failed.");
 		return false;
@@ -76,25 +65,30 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 	// Activate datastore structure for use.
 	// The datastore configuration is checked and if everything is correct, datastore gets its unique ID to be used for datastore operations (ncds_apply_rpc()).
 	config->dsid = ncds_init(config->datastore);
-	//config.dsid = 1;
 	if (config->dsid <= 0) { //Optionally: ncds_init has 4 different error return types
 		ncds_free(config->datastore);
 		return false;
 	}
 
-	//Prepare capabilities configuration
-	//my_capabilities = nc_session_get_cpblts_default();
-	my_capabilities = nc_cpblts_new(srv_cpblts);
+	/*
+	 * Register the basic capabilities into the list. Hardcode the values - unfortunately,
+	 * the libnetconf has constants for these, but does not publish them.
+	 */
+	register_capability("urn:ietf:params:netconf:base:1.0");
+	register_capability("urn:ietf:params:netconf:base:1.1");
+	register_capability("urn:ietf:params:netconf:capability:writable-running:1.0");
+	// Generate the capabilities for the library
+	struct nc_cpblts *capabilities = nc_cpblts_new(get_capabilities());
 
 	//Accept NETCONF session from a client.
-	config->session = nc_session_accept(my_capabilities);
+	config->session = nc_session_accept(capabilities);
 	if (config->session == NULL) {
 		clb_print_error("Session not established.\n");
-		nc_cpblts_free(my_capabilities);
+		nc_cpblts_free(capabilities);
 		return false;
 	}
 
-	nc_cpblts_free(my_capabilities);
+	nc_cpblts_free(capabilities);
 
 	//REQUESTED by RFC 6022
 	//Add the session into the internal list of monitored sessions that
