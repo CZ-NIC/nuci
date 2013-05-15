@@ -47,7 +47,7 @@ int nuci_ds_unlock(void *data, struct ncds_ds* ds, const struct nc_session* sess
 */
 static char* nuci_ds_getconfig(void *data, NC_DATASTORE target) {
 	fprintf(stderr, "CALLBACKS_DEBUG: \"getconfig\" called\n");
-	return (char *)"xyz";
+	return strdup("<xyz/>");
 }
 /*
 int nuci_ds_copyconfig(void *data, struct ncds_ds* ds, const struct nc_session* session, const nc_rpc* rpc, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
