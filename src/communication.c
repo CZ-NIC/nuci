@@ -48,8 +48,8 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	}
 
 	// Activate datastore structure for use.
-	config->dsid = ncds_init(config->config_datastore);
-	if (config->dsid <= 0) { //Optionally: ncds_init has 4 different error return types
+	config->config_dsid = ncds_init(config->config_datastore);
+	if (config->config_dsid <= 0) { //Optionally: ncds_init has 4 different error return types
 		ncds_free(config->config_datastore);
 		return false;
 	}
@@ -122,7 +122,7 @@ void comm_start_loop(const struct srv_config *config) {
 		}
 
 		// 2/3 - Reply to the client's request
-		communication.reply = ncds_apply_rpc(config->dsid, config->session, communication.msg);
+		communication.reply = ncds_apply_rpc(config->config_dsid, config->session, communication.msg);
 
 		if (communication.reply == NULL) {
 			//nothing to do

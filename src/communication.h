@@ -10,7 +10,7 @@
 struct srv_config {
 	struct nc_session *session; ///<Session ID
 	// ID of the config data store.
-	ncds_id dsid;
+	ncds_id config_dsid;
 	// Datastore for the configuration.
 	struct ncds_ds *config_datastore;
 };
