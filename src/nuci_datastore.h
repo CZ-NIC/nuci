@@ -3,6 +3,6 @@
 
 struct ncds_custom_funcs;
 
-struct ncds_custom_funcs *nuci_ds_fill_callbacks(void);
+extern const struct ncds_custom_funcs *ds_funcs;
 
 #endif // NUCI_DATASTORE_H

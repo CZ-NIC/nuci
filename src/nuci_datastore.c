@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom_public.h>
@@ -65,20 +66,8 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * conf
 	return 0;
 }
 
-struct ncds_custom_funcs *nuci_ds_fill_callbacks(void) {
-	struct ncds_custom_funcs *cb = (struct ncds_custom_funcs *)calloc(1, sizeof(struct ncds_custom_funcs));
-
-	//cb->init = nuci_ds_init;
-	cb->free = nuci_ds_free;
-	//cb->was_changed = nuci_ds_was_changed;
-	//cb->rollback = nuci_ds_rollback;
-	//cb->get_lockinfo = nuci_ds_get_lockinfo;
-	//cb->lock = nuci_ds_lock;
-	//cb->unlock = nuci_ds_unlock;
-	cb->getconfig = nuci_ds_getconfig;
-	//cb->copyconfig = nuci_ds_copyconfig;
-	//cb->deleteconfig = nuci_ds_deleteconfig;
-	cb->editconfig = nuci_ds_editconfig;
-
-	return cb;
-}
+const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
+	.free = nuci_ds_free,
+	.getconfig = nuci_ds_getconfig,
+	.editconfig = nuci_ds_editconfig
+};

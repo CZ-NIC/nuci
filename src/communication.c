@@ -42,7 +42,7 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	}
 
 	// Set the callbacks
-	if (ncds_custom_set_data(config->config_datastore, NULL, nuci_ds_fill_callbacks()) != 0) {
+	if (ncds_custom_set_data(config->config_datastore, NULL, ds_funcs) != 0) {
 		clb_print_error("Linking datastore to a file failed.");
 		return false;
 	}
