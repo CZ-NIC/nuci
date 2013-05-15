@@ -92,6 +92,9 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 		return false;
 	}
 
+	// Add to the list of sessions.
+	nc_session_monitor(config->session);
+
 	return true;
 }
 
