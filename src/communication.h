@@ -4,13 +4,15 @@
 #include <stdbool.h>
 #include <libnetconf.h>
 
-/**
- * @brief Holds server configuration
+/*
+ * Holds server configuration
  */
 struct srv_config {
 	struct nc_session *session; ///<Session ID
-	ncds_id dsid; ///< Working Datastore's datastore ID
-	struct ncds_ds *datastore; ///<Datastore handler
+	// ID of the config data store.
+	ncds_id dsid;
+	// Datastore for the configuration.
+	struct ncds_ds *config_datastore;
 };
 
 void comm_set_print_error_callback(void(*clb)(const char *message));
