@@ -3,6 +3,8 @@
 
 #include "interpreter.h"
 
+#include <stddef.h>
+
 extern struct interpreter *test_interpreter;
 
 /*
@@ -38,6 +40,15 @@ void register_submodel(const char *path);
  * concatenated to generate the desired statistics.
  */
 void register_stat_generator(const char *substats_path, lua_callback callback);
+
+/*
+ * Call all the statistics generarots and return their answers.
+ *
+ * Count of the generators is returned in count. The result is newly
+ * allocated array of strings, the results of the generators. It is
+ * up to the caller to free it.
+ */
+char **register_call_stats_generators(size_t *count, struct interpreter *interpreter);
 
 /*
  * Register (part of) the data store.

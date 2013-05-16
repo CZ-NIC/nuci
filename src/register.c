@@ -58,6 +58,14 @@ void register_stat_generator(const char *substats_path, lua_callback callback) {
 		fprintf(stderr, "Testing callback: %s\n", interpreter_call_str(test_interpreter, callback));
 }
 
+char **register_call_stats_generators(size_t *count, struct interpreter *interpreter) {
+	*count = callback_count;
+	char **result = malloc(callback_count * sizeof *result);
+	for (size_t i = 0; i < callback_count; i ++)
+		result[i] = strdup(interpreter_call_str(interpreter, stats_callbacks[i]));
+	return result;
+}
+
 void register_datastore_provider(const char *ns, lua_datastore datastore) {
 	// TODO: Strdup the data store
 	fprintf(stderr, "Registering new data store part %d for ns %s\n", datastore, ns);
