@@ -37,7 +37,7 @@ void register_submodel(const char *path);
  * All the registered callbacks should then be called and their output
  * concatenated to generate the desired statistics.
  */
-void register_stat_generator(lua_callback callback);
+void register_stat_generator(const char *substats_path, lua_callback callback);
 
 /*
  * Register (part of) the data store.

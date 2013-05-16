@@ -34,8 +34,8 @@ void register_submodel(const char *path) {
 	fprintf(stderr, "Registering submodule: %s\n", path);
 }
 
-void register_stat_generator(lua_callback callback) {
-	fprintf(stderr, "Registering new stat generator %d\n", callback);
+void register_stat_generator(const char *substats_path, lua_callback callback) {
+	fprintf(stderr, "Registering new stat generator %d for %s\n", callback, substats_path);
 	if (test_interpreter)
 		fprintf(stderr, "Testing callback: %s\n", interpreter_call_str(test_interpreter, callback));
 }

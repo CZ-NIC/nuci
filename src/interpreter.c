@@ -34,10 +34,10 @@ static int register_submodel_lua(lua_State *lua) {
 
 static int register_stat_generator_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
-	if (param_count != 1)
-		luaL_error(lua, "register_stat_generator expects 1 parameter, %d given", param_count);
+	if (param_count != 2)
+		luaL_error(lua, "register_stat_generator expects 2 parameter, %d given", param_count);
 	lua_callback callback = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the function to the registry
-	register_stat_generator(callback);
+	register_stat_generator(lua_tostring(lua, 1), callback);
 	return 0; // No results
 }
 
