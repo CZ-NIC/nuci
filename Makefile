@@ -8,8 +8,6 @@ ASCIIDOC := asciidoc
 AR := ar
 MAX_LOG_LEVEL := LOG_DEBUG_VERBOSE
 PAGE_SIZE := $(shell getconf PAGE_SIZE)
-EXTRA_INCLUDES := /usr/include/libxml2
-EXTRA_LIBS := xml2
 
 PLUGIN_PATH := $(abspath $(S)/src/lua_plugins)
 

@@ -5,4 +5,6 @@ nuci_MODULES := main \
 	nuci_datastore \
 	interpreter \
 	register
-nuci_SYSTEM_LIBS := netconf lua
+
+nuci_PKG_CONFIGS := lua libnetconf
+nuci_EXE_CONFIGS := xml2
