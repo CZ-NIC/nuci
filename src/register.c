@@ -36,6 +36,7 @@ void register_capability(const char *cap_uri) {
 }
 
 const char *const *get_capabilities() {
+	check_array(&capabilities);
 	return capabilities.data;
 }
 
@@ -43,6 +44,11 @@ static struct string_array config_submodels = ARRAY_INITIALIZER;
 
 void register_submodel(const char *path) {
 	insert_string(&config_submodels, path);
+}
+
+const char *const *get_submodels() {
+	check_array(&config_submodels);
+	return config_submodels.data;
 }
 
 static struct string_array stats_submodels = ARRAY_INITIALIZER;
@@ -64,6 +70,11 @@ char **register_call_stats_generators(size_t *count, struct interpreter *interpr
 	for (size_t i = 0; i < callback_count; i ++)
 		result[i] = strdup(interpreter_call_str(interpreter, stats_callbacks[i]));
 	return result;
+}
+
+const char *const *get_stat_defs() {
+	check_array(&stats_submodels);
+	return stats_submodels.data;
 }
 
 void register_datastore_provider(const char *ns, lua_datastore datastore) {

@@ -1,0 +1,6 @@
+<container name="stats">
+  <presence value="Statistics"/>
+  <description>
+    <text>Top-level container for all statistics.</text>
+  </description>
+</container>

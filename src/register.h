@@ -34,6 +34,13 @@ const char *const *get_capabilities();
 void register_submodel(const char *path);
 
 /*
+ * Get list of submodules, as defined by register_submodel.
+ *
+ * Same form as get_capabilities.
+ */
+const char *const *get_submodels();
+
+/*
  * Register a function that is called to produce the XML statistics.
  *
  * All the registered callbacks should then be called and their output
@@ -49,6 +56,14 @@ void register_stat_generator(const char *substats_path, lua_callback callback);
  * up to the caller to free it.
  */
 char **register_call_stats_generators(size_t *count, struct interpreter *interpreter);
+
+/*
+ * Provide list of all the spec submodules to include into the main module, registered
+ * through register_stat_generator.
+ *
+ * Same form as get_capabilities.
+ */
+const char *const *get_stat_defs();
 
 /*
  * Register (part of) the data store.
