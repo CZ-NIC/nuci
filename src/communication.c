@@ -13,7 +13,7 @@
  */
 struct rpc_communication {
 	nc_rpc *msg; ///<Incoming message
-	nc_rpc *reply; ///<Generated reply
+	nc_reply *reply; ///<Generated reply
 };
 
 static void(*clb_print_error)(const char *message) = NULL;
@@ -58,6 +58,8 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	return true;
 }
 
+
+
 bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 	// ID of the config data store.
 	comm_test_values();
@@ -98,13 +100,42 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 	return true;
 }
 
+/*
+ * This function send reply to user.
+ * It doesn't care if it is OK message or self-generated error.
+ * Function destroy communication structures.
+ * Return TRUE - function sent reply sucesfully; if was random error
+ * Return FALSE - function can't sent reply; session is broken
+ */
+
+static bool comm_send_reply(struct nc_session *session, struct rpc_communication *communication) {
+	const nc_msgid msgid;
+
+	msgid = nc_session_send_reply(session, communication->msg, communication->reply);
+	if (msgid == 0) {
+		nc_rpc_free(communication->msg);
+		nc_reply_free(communication->reply);
+
+		return false;
+	}
+
+	nc_rpc_free(communication->msg);
+	nc_reply_free(communication->reply);
+
+	return true;
+}
+
 void comm_start_loop(const struct srv_config *config) {
 	struct rpc_communication communication;
 	NC_MSG_TYPE msg_type;
-	const nc_msgid msgid;
 	NC_SESSION_STATUS session_status;
 
 	while (true) {
+		//let's be prepared for incoming errors
+		communication.msg = NULL;
+		communication.reply = NULL;
+
+		//check session status
 		session_status = nc_session_get_status(config->session);
 		if (session_status == NC_SESSION_STATUS_CLOSING  || session_status == NC_SESSION_STATUS_CLOSED || session_status == NC_SESSION_STATUS_ERROR) {
 			break;
@@ -116,36 +147,40 @@ void comm_start_loop(const struct srv_config *config) {
 		//if (session_status == NC_SESSION_STATUS_STARTUP) //All is OK, go ahead
 
 
-		// 1/3 - Process incoming requests
+		//Process incoming requests
 		msg_type = nc_session_recv_rpc(config->session, -1, &communication.msg);
 			//[in]	timeout	Timeout in milliseconds, -1 for infinite timeout, 0 for non-blocking
 		if (msg_type == NC_MSG_UNKNOWN) {
+			communication.reply = nc_reply_error(nc_err_new(NC_ERR_MALFORMED_MSG));
+
 			clb_print_error("Broken message recieved");
-			nc_rpc_free(communication.msg);
+			if (!comm_send_reply(config->session, &communication)) {
+				break;
+			}
+
 			continue;
 		}
 
-		// 2/3 - Reply to the client's request
+		//Reply to the client's request
 		ncds_id *ids;
 		communication.reply = ncds_apply_rpc2all(config->session, communication.msg, 1, &ids);
 		free(ids);
 
-		if (communication.reply == NULL) {
-			//nothing to do
-			nc_rpc_free(communication.msg);
+		//FIXME: NCDS_RPC_NOT_APPLICABLE == (void *)(-1)
+		if (communication.reply == NULL || communication.reply == NCDS_RPC_NOT_APPLICABLE) {
+			//NC_ERR_UNKNOWN_ELEM sounds good for now
+			communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
+			if (!comm_send_reply(config->session, &communication)) {
+				break;
+			}
+
 			continue;
 		}
 
-		msgid = nc_session_send_reply(config->session, communication.msg, communication.reply);
-		if (msgid == 0) {
-			clb_print_error("I can't send reply");
-			//continue is not necessary
-			//messages are freed at end of loop
+		//send non-error reply
+		if (!comm_send_reply(config->session, &communication)) {
+			break;
 		}
-
-		// 3/3 - Free all unused objects
-		nc_rpc_free(communication.msg);
-		nc_reply_free(communication.reply);
 	}
 }
 
