@@ -1,7 +1,11 @@
 register_capability("test:plugin")
 register_submodel("/path/to/submodule")
 register_stat_generator("substats-path", function ()
-	return "Hello"
+	return [[
+<stats xmlns='http://www.nic.cz/ns/router/stats'>
+  <count>42</count>
+  <size>XXL</size>
+</stats>]]
 end)
 datastore = { config = "Hello" }
 function datastore:get_config ()

@@ -59,12 +59,30 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	return true;
 }
 
+static struct interpreter *interpreter;
+
 static char *get_stats(const char *model, const char *running, struct nc_err **e) {
 	(void) model;
 	(void) running;
 	(void) e;
-	clb_print_error("Get-stats called\n");
-	return strdup("<stats-test />");
+	// Get all the results of the generators
+	size_t result_count;
+	char **results = register_call_stats_generators(&result_count, interpreter);
+	size_t len = 0;
+	// Compute how much space we need for the whole data
+	for (size_t i = 0; i < result_count; i ++)
+		len += strlen(results[i]);
+	// Get the result
+	char *result = malloc(len + 1);
+	// Concatenate the results together and free the separate results
+	result[0] = '\0';
+	for (size_t i = 0; i < result_count; i ++) {
+		strcat(result, results[i]);
+		free(results[i]);
+	}
+	free(results);
+
+	return result;
 }
 
 static bool stats_ds_init(const char *datastore_model_path, struct srv_config *config) {
@@ -81,7 +99,7 @@ static bool stats_ds_init(const char *datastore_model_path, struct srv_config *c
 	return true;
 }
 
-bool comm_init(const char *config_model_path, const char *stats_model_path, struct srv_config *config) {
+bool comm_init(const char *config_model_path, const char *stats_model_path, struct srv_config *config, struct interpreter *interpreter_) {
 	// Wipe it out, so we have NULLs everywhere we didn't set something yet
 	memset(config, 0, sizeof *config);
 	// ID of the config data store.
@@ -126,6 +144,8 @@ bool comm_init(const char *config_model_path, const char *stats_model_path, stru
 
 	// Add to the list of sessions.
 	nc_session_monitor(config->session);
+
+	interpreter = interpreter_;
 
 	return true;
 }
