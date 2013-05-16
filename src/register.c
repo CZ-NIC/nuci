@@ -6,26 +6,37 @@
 
 struct interpreter *test_interpreter;
 
-// List containing just NULL
-static const char **capabilities = NULL;
-static size_t capability_used = 1, capability_capacity = 1;
+struct string_array {
+	const char **data;
+	size_t capacity, used;
+};
 
-static void check_capabilities() {
-	if (!capabilities)
-		capabilities = calloc(1, capability_capacity * sizeof *capabilities);
+#define ARRAY_INITIALIZER {\
+	.capacity = 1, \
+	.used = 1 \
 }
 
+static void check_array(struct string_array *array) {
+	if (!array->data)
+		array->data = calloc(1, array->capacity * sizeof *array->data);
+}
+
+static void insert_string(struct string_array *array, const char *string) {
+	check_array(array);
+	if (array->used == array->capacity)
+		array->data = realloc(array->data, (array->capacity *= 2) * sizeof *array->data);
+	array->data[array->used - 1] = string;
+	array->data[array->used ++] = NULL;
+}
+
+static struct string_array capabilities = ARRAY_INITIALIZER;
+
 void register_capability(const char *cap_uri) {
-	fprintf(stderr, "Registering capability: %s\n", cap_uri);
-	check_capabilities();
-	if (capability_used == capability_capacity)
-		capabilities = realloc(capabilities, (capability_capacity *= 2) * sizeof *capabilities);
-	capabilities[capability_used - 1] = strdup(cap_uri);
-	capabilities[capability_used ++] = NULL;
+	insert_string(&capabilities, strdup(cap_uri));
 }
 
 const char *const *get_capabilities() {
-	return capabilities;
+	return capabilities.data;
 }
 
 void register_submodel(const char *path) {
