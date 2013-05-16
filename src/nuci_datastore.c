@@ -46,9 +46,14 @@ int nuci_ds_unlock(void *data, struct ncds_ds* ds, const struct nc_session* sess
 	return 0;
 }
 */
-static char* nuci_ds_getconfig(void *data, NC_DATASTORE target) {
-	fprintf(stderr, "CALLBACKS_DEBUG: \"getconfig\" called\n");
-	return strdup("<xyz/>");
+static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
+	//only running source for now
+	if (target != NC_DATASTORE_RUNNING) {
+		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
+		return NULL;
+	}
+
+	return strdup("<this-is-myconfiguration-content/>");
 }
 /*
 int nuci_ds_copyconfig(void *data, struct ncds_ds* ds, const struct nc_session* session, const nc_rpc* rpc, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
