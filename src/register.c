@@ -6,38 +6,75 @@
 
 struct interpreter *test_interpreter;
 
-// List containing just NULL
-static const char **capabilities = NULL;
-static size_t capability_used = 1, capability_capacity = 1;
+struct string_array {
+	const char **data;
+	size_t capacity, used;
+};
 
-static void check_capabilities() {
-	if (!capabilities)
-		capabilities = calloc(1, capability_capacity * sizeof *capabilities);
+#define ARRAY_INITIALIZER {\
+	.capacity = 1, \
+	.used = 1 \
 }
 
+static void check_array(struct string_array *array) {
+	if (!array->data)
+		array->data = calloc(1, array->capacity * sizeof *array->data);
+}
+
+static void insert_string(struct string_array *array, const char *string) {
+	check_array(array);
+	if (array->used == array->capacity)
+		array->data = realloc(array->data, (array->capacity *= 2) * sizeof *array->data);
+	array->data[array->used - 1] = string;
+	array->data[array->used ++] = NULL;
+}
+
+static struct string_array capabilities = ARRAY_INITIALIZER;
+
 void register_capability(const char *cap_uri) {
-	fprintf(stderr, "Registering capability: %s\n", cap_uri);
-	check_capabilities();
-	if (capability_used == capability_capacity)
-		capabilities = realloc(capabilities, (capability_capacity *= 2) * sizeof *capabilities);
-	capabilities[capability_used - 1] = strdup(cap_uri);
-	capabilities[capability_used ++] = NULL;
+	insert_string(&capabilities, strdup(cap_uri));
 }
 
 const char *const *get_capabilities() {
-	return capabilities;
+	check_array(&capabilities);
+	return capabilities.data;
 }
+
+static struct string_array config_submodels = ARRAY_INITIALIZER;
 
 void register_submodel(const char *path) {
-	// TODO: Implement the function. This is just a dummy function to check it is called.
-	// TODO: Strdup the path
-	fprintf(stderr, "Registering submodule: %s\n", path);
+	insert_string(&config_submodels, path);
 }
 
-void register_stat_generator(lua_callback callback) {
-	fprintf(stderr, "Registering new stat generator %d\n", callback);
+const char *const *get_submodels() {
+	check_array(&config_submodels);
+	return config_submodels.data;
+}
+
+static struct string_array stats_submodels = ARRAY_INITIALIZER;
+
+static lua_callback *stats_callbacks;
+static size_t callback_count;
+
+void register_stat_generator(const char *substats_path, lua_callback callback) {
+	insert_string(&stats_submodels, substats_path);
+	stats_callbacks = realloc(stats_callbacks, (++ callback_count) * sizeof *stats_callbacks);
+	stats_callbacks[callback_count - 1] = callback;
 	if (test_interpreter)
 		fprintf(stderr, "Testing callback: %s\n", interpreter_call_str(test_interpreter, callback));
+}
+
+char **register_call_stats_generators(size_t *count, struct interpreter *interpreter) {
+	*count = callback_count;
+	char **result = malloc(callback_count * sizeof *result);
+	for (size_t i = 0; i < callback_count; i ++)
+		result[i] = strdup(interpreter_call_str(interpreter, stats_callbacks[i]));
+	return result;
+}
+
+const char *const *get_stat_defs() {
+	check_array(&stats_submodels);
+	return stats_submodels.data;
 }
 
 void register_datastore_provider(const char *ns, lua_datastore datastore) {

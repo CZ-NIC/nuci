@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nuci-stats"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:stats="http://www.nic.cz/ns/router/stats">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/stats"/>

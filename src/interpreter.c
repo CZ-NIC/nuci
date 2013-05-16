@@ -34,10 +34,10 @@ static int register_submodel_lua(lua_State *lua) {
 
 static int register_stat_generator_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
-	if (param_count != 1)
-		luaL_error(lua, "register_stat_generator expects 1 parameter, %d given", param_count);
+	if (param_count != 2)
+		luaL_error(lua, "register_stat_generator expects 2 parameter, %d given", param_count);
 	lua_callback callback = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the function to the registry
-	register_stat_generator(callback);
+	register_stat_generator(lua_tostring(lua, 1), callback);
 	return 0; // No results
 }
 
@@ -98,7 +98,8 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 
 		size_t complete_len = strlen(ent->d_name) + path_len + 2; // 1 for '\0', 1 for '/'
 		char filename[complete_len];
-		assert((size_t ) snprintf(filename, complete_len, "%s/%s", path, ent->d_name) == complete_len - 1);
+		size_t print_len = snprintf(filename, complete_len, "%s/%s", path, ent->d_name);
+		assert(print_len == complete_len - 1);
 		if (luaL_dofile(interpreter->state, filename) != 0) {
 			// The error is on the top of the string, at index -1
 			error("Failure to load lua plugin %s: %s\n", ent->d_name, lua_tostring(interpreter->state, -1));

@@ -4,7 +4,8 @@ nuci_MODULES := main \
 	communication \
 	nuci_datastore \
 	interpreter \
-	register
+	register \
+	spec_build
 
 LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $$lua ; break ; fi ; done)
 

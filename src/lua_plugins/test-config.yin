@@ -1,0 +1,7 @@
+<container name="data">
+  <presence value="Statistics"/>
+  <description>
+    <text>Top-level container for all statistics.</text>
+  </description>
+  <leaf name="bla"/>
+</container>

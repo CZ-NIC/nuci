@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom_public.h>
@@ -44,23 +45,63 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 
 	// Set the callbacks
 	if (ncds_custom_set_data(config->config_datastore, NULL, ds_funcs) != 0) {
-		clb_print_error("Linking datastore to a file failed.");
+		clb_print_error("Linking datastore with functions.");
 		return false;
 	}
 
 	// Activate datastore structure for use.
 	config->config_dsid = ncds_init(config->config_datastore);
 	if (config->config_dsid <= 0) { //Optionally: ncds_init has 4 different error return types
-		ncds_free(config->config_datastore);
+		clb_print_error("Couldn't activate the config data store.");
 		return false;
 	}
 
 	return true;
 }
 
+static struct interpreter *interpreter;
 
+static char *get_stats(const char *model, const char *running, struct nc_err **e) {
+	(void) model;
+	(void) running;
+	(void) e;
+	// Get all the results of the generators
+	size_t result_count;
+	char **results = register_call_stats_generators(&result_count, interpreter);
+	size_t len = 0;
+	// Compute how much space we need for the whole data
+	for (size_t i = 0; i < result_count; i ++)
+		len += strlen(results[i]);
+	// Get the result
+	char *result = malloc(len + 1);
+	// Concatenate the results together and free the separate results
+	result[0] = '\0';
+	for (size_t i = 0; i < result_count; i ++) {
+		strcat(result, results[i]);
+		free(results[i]);
+	}
+	free(results);
 
-bool comm_init(const char *datastore_model_path, struct srv_config *config) {
+	return result;
+}
+
+static bool stats_ds_init(const char *datastore_model_path, struct srv_config *config) {
+	// New data store, no config but function to generate the statistics.
+	config->stats_datastore = ncds_new(NCDS_TYPE_EMPTY, datastore_model_path, get_stats);
+
+	// Activate it
+	config->stats_dsid = ncds_init(config->stats_datastore);
+	if (config->stats_dsid <= 0) {
+		fprintf(stderr, "Couldn't activate the statistics data store (%d).", (int) config->stats_dsid);
+		return false;
+	}
+
+	return true;
+}
+
+bool comm_init(const char *config_model_path, const char *stats_model_path, struct srv_config *config, struct interpreter *interpreter_) {
+	// Wipe it out, so we have NULLs everywhere we didn't set something yet
+	memset(config, 0, sizeof *config);
 	// ID of the config data store.
 	comm_test_values();
 
@@ -71,8 +112,15 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 	}
 
 	// Get the config data store
-	if (!config_ds_init(datastore_model_path, config))
+	if (!config_ds_init(config_model_path, config)) {
+		comm_cleanup(config);
 		return false;
+	}
+	// Get the statistics data store
+	if (!stats_ds_init(stats_model_path, config)) {
+		comm_cleanup(config);
+		return false;
+	}
 	/*
 	 * Register the basic capabilities into the list. Hardcode the values - unfortunately,
 	 * the libnetconf has constants for these, but does not publish them.
@@ -90,12 +138,14 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 
 	if (config->session == NULL) {
 		clb_print_error("Session not established.\n");
-		ncds_free(config->config_datastore);
+		comm_cleanup(config);
 		return false;
 	}
 
 	// Add to the list of sessions.
 	nc_session_monitor(config->session);
+
+	interpreter = interpreter_;
 
 	return true;
 }
@@ -184,18 +234,25 @@ void comm_start_loop(const struct srv_config *config) {
 	}
 }
 
-void comm_cleanup(const struct srv_config *config) {
+void comm_cleanup(struct srv_config *config) {
 	if (nc_session_get_status(config->session) == NC_SESSION_STATUS_WORKING) {
 		//Close NETCONF connection with the server
 		nc_session_close(config->session, NC_SESSION_TERM_CLOSED);
-		//WARNING!!! - Only nc_session_free() and nc_session_get_status() functions are allowed after this call.
 	}
 
-	//Cleanup the session structure and free all the allocated resources
-	nc_session_free(config->session);
+	// Cleanup the session structure and free all the allocated resources
+	if (config->session)
+		nc_session_free(config->session);
+	config->session = NULL;
 
-	//Close the specified datastore and free all the resources
-	ncds_free(config->config_datastore);
+	// Close data stores
+	if (config->config_datastore)
+		ncds_free(config->config_datastore);
+	config->config_datastore = NULL;
+
+	if (config->stats_datastore)
+		ncds_free(config->stats_datastore);
+	config->stats_datastore = NULL;
 
 	//Close internal libnetconf structures and subsystems
 	nc_close(0);
