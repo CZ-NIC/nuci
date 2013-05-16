@@ -39,14 +39,21 @@ const char *const *get_capabilities() {
 	return capabilities.data;
 }
 
+static struct string_array config_submodels = ARRAY_INITIALIZER;
+
 void register_submodel(const char *path) {
-	// TODO: Implement the function. This is just a dummy function to check it is called.
-	// TODO: Strdup the path
-	fprintf(stderr, "Registering submodule: %s\n", path);
+	insert_string(&config_submodels, path);
 }
 
+static struct string_array stats_submodels = ARRAY_INITIALIZER;
+
+static lua_callback *stats_callbacks;
+static size_t callback_count;
+
 void register_stat_generator(const char *substats_path, lua_callback callback) {
-	fprintf(stderr, "Registering new stat generator %d for %s\n", callback, substats_path);
+	insert_string(&stats_submodels, substats_path);
+	stats_callbacks = realloc(stats_callbacks, (++ callback_count) * sizeof *stats_callbacks);
+	stats_callbacks[callback_count - 1] = callback;
 	if (test_interpreter)
 		fprintf(stderr, "Testing callback: %s\n", interpreter_call_str(test_interpreter, callback));
 }
