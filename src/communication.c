@@ -63,7 +63,7 @@ bool comm_init(const char *datastore_model_path, struct srv_config *config) {
 	comm_test_values();
 
 	//Initialize libnetconf for system-wide usage. This initialization is shared across all the processes.
-	if (nc_init(NC_INIT_NOTIF | NC_INIT_NACM) == -1) {
+	if (nc_init(NC_INIT_NACM) == -1) {
 		clb_print_error("libnetconf initiation failed.");
 		return false;
 	}
