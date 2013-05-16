@@ -6,5 +6,8 @@ nuci_MODULES := main \
 	interpreter \
 	register
 
-nuci_PKG_CONFIGS := lua libnetconf
+LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $$lua ; break ; fi ; done)
+
+
+nuci_PKG_CONFIGS := $(LUA_NAME) libnetconf
 nuci_EXE_CONFIGS := xml2
