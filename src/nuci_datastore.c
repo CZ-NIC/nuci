@@ -65,10 +65,19 @@ int nuci_ds_deleteconfig(void *data, struct ncds_ds* ds, const struct nc_session
 	fprintf(stderr, "CALLBACKS_DEBUG: \"deleteconfig\" called\n");
 	return 0;
 }
-*/	//zjistit co vraci const char *config
-static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop) {
-	fprintf(stderr, "CALLBACKS_DEBUG: \"editconfig\" called\n");
-	return 0;
+*/
+
+//Documentation for parameters defop and errop: http://libnetconf.googlecode.com/git/doc/doxygen/html/d3/d7a/netconf_8h.html#a5852fd110198481afb37cc8dcf0bf454
+static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
+	//only running source for now
+	if (target != NC_DATASTORE_RUNNING) {
+		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
+		return NULL;
+	}
+
+	fprintf(stderr, "Config content:\n%s\n", config);
+
+	return EXIT_SUCCESS;
 }
 
 const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
