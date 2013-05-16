@@ -48,8 +48,8 @@ endif
 define COMMON_REGISTER
 
 $(1): $$(patsubst %,$(O)/.objs/$(3)%.o,$$($(2)_MODULES))
-$(1): CFLAGS_ALL += $$($(2)_CFLAGS)
-$(1): LDFLAGS_ALL += $$($(2)_LDFLAGS)
+$(1): CFLAGS_ALL += $$($(2)_CFLAGS) $$(foreach CONFIG,$$($(2)_PKG_CONFIGS),$$(shell pkg-config --cflags $$(CONFIG))) $$(foreach CONFIG,$$($(2)_EXE_CONFIGS),$$(shell $$(CONFIG)-config --cflags))
+$(1): LDFLAGS_ALL += $$($(2)_LDFLAGS) $$(foreach CONFIG,$$($(2)_PKG_CONFIGS),$$(shell pkg-config --libs $$(CONFIG))) $$(foreach CONFIG,$$($(2)_EXE_CONFIGS),$$(shell $$(CONFIG)-config --libs))
 ifdef STATIC
 TODO: Static linking
 else
