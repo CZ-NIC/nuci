@@ -9,7 +9,11 @@ cat <<ENDXML | socat STDIO EXEC:./bin/nuci,pty
 </hello>
 ]]>]]><?xml version="1.0" encoding="UTF-8"?>
 <rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="An id">
-  <lock/>
+  <lock>
+    <target>
+      <running/>
+    </target>
+  </lock>
 </rpc>
 ]]>]]>
 ENDXML
