@@ -14,12 +14,12 @@ cat <<ENDXML | socat STDIO EXEC:./bin/nuci,pty
       <running/>
     </target>
     <config>
-            <top xmlns="http://netconfcentral.org/ns/toaster">
-              <interface>
-                <name>Ethernet0/0</name>
-                <mtu>100000</mtu>
-            </interface>
-        </top>
+      <top xmlns="http://netconfcentral.org/ns/toaster">
+        <interface>
+          <name>Ethernet0/0</name>
+          <mtu>100000</mtu>
+        </interface>
+      </top>
     </config>
   </edit-config>
 </rpc>
