@@ -214,6 +214,7 @@ void comm_start_loop(const struct srv_config *config) {
 			//NC_ERR_UNKNOWN_ELEM sounds good for now
 			communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
 			if (!comm_send_reply(config->session, &communication)) {
+				clb_print_error("Couldn't send error reply");
 				break;
 			}
 
@@ -222,6 +223,7 @@ void comm_start_loop(const struct srv_config *config) {
 
 		//send non-error reply
 		if (!comm_send_reply(config->session, &communication)) {
+			clb_print_error("Couldn't send reply");
 			break;
 		}
 	}
