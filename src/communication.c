@@ -106,7 +106,7 @@ bool comm_init(const char *config_model_path, const char *stats_model_path, stru
 	comm_test_values();
 
 	//Initialize libnetconf for system-wide usage. This initialization is shared across all the processes.
-	if (nc_init(NC_INIT_NACM) == -1) {
+	if (nc_init(0) == -1) {
 		clb_print_error("libnetconf initiation failed.");
 		return false;
 	}
