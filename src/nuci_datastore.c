@@ -72,7 +72,7 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * conf
 	//only running source for now
 	if (target != NC_DATASTORE_RUNNING) {
 		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
-		return NULL;
+		return EXIT_FAILURE;
 	}
 
 	fprintf(stderr, "Config content:\n%s\n", config);
