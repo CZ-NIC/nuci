@@ -208,11 +208,8 @@ void comm_start_loop(const struct srv_config *config) {
 		}
 
 		//Reply to the client's request
-		ncds_id *ids;
-		communication.reply = ncds_apply_rpc2all(config->session, communication.msg, 1, &ids);
-		free(ids);
+		communication.reply = ncds_apply_rpc2all(config->session, communication.msg, NULL);
 
-		//FIXME: NCDS_RPC_NOT_APPLICABLE == (void *)(-1)
 		if (communication.reply == NULL || communication.reply == NCDS_RPC_NOT_APPLICABLE) {
 			//NC_ERR_UNKNOWN_ELEM sounds good for now
 			communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
