@@ -13,8 +13,8 @@
  * @brief Message & reply
  */
 struct rpc_communication {
-	nc_rpc *msg; ///<Incoming message
-	nc_reply *reply; ///<Generated reply
+	nc_rpc *msg; // Incoming message
+	nc_reply *reply; // Reply to send
 };
 
 static void(*clb_print_error)(const char *message) = NULL;
@@ -176,17 +176,13 @@ static bool comm_send_reply(struct nc_session *session, struct rpc_communication
 }
 
 void comm_start_loop(const struct srv_config *config) {
-	struct rpc_communication communication;
-	NC_MSG_TYPE msg_type;
-	NC_SESSION_STATUS session_status;
-
 	while (true) {
-		//let's be prepared for incoming errors
-		communication.msg = NULL;
-		communication.reply = NULL;
+		struct rpc_communication communication;
+		// Make sure there's no garbage if we don't set something in it.
+		memset(&communication, 0, sizeof communication);
 
 		//check session status
-		session_status = nc_session_get_status(config->session);
+		NC_SESSION_STATUS session_status = nc_session_get_status(config->session);
 		if (session_status == NC_SESSION_STATUS_CLOSING  || session_status == NC_SESSION_STATUS_CLOSED || session_status == NC_SESSION_STATUS_ERROR) {
 			break;
 		}
@@ -198,7 +194,7 @@ void comm_start_loop(const struct srv_config *config) {
 
 
 		//Process incoming requests
-		msg_type = nc_session_recv_rpc(config->session, -1, &communication.msg);
+		NC_MSG_TYPE msg_type = nc_session_recv_rpc(config->session, -1, &communication.msg);
 			//[in]	timeout	Timeout in milliseconds, -1 for infinite timeout, 0 for non-blocking
 		if (msg_type == NC_MSG_UNKNOWN) {
 			communication.reply = nc_reply_error(nc_err_new(NC_ERR_MALFORMED_MSG));
