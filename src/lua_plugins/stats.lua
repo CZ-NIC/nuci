@@ -1,3 +1,4 @@
+
 -- Define the commands and their mapping to XML elements.
 local commands = {
 	{ cmd = "dmesg | grep -i machine | sed 's/is /|/g' | cut -d '|' -f 2", shell = true, element = "boardName" },
@@ -12,7 +13,7 @@ local commands = {
 	-- TODO: Read /proc/uptime directly
 	{ cmd = "cat /proc/uptime | cut -d ' ' -f 1", shell = true, element = "uptime" },
 	-- TODO: Read /proc/meminfo directly, and parse it somehow to XML
-	{ cmd = "cat /proc/meminfo", shell = true, element = "memInfo" }
+	{ file = "/proc/meminfo", element = "memInfo" }
 	-- TODO: Other commands too
 };
 
@@ -20,13 +21,32 @@ register_stat_generator("stats.yin", function ()
 	output = "<stats xmlns='http://www.nic.cz/ns/router/stats'>";
 	for i, command in ipairs(commands) do
 		local ecode, out, err;
-		if command.shell then
-			ecode, out, err = run_command(nil, 'sh', '-c', command.cmd);
+		if command.cmd then
+			-- Run it as a command
+			if command.shell then
+				ecode, out, err = run_command(nil, 'sh', '-c', command.cmd);
+			else
+				ecode, out, err = run_command(nil, command.cmd);
+			end
+			if ecode ~= 0 then
+				return nil, "Command to get " .. command.element .. "failed with: " .. err;
+			end
 		else
-			ecode, out, err = run_command(nil, command.cmd);
-		end
-		if ecode ~= 0 then
-			return nil, "Command to get " .. command.element .. "failed with: " .. err;
+			-- Read the data from file
+			if command.file then
+				local file, errstr = io.open(command.file)
+				if file then
+					out = '';
+					for l in file:lines() do
+						out = out .. l .. "\n";
+					end
+					file:close();
+				else
+					return nil, errstr;
+				end
+			else
+				return nil, "Confused: no cmd nor file for " .. command.element;
+			end
 		end
 		-- TODO: Trim output
 		-- TODO: Escape the output
