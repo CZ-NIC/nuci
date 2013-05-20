@@ -4,9 +4,9 @@ local commands = {
 	{ cmd = "dmesg | grep -i machine | sed 's/is /|/g' | cut -d '|' -f 2", shell = true, element = "boardName" },
 	-- TODO: Use UCI directly
 	--{ cmd = "uci get system.@system[0].hostname", shell = true, element = "hostname" },
-	{ cmd = "uname -r", shell = true, element = "kernelVersion" },
+	{ cmd = "uname", params = {'-r'}, shell = false, element = "kernelVersion" },
 	--{ cmd = "cat /etc/openwrt_release  | grep DISTRIB_DESCRIPTION | cut -d '\"' -f 2", shell = true, element = "firmwareVersion" },
-	{ cmd = "date", shell = false, element = "localTime" },
+	{ cmd = "date", params = {'+%s'}, shell = false, element = "localTime" },
 	{ cmd = "uptime | cut -d ':' -f 5", shell = true, element = "loadAverage" },
 	{ cmd = "uptime | cut -d ':' -f 5 | cut -d ',' -f 1", shell = true, element = "currentLoad" },
 	-- TODO The ifconfig stuff
@@ -17,16 +17,22 @@ local commands = {
 	-- TODO: Other commands too
 };
 
+-- trim whitespace from right end of string
+function trimr(s)
+	return s:find'^%s*$' and '' or s:match'^(.*%S)'
+end
+
 register_stat_generator("stats.yin", function ()
 	output = "<stats xmlns='http://www.nic.cz/ns/router/stats'>";
 	for i, command in ipairs(commands) do
 		local ecode, out, err;
 		if command.cmd then
+			local params = command.params or {}
 			-- Run it as a command
 			if command.shell then
-				ecode, out, err = run_command(nil, 'sh', '-c', command.cmd);
+				ecode, out, err = run_command(nil, 'sh', '-c', command.cmd, unpack(params));
 			else
-				ecode, out, err = run_command(nil, command.cmd);
+				ecode, out, err = run_command(nil, command.cmd, unpack(params));
 			end
 			if ecode ~= 0 then
 				return nil, "Command to get " .. command.element .. "failed with: " .. err;
@@ -48,6 +54,7 @@ register_stat_generator("stats.yin", function ()
 				return nil, "Confused: no cmd nor file for " .. command.element;
 			end
 		end
+		out = trimr(out)
 		-- TODO: Trim output
 		-- TODO: Escape the output
 		output = output .. "<" .. command.element .. ">" .. out .. "</" .. command.element .. ">";
