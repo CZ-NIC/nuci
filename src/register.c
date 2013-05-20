@@ -23,14 +23,14 @@ static void insert_string(struct string_array *array, const char *string) {
 	check_array(array);
 	if (array->used == array->capacity)
 		array->data = realloc(array->data, (array->capacity *= 2) * sizeof *array->data);
-	array->data[array->used - 1] = string;
+	array->data[array->used - 1] = strdup(string);
 	array->data[array->used ++] = NULL;
 }
 
 static struct string_array capabilities = ARRAY_INITIALIZER;
 
 void register_capability(const char *cap_uri) {
-	insert_string(&capabilities, strdup(cap_uri));
+	insert_string(&capabilities, cap_uri);
 }
 
 const char *const *get_capabilities() {
