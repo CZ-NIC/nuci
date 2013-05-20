@@ -17,7 +17,7 @@ local commands = {
 		local index, time = next(times);
 		local result = '';
 		for l in out:gmatch('([^ ]+)') do
-			result = result .. '<avg' .. time .. '>' .. l .. '</avg' .. time .. '>';
+			result = result .. '<avg' .. time .. '>' .. xml_escape(l) .. '</avg' .. time .. '>';
 			index, time = next(times, index);
 			if not index then
 				break;
@@ -26,15 +26,13 @@ local commands = {
 		return result
 	end},
 	-- TODO The ifconfig stuff
-	-- TODO: Read /proc/uptime directly
 	{ file = "/proc/uptime", element = "uptime", postprocess = function (out)
 		return out:gsub(' .*', '')
 	end},
-	-- TODO: Read /proc/meminfo directly, and parse it somehow to XML
 	{ file = "/proc/meminfo", element = "memInfo", postprocess = function (out)
 		local result = '';
 		for name, value in out:gmatch('(%w+):%s+(%d+)[^\n]*\n') do
-			result = result .. "<" .. name .. ">" .. value .. "</" .. name .. ">"
+			result = result .. "<" .. name .. ">" .. xml_escape(value) .. "</" .. name .. ">"
 		end
 		return result
 	end}
@@ -80,10 +78,10 @@ register_stat_generator("stats.yin", function ()
 			return err
 		end
 		out = trimr(out)
-		if command.postprocess then
-			out = command.postprocess(out)
-		end
-		-- TODO: Escape the output
+		local postprocess = command.postprocess or xml_escape
+		print(command.element .. ":" .. out)
+
+		out = postprocess(out)
 		output = output .. "<" .. command.element .. ">" .. out .. "</" .. command.element .. ">";
 	end;
 	output = output .. "</stats>";

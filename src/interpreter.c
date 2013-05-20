@@ -223,6 +223,53 @@ static void error(const char *format, ...) {
 	va_end(args);
 }
 
+static void entity(char *buffer, size_t *pos, const char *name) {
+	buffer[(*pos) ++] = '&';
+	for (const char *c = name; *c; c ++)
+		buffer[(*pos) ++] = *c;
+	buffer[(*pos) ++] = ';';
+}
+
+static int xml_escape_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count != 1)
+		luaL_error(lua, "xml_escape expects 1 parameter, %d given", param_count);
+	const char *input = lua_tostring(lua, 1);
+	if (!input)
+		luaL_error(lua, "Not a string passed to xml_escape");
+	size_t in_len = strlen(input);
+	// The entity has &<code>;, <code> is max 4 chars.
+	size_t out_len = 6 * in_len;
+	char *output = malloc(out_len + 1);
+	size_t out_pos = 0;
+	for (const char *c = input; *c; c ++) {
+		switch (*c) {
+			case '"':
+				entity(output, &out_pos, "quot");
+				break;
+			case '&':
+				entity(output, &out_pos, "amp");
+				break;
+			case '\'':
+				entity(output, &out_pos, "apos");
+				break;
+			case '<':
+				entity(output, &out_pos, "lt");
+				break;
+			case '>':
+				entity(output, &out_pos, "gt");
+				break;
+			default:
+				output[out_pos ++] = *c;
+		}
+	}
+	assert(out_pos <= out_len);
+	output[out_pos] = '\0';
+	lua_pushstring(lua, output);
+	free(output);
+	return 1;
+}
+
 struct interpreter {
 	lua_State *state;
 };
@@ -243,6 +290,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "register_stat_generator", register_stat_generator_lua);
 	add_func(result, "register_datastore_provider", register_datastore_provider_lua);
 	add_func(result, "run_command", run_command_lua);
+	add_func(result, "xml_escape", xml_escape_lua);
 	return result;
 }
 
