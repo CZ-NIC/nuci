@@ -43,7 +43,6 @@ int main(int argc, const char *argv[]) {
 
 	struct srv_config config;
 	struct interpreter *interpreter = interpreter_create();
-	test_interpreter = interpreter;
 	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
 		return 1;
 

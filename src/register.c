@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct interpreter *test_interpreter;
-
 struct string_array {
 	const char **data;
 	size_t capacity, used;
@@ -60,8 +58,6 @@ void register_stat_generator(const char *substats_path, lua_callback callback) {
 	insert_string(&stats_submodels, substats_path);
 	stats_callbacks = realloc(stats_callbacks, (++ callback_count) * sizeof *stats_callbacks);
 	stats_callbacks[callback_count - 1] = callback;
-	if (test_interpreter)
-		fprintf(stderr, "Testing callback: %s\n", interpreter_call_str(test_interpreter, callback));
 }
 
 char **register_call_stats_generators(size_t *count, struct interpreter *interpreter) {
@@ -80,12 +76,4 @@ const char *const *get_stat_defs() {
 void register_datastore_provider(const char *ns, lua_datastore datastore) {
 	// TODO: Strdup the data store
 	fprintf(stderr, "Registering new data store part %d for ns %s\n", datastore, ns);
-	if (test_interpreter) {
-		const char *error = NULL;
-		interpreter_set_config(test_interpreter, datastore, "Test config", &error);
-		fprintf(stderr, "Set congig: %s\n", error);
-		error = NULL;
-		const char *getconfig = interpreter_get_config(test_interpreter, datastore, &error);
-		fprintf(stderr, "Get congig: %s/%s\n", getconfig, error);
-	}
 }

@@ -5,8 +5,6 @@
 
 #include <stddef.h>
 
-extern struct interpreter *test_interpreter;
-
 /*
  * Interface to register stuff for the lua plugins. Capabilities,
  * namespaces and callbacks.
