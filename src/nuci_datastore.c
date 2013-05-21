@@ -8,7 +8,7 @@
 #include <sys/file.h>
 
 #include <libnetconf.h>
-#include <libnetconf/datastore_custom_public.h>
+#include <libnetconf/datastore_custom.h>
 
 #include <libxml/tree.h>
 #include <libxml/xpath.h>

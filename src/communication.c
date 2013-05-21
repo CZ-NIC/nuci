@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include <libnetconf.h>
-#include <libnetconf/datastore_custom_public.h>
+#include <libnetconf/datastore_custom.h>
 
 /**
  * @brief Message & reply
