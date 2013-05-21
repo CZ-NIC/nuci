@@ -25,7 +25,41 @@ local commands = {
 		end
 		return result
 	end},
-	-- TODO The ifconfig stuff
+	{ cmd = 'ifconfig', params = {'-a'}, element = 'interfaces', postprocess = function (out)
+		-- First put everything to a table. There might be multiple interfaces with the same name
+		-- (because of sub-interfaces).
+		local interfaces = {}
+		local position = 1;
+		local s, e = out:find('\n\n', position, true);
+		while s do
+			local interface = out:sub(position, s - 1);
+			local name = interface:gmatch('([^:]*):')();
+			print(name);
+			local addresses = interfaces[name] or ''
+			for kind, addr in interface:gmatch('        (%S+)%s+(%S+)') do
+				if kind == 'HWaddr' then
+					kind = 'ether';
+				end
+				if kind == 'inet' or kind == 'inet6' or kind == 'ether' then
+					addr = addr:gsub('addr:', '');
+					addresses = addresses .. '<address type="' .. kind .. '">' .. xml_escape(addr) .. '</address>';
+				end
+			end
+			-- TODO: Check if it is bridge or wireless and get the throughput
+			interfaces[name] = addresses
+			position = e + 1;
+			s, e = out:find('\n\n', position, true);
+			print(name .. ': ' .. interfaces[name]);
+		end
+		print(interfaces);
+		print(interfaces['eth0']);
+		print(next(interfaces));
+		local result = '';
+		for name, addresses in pairs(interfaces) do
+			result = result .. '<interface><name>' .. xml_escape(name) .. '</name>' .. addresses .. '</interface>';
+		end
+		return result;
+	end},
 	{ file = "/proc/uptime", element = "uptime", postprocess = function (out)
 		return out:gsub(' .*', '')
 	end},
@@ -79,12 +113,10 @@ register_stat_generator("stats.yin", function ()
 		end
 		out = trimr(out)
 		local postprocess = command.postprocess or xml_escape
-		print(command.element .. ":" .. out)
 
 		out = postprocess(out)
 		output = output .. "<" .. command.element .. ">" .. out .. "</" .. command.element .. ">";
 	end;
 	output = output .. "</stats>";
-	print(output);
 	return output;
 end)
