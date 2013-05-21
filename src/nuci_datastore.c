@@ -107,9 +107,10 @@ int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 		return EXIT_FAILURE;
 	}
 
-	//I currently have lock. User forgot it?
+	//I currently have lock. No double-locking.
 	if (d->holding_lock) {
-		return EXIT_SUCCESS;
+		*error = nc_err_new(NC_ERR_LOCK_DENIED);
+		return EXIT_FAILURE;
 	}
 
 	//I haven't lock
@@ -149,21 +150,10 @@ int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	}
 
 	//I haven't lock
-	//Has some other process lock?
+	//It doesn't matter if datastore is locket or unlocked
+	*error = nc_err_new(NC_ERR_LOCK_DENIED);
 
-	if (!test_and_set_lock(data)) {
-		//Some other process has lock
-		*error = nc_err_new(NC_ERR_LOCK_DENIED);
-		return EXIT_FAILURE;
-	}
-
-	//Any other process hasn't lock - I have, but I don't want it -> release
-	if (!release_lock(data)) { //release it
-		*error = nc_err_new(NC_ERR_OP_FAILED);
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
 
 static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
