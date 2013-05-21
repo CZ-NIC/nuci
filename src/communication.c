@@ -44,10 +44,7 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	}
 
 	// Set the callbacks
-	if (ncds_custom_set_data(config->config_datastore, nuci_ds_get_custom_data(), ds_funcs) != 0) {
-		clb_print_error("Linking datastore with functions.");
-		return false;
-	}
+	ncds_custom_set_data(config->config_datastore, nuci_ds_get_custom_data(), ds_funcs);
 
 	// Activate datastore structure for use.
 	config->config_dsid = ncds_init(config->config_datastore);
