@@ -69,7 +69,8 @@ local commands = {
 			result = result .. "<" .. name .. ">" .. xml_escape(value) .. "</" .. name .. ">"
 		end
 		return result
-	end}
+	end},
+	{ cmd = 'false', element = 'false' }
 	-- TODO: Other commands too
 };
 
@@ -84,7 +85,7 @@ local function get_output(command)
 			ecode, out, err = run_command(nil, command.cmd, unpack(params));
 		end
 		if ecode ~= 0 then
-			return nil, "Command to get " .. command.element .. "failed with: " .. err;
+			return nil, "Command to get " .. command.element .. " failed with code " .. ecode .. " and stderr " .. err;
 		end
 		return out;
 	end
@@ -109,7 +110,7 @@ register_stat_generator("stats.yin", function ()
 	for i, command in ipairs(commands) do
 		local out, err = get_output(command);
 		if not out then
-			return err
+			return nil, err
 		end
 		out = trimr(out)
 		local postprocess = command.postprocess or xml_escape

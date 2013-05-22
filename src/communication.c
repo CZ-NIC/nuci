@@ -67,7 +67,16 @@ static char *get_stats(const char *model, const char *running, struct nc_err **e
 	(void) e;
 	// Get all the results of the generators
 	size_t result_count;
-	char **results = register_call_stats_generators(&result_count, interpreter);
+	char *error = NULL;
+	char **results = register_call_stats_generators(&result_count, interpreter, &error);
+	if (error) {
+		*e = nc_err_new(NC_ERR_OP_FAILED);
+		nc_err_set(*e, NC_ERR_PARAM_TYPE, "application");
+		nc_err_set(*e, NC_ERR_PARAM_SEVERITY, "error");
+		nc_err_set(*e, NC_ERR_PARAM_MSG, error);
+		free(error);
+		return NULL;
+	}
 	size_t len = 0;
 	// Compute how much space we need for the whole data
 	for (size_t i = 0; i < result_count; i ++)
