@@ -61,25 +61,6 @@ void register_stat_generator(const char *stats_spec, lua_callback callback) {
 	stats_callbacks[callback_count - 1] = callback;
 }
 
-char **register_call_stats_generators(size_t *count, struct interpreter *interpreter, char **error_out) {
-	*count = callback_count;
-	char **result = malloc(callback_count * sizeof *result);
-	const char *error = NULL;
-	for (size_t i = 0; i < callback_count; i ++) {
-		const char *stats = interpreter_call_str(interpreter, stats_callbacks[i], &error);
-		if (error) { // There's an error. Cancel the creation of result and propagate the error.
-			assert(!stats);
-			*error_out = strdup(error);
-			for (size_t j = 0; j < i; j ++)
-				free(result[j]);
-			free(result);
-			return NULL;
-		}
-		result[i] = strdup(stats);
-	}
-	return result;
-}
-
 const char *const *get_stat_defs(const lua_callback **callbacks, size_t *size) {
 	check_array(&stats_modules);
 	if (callbacks)

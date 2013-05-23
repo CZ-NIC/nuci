@@ -47,18 +47,6 @@ const char *const *get_submodels();
 void register_stat_generator(const char *stats_spec_path, lua_callback callback);
 
 /*
- * Call all the statistics generarots and return their answers.
- *
- * Count of the generators is returned in count. The result is newly
- * allocated array of strings, the results of the generators. It is
- * up to the caller to free it.
- *
- * In case something goes wrong, the error is set (and ownership is passed
- * to the caller). In such case, NULL is returned.
- */
-char **register_call_stats_generators(size_t *count, struct interpreter *interpreter, char **error);
-
-/*
  * Provide list of all the spec submodules to include into the main module, registered
  * through register_stat_generator.
  *
