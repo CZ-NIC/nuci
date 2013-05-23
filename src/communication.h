@@ -18,6 +18,8 @@ struct stats_mapping;
  * Holds server configuration
  */
 struct srv_config {
+	// The lua interpreter
+	struct interpreter *interpreter;
 	// The session (connection) to the client.
 	struct nc_session *session;
 	// The configuration data store.

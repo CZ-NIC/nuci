@@ -1,6 +1,7 @@
 #include "communication.h"
 #include "nuci_datastore.h"
 #include "register.h"
+#include "interpreter.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,8 +65,6 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	return true;
 }
 
-static struct interpreter *interpreter;
-
 /*
  * Take the model spec (yin) specs and extract the namespace uri of the model.
  * Pass the result onto the caller for free.
@@ -101,36 +100,30 @@ struct stats_mapping {
 };
 
 static char *get_stats(const char *model, const char *running, struct nc_err **e) {
-	char *model_uri = extract_model_uri_string(model);
-	free(model_uri);
 	(void) running;
-	// Get all the results of the generators
-	size_t result_count;
-	char *error = NULL;
-	char **results = register_call_stats_generators(&result_count, interpreter, &error);
+	char *model_uri = extract_model_uri_string(model);
+	lua_callback callback;
+	bool callback_found = false;
+	for (size_t i = 0; i < global_srv_config.stats_datastore_count; i ++)
+		if (strcmp(model_uri, global_srv_config.stats_mappings[i].namespace) == 0) {
+			callback_found = true;
+			callback = global_srv_config.stats_mappings[i].callback;
+			break;
+		}
+	free(model_uri);
+	assert(callback_found); // We should not be called with namespace we don't know
+	const char *error = NULL;
+	const char *result = interpreter_call_str(global_srv_config.interpreter, callback, &error);
+
 	if (error) {
 		*e = nc_err_new(NC_ERR_OP_FAILED);
 		nc_err_set(*e, NC_ERR_PARAM_TYPE, "application");
 		nc_err_set(*e, NC_ERR_PARAM_SEVERITY, "error");
 		nc_err_set(*e, NC_ERR_PARAM_MSG, error);
-		free(error);
 		return NULL;
 	}
-	size_t len = 0;
-	// Compute how much space we need for the whole data
-	for (size_t i = 0; i < result_count; i ++)
-		len += strlen(results[i]);
-	// Get the result
-	char *result = malloc(len + 1);
-	// Concatenate the results together and free the separate results
-	result[0] = '\0';
-	for (size_t i = 0; i < result_count; i ++) {
-		strcat(result, results[i]);
-		free(results[i]);
-	}
-	free(results);
 
-	return result;
+	return strdup(result);
 }
 
 static bool stats_ds_init(const char *datastore_model_path, struct datastore *datastore) {
@@ -209,7 +202,7 @@ bool comm_init(const char *config_model_path, struct srv_config *config, struct 
 	// Add to the list of sessions.
 	nc_session_monitor(config->session);
 
-	interpreter = interpreter_;
+	config->interpreter = interpreter_;
 
 	return true;
 }
