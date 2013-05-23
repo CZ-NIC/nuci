@@ -91,7 +91,6 @@ static char *get_stats(const char *model, const char *running, struct nc_err **e
 	printf("Model uri: %s\n", model_uri);
 	free(model_uri);
 	(void) running;
-	(void) e;
 	// Get all the results of the generators
 	size_t result_count;
 	char *error = NULL;
