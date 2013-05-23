@@ -19,3 +19,7 @@ build/buildsystem.html
 
 # Created by the binary at run time.
 src/datastore.xml
+
+# Random "service" files
+core
+tags

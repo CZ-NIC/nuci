@@ -5,8 +5,6 @@
 
 #include <stddef.h>
 
-extern struct interpreter *test_interpreter;
-
 /*
  * Interface to register stuff for the lua plugins. Capabilities,
  * namespaces and callbacks.
@@ -46,24 +44,17 @@ const char *const *get_submodels();
  * All the registered callbacks should then be called and their output
  * concatenated to generate the desired statistics.
  */
-void register_stat_generator(const char *substats_path, lua_callback callback);
-
-/*
- * Call all the statistics generarots and return their answers.
- *
- * Count of the generators is returned in count. The result is newly
- * allocated array of strings, the results of the generators. It is
- * up to the caller to free it.
- */
-char **register_call_stats_generators(size_t *count, struct interpreter *interpreter);
+void register_stat_generator(const char *stats_spec_path, lua_callback callback);
 
 /*
  * Provide list of all the spec submodules to include into the main module, registered
  * through register_stat_generator.
  *
- * Same form as get_capabilities.
+ * Resutl is of the same form as get_capabilities. The callbacks is output-only array of
+ * the callbacks (indeces match) and size is output-only size of both arrayrs (excluding the
+ * NULL at the end of the specs string array).
  */
-const char *const *get_stat_defs();
+const char *const *get_stat_defs(const lua_callback **callbacks, size_t *size);
 
 /*
  * Register (part of) the data store.
