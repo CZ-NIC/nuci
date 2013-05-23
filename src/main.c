@@ -46,7 +46,9 @@ int main(int argc, const char *argv[]) {
 	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
 		return 1;
 
-	char *stat_file = spec_build(STATS_MODEL_PATH, PLUGIN_PATH, get_stat_defs());
+	const lua_callback *callbacks;
+	size_t size;
+	char *stat_file = spec_build(STATS_MODEL_PATH, PLUGIN_PATH, get_stat_defs(&callbacks, &size));
 	char *config_file = spec_build(CONFIG_MODEL_PATH, PLUGIN_PATH, get_submodels());
 	bool init = comm_init(config_file, stat_file, &config, interpreter);
 	unlink(stat_file);

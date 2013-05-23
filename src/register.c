@@ -50,13 +50,13 @@ const char *const *get_submodels() {
 	return config_submodels.data;
 }
 
-static struct string_array stats_submodels = ARRAY_INITIALIZER;
+static struct string_array stats_modules = ARRAY_INITIALIZER;
 
 static lua_callback *stats_callbacks;
 static size_t callback_count;
 
-void register_stat_generator(const char *substats_path, lua_callback callback) {
-	insert_string(&stats_submodels, substats_path);
+void register_stat_generator(const char *stats_spec, lua_callback callback) {
+	insert_string(&stats_modules, stats_spec);
 	stats_callbacks = realloc(stats_callbacks, (++ callback_count) * sizeof *stats_callbacks);
 	stats_callbacks[callback_count - 1] = callback;
 }
@@ -80,9 +80,13 @@ char **register_call_stats_generators(size_t *count, struct interpreter *interpr
 	return result;
 }
 
-const char *const *get_stat_defs() {
-	check_array(&stats_submodels);
-	return stats_submodels.data;
+const char *const *get_stat_defs(const lua_callback **callbacks, size_t *size) {
+	check_array(&stats_modules);
+	if (callbacks)
+		*callbacks = stats_callbacks;
+	if (size)
+		*size = callback_count;
+	return stats_modules.data;
 }
 
 void register_datastore_provider(const char *ns, lua_datastore datastore) {
