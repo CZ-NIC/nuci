@@ -5,9 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 /**
  * @brief Message & reply
@@ -61,8 +64,32 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 
 static struct interpreter *interpreter;
 
+/*
+ * Take the model spec (yin) specs and extract the namespace uri of the model.
+ * Pass the result onto the caller for free.
+ */
+static char *extract_model_uri(const char *model) {
+	xmlDoc *doc = xmlReadMemory(model, strlen(model), "model.xml", NULL, 0);
+	assert(doc); // By now, someone should have validated the model before us.
+	xmlNode *node = xmlDocGetRootElement(doc);
+	assert(node);
+	char *model_uri = NULL;
+	for (xmlNode *current = node->children; current; current = current->next) {
+		if (xmlStrcmp(current->name, (const xmlChar *) "namespace") == 0 && xmlStrcmp(current->ns->href, (const xmlChar *) "urn:ietf:params:xml:ns:yang:yin:1") == 0) {
+			xmlChar *uri = xmlGetProp(current, (const xmlChar *) "uri");
+			// Get a proper string, not some xml* beast.
+			model_uri = strdup((const char *) uri);
+			xmlFree(uri);
+		}
+	}
+	xmlFreeDoc(doc);
+	return model_uri;
+}
+
 static char *get_stats(const char *model, const char *running, struct nc_err **e) {
-	(void) model;
+	char *model_uri = extract_model_uri(model);
+	printf("Model uri: %s\n", model_uri);
+	free(model_uri);
 	(void) running;
 	(void) e;
 	// Get all the results of the generators
