@@ -335,8 +335,15 @@ const char *interpreter_call_str(struct interpreter *interpreter, lua_callback c
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Copy the function to the stack
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, callback);
-	// No parameters for the callback functions, none pushed. We want up to 2 results.
-	lua_call(lua, 0, 2);
+	/*
+	 * No parameters for the callback functions, none pushed. We want up to 2 results.
+	 *
+	 * In case an error is returned, there's just single value on stack, which is the
+	 * error message. However, the follow-up error handler looks at the last value on
+	 * stack for error, which works both for the case function returns error itself
+	 * and for lua interpreter errors. So no need to check return value of lua_pcall.
+	 */
+	lua_pcall(lua, 0, 2, 0);
 	if (!lua_isnil(lua, -1)) { // There's an error
 		*error = lua_tostring(lua, -1);
 		return NULL;
