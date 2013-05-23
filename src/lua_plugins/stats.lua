@@ -1,3 +1,4 @@
+require("uci");
 
 -- trim whitespace from right end of string
 local function trimr(s)
@@ -7,8 +8,7 @@ end
 -- Define the commands and their mapping to XML elements.
 local commands = {
 	{ cmd = "dmesg | grep -i machine | sed 's/is /|/g' | cut -d '|' -f 2", shell = true, element = "boardName" },
-	-- TODO: Use UCI directly
-	--{ cmd = "uci get system.@system[0].hostname", shell = true, element = "hostname" },
+	{ uci = "system", selector = { { tp = "system" }, { name = "hostname" } }, element = "hostname" },
 	{ cmd = "uname", params = {'-r'}, element = "kernelVersion" },
 	--{ cmd = "cat /etc/openwrt_release  | grep DISTRIB_DESCRIPTION | cut -d '\"' -f 2", shell = true, element = "firmwareVersion" },
 	{ cmd = "date", params = {'+%s'}, element = "localTime" },
@@ -69,8 +69,7 @@ local commands = {
 			result = result .. "<" .. name .. ">" .. xml_escape(value) .. "</" .. name .. ">"
 		end
 		return result
-	end},
-	{ cmd = 'false', element = 'false' }
+	end}
 	-- TODO: Other commands too
 };
 
@@ -102,7 +101,31 @@ local function get_output(command)
 			return nil, errstr;
 		end
 	end
-	return nil, "Confused: no cmd nor file for " .. command.element;
+	if command.uci then
+		data = uci.cursor().get_all(command.uci)
+		for i, selector in ipairs(command.selector or {}) do
+			local found = false;
+			for name, item in pairs(data) do
+				local selected = true;
+				if selector.name then
+					selected = selected and (selector.name == name);
+				end
+				if selector.tp then
+					selected = selected and (selector.tp == item[".type"]);
+				end
+				if selected then
+					data = item;
+					found = true;
+					break;
+				end
+			end
+			if not found then
+				return nil, "UCI info for " .. command.element .. " not found";
+			end
+		end
+		return data;
+	end
+	return nil, "Confused: no cmd, file nor uci for " .. command.element;
 end
 
 register_stat_generator("stats.yin", function ()
