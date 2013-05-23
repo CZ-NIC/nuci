@@ -6,19 +6,26 @@
 
 struct interpreter;
 
+// One data store
+struct datastore {
+	ncds_id id;
+	struct ncds_ds *datastore;
+};
+
+struct stats_mapping;
+
 /*
  * Holds server configuration
  */
 struct srv_config {
-	struct nc_session *session; ///<Session ID
-	// ID of the config data store.
-	ncds_id config_dsid;
-	// Datastore for the configuration.
-	struct ncds_ds *config_datastore;
-	// ID of the statistics data store.
-	ncds_id stats_dsid;
-	// Datastore for the statistics
-	struct ncds_ds *stats_datastore;
+	// The session (connection) to the client.
+	struct nc_session *session;
+	// The configuration data store.
+	struct datastore config_ds;
+	// The statistics data stores
+	struct datastore *stats_datastores;
+	struct stats_mapping *stats_mappings;
+	size_t stats_datastore_count;
 };
 
 void comm_set_print_error_callback(void(*clb)(const char *message));

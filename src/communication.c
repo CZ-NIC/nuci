@@ -39,22 +39,22 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 static bool config_ds_init(const char *datastore_model_path, struct srv_config *config) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
-	config->config_datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
+	config->config_ds.datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
 
-	if (config->config_datastore == NULL) {
+	if (config->config_ds.datastore == NULL) {
 		clb_print_error("Datastore preparing failed.");
 		return false;
 	}
 
 	// Set the callbacks
-	if (ncds_custom_set_data(config->config_datastore, nuci_ds_get_custom_data(), ds_funcs) != 0) {
+	if (ncds_custom_set_data(config->config_ds.datastore, nuci_ds_get_custom_data(), ds_funcs) != 0) {
 		clb_print_error("Linking datastore with functions.");
 		return false;
 	}
 
 	// Activate datastore structure for use.
-	config->config_dsid = ncds_init(config->config_datastore);
-	if (config->config_dsid <= 0) { //Optionally: ncds_init has 4 different error return types
+	config->config_ds.id = ncds_init(config->config_ds.datastore);
+	if (config->config_ds.id <= 0) { //Optionally: ncds_init has 4 different error return types
 		clb_print_error("Couldn't activate the config data store.");
 		return false;
 	}
@@ -120,14 +120,14 @@ static char *get_stats(const char *model, const char *running, struct nc_err **e
 	return result;
 }
 
-static bool stats_ds_init(const char *datastore_model_path, struct srv_config *config) {
+static bool stats_ds_init(const char *datastore_model_path, struct datastore *datastore) {
 	// New data store, no config but function to generate the statistics.
-	config->stats_datastore = ncds_new(NCDS_TYPE_EMPTY, datastore_model_path, get_stats);
+	datastore->datastore = ncds_new(NCDS_TYPE_EMPTY, datastore_model_path, get_stats);
 
 	// Activate it
-	config->stats_dsid = ncds_init(config->stats_datastore);
-	if (config->stats_dsid <= 0) {
-		fprintf(stderr, "Couldn't activate the statistics data store (%d).", (int) config->stats_dsid);
+	datastore->id = ncds_init(datastore->datastore);
+	if (datastore->id <= 0) {
+		fprintf(stderr, "Couldn't activate the statistics data store for %s (%d).", datastore_model_path, (int) datastore->id);
 		return false;
 	}
 
@@ -137,7 +137,8 @@ static bool stats_ds_init(const char *datastore_model_path, struct srv_config *c
 bool comm_init(const char *config_model_path, const char *stats_model_path, struct srv_config *config, struct interpreter *interpreter_) {
 	// Wipe it out, so we have NULLs everywhere we didn't set something yet
 	memset(config, 0, sizeof *config);
-	// ID of the config data store.
+	config->stats_datastores = calloc(1, sizeof *config->stats_datastores);
+	config->stats_datastore_count = 1;
 	comm_test_values();
 
 	//Initialize libnetconf for system-wide usage. This initialization is shared across all the processes.
@@ -152,7 +153,7 @@ bool comm_init(const char *config_model_path, const char *stats_model_path, stru
 		return false;
 	}
 	// Get the statistics data store
-	if (!stats_ds_init(stats_model_path, config)) {
+	if (!stats_ds_init(stats_model_path, config->stats_datastores)) {
 		comm_cleanup(config);
 		return false;
 	}
@@ -275,14 +276,19 @@ void comm_cleanup(struct srv_config *config) {
 		nc_session_free(config->session);
 	config->session = NULL;
 
-	// Close data stores
-	if (config->config_datastore)
-		ncds_free(config->config_datastore);
-	config->config_datastore = NULL;
+	// Close data stores and free memory for service info around them
+	if (config->config_ds.datastore)
+		ncds_free(config->config_ds.datastore);
+	config->config_ds.datastore = NULL;
 
-	if (config->stats_datastore)
-		ncds_free(config->stats_datastore);
-	config->stats_datastore = NULL;
+	for (size_t i = 0; i < config->stats_datastore_count; i ++) {
+		if (config->stats_datastores[i].datastore)
+			ncds_free(config->stats_datastores[i].datastore);
+		config->stats_datastores[i].datastore = NULL;
+	}
+
+	free(config->stats_datastores);
+	free(config->stats_mappings);
 
 	//Close internal libnetconf structures and subsystems
 	nc_close(0);
