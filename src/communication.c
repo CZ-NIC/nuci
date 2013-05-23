@@ -20,6 +20,8 @@ struct rpc_communication {
 	nc_reply *reply; // Reply to send
 };
 
+struct srv_config global_srv_config;
+
 static void(*clb_print_error)(const char *message) = NULL;
 
 static void clb_print_error_default(const char *message) {
@@ -100,7 +102,6 @@ struct stats_mapping {
 
 static char *get_stats(const char *model, const char *running, struct nc_err **e) {
 	char *model_uri = extract_model_uri_string(model);
-	printf("Model uri: %s\n", model_uri);
 	free(model_uri);
 	(void) running;
 	// Get all the results of the generators

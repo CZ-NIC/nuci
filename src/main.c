@@ -40,13 +40,12 @@ int main(int argc, const char *argv[]) {
 	nc_verbosity(NC_VERB_DEBUG);
 	nc_callback_print(callback_print);
 
-	struct srv_config config;
 	struct interpreter *interpreter = interpreter_create();
 	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
 		return 1;
 
 	char *config_file = spec_build(CONFIG_MODEL_PATH, PLUGIN_PATH, get_submodels());
-	bool init = comm_init(config_file, &config, interpreter);
+	bool init = comm_init(config_file, &global_srv_config, interpreter);
 	//unlink(config_file);
 	free(config_file);
 
@@ -55,8 +54,8 @@ int main(int argc, const char *argv[]) {
 		return 1;
 	}
 
-	comm_start_loop(&config);
-	comm_cleanup(&config);
+	comm_start_loop(&global_srv_config);
+	comm_cleanup(&global_srv_config);
 
 	interpreter_destroy(interpreter);
 

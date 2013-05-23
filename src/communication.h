@@ -28,6 +28,8 @@ struct srv_config {
 	size_t stats_datastore_count;
 };
 
+extern struct srv_config global_srv_config;
+
 void comm_set_print_error_callback(void(*clb)(const char *message));
 bool comm_init(const char *config_model_path, struct srv_config *config_out, struct interpreter *interpreter);
 void comm_start_loop(const struct srv_config *config);
