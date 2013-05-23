@@ -11,7 +11,6 @@
 #include <libnetconf.h>
 
 static const char *CONFIG_MODEL_PATH = SOURCE_DIRECTORY "/specs/config.yin";
-static const char *STATS_MODEL_PATH = SOURCE_DIRECTORY "/specs/stats.yin";
 
 void callback_print(NC_VERB_LEVEL level, const char *msg) {
 	const char *level_message = "<UNKNOWN>";
@@ -46,14 +45,9 @@ int main(int argc, const char *argv[]) {
 	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
 		return 1;
 
-	const lua_callback *callbacks;
-	size_t size;
-	char *stat_file = spec_build(STATS_MODEL_PATH, PLUGIN_PATH, get_stat_defs(&callbacks, &size));
 	char *config_file = spec_build(CONFIG_MODEL_PATH, PLUGIN_PATH, get_submodels());
-	bool init = comm_init(config_file, stat_file, &config, interpreter);
-	unlink(stat_file);
+	bool init = comm_init(config_file, &config, interpreter);
 	//unlink(config_file);
-	free(stat_file);
 	free(config_file);
 
 	if (!init) {

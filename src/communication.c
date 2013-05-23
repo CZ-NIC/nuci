@@ -68,8 +68,7 @@ static struct interpreter *interpreter;
  * Take the model spec (yin) specs and extract the namespace uri of the model.
  * Pass the result onto the caller for free.
  */
-static char *extract_model_uri(const char *model) {
-	xmlDoc *doc = xmlReadMemory(model, strlen(model), "model.xml", NULL, 0);
+static char *extract_model_uri(xmlDoc *doc) {
 	assert(doc); // By now, someone should have validated the model before us.
 	xmlNode *node = xmlDocGetRootElement(doc);
 	assert(node);
@@ -86,8 +85,21 @@ static char *extract_model_uri(const char *model) {
 	return model_uri;
 }
 
+static char *extract_model_uri_string(const char *model) {
+	return extract_model_uri(xmlReadMemory(model, strlen(model), "model.xml", NULL, 0));
+}
+
+static char *extract_model_uri_file(const char *file) {
+	return extract_model_uri(xmlParseFile(file));
+}
+
+struct stats_mapping {
+	char *namespace;
+	lua_callback callback;
+};
+
 static char *get_stats(const char *model, const char *running, struct nc_err **e) {
-	char *model_uri = extract_model_uri(model);
+	char *model_uri = extract_model_uri_string(model);
 	printf("Model uri: %s\n", model_uri);
 	free(model_uri);
 	(void) running;
@@ -134,11 +146,9 @@ static bool stats_ds_init(const char *datastore_model_path, struct datastore *da
 	return true;
 }
 
-bool comm_init(const char *config_model_path, const char *stats_model_path, struct srv_config *config, struct interpreter *interpreter_) {
+bool comm_init(const char *config_model_path, struct srv_config *config, struct interpreter *interpreter_) {
 	// Wipe it out, so we have NULLs everywhere we didn't set something yet
 	memset(config, 0, sizeof *config);
-	config->stats_datastores = calloc(1, sizeof *config->stats_datastores);
-	config->stats_datastore_count = 1;
 	comm_test_values();
 
 	//Initialize libnetconf for system-wide usage. This initialization is shared across all the processes.
@@ -152,11 +162,28 @@ bool comm_init(const char *config_model_path, const char *stats_model_path, stru
 		comm_cleanup(config);
 		return false;
 	}
-	// Get the statistics data store
-	if (!stats_ds_init(stats_model_path, config->stats_datastores)) {
-		comm_cleanup(config);
-		return false;
+
+	// Create the statistics data stores.
+	size_t stats_plugin_count;
+	const lua_callback *callbacks;
+	const char *const *stats_specs = get_stat_defs(&callbacks, &stats_plugin_count);
+	config->stats_datastores = calloc(stats_plugin_count, sizeof *config->stats_datastores);
+	config->stats_mappings = calloc(stats_plugin_count, sizeof *config->stats_mappings);
+	for (size_t i = 0; i < stats_plugin_count; i ++) {
+		size_t len = strlen(PLUGIN_PATH) + strlen(stats_specs[i]) + 2; // For the '/' and for '\0'
+		char filename[len];
+		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, stats_specs[i]);
+		assert(print_len == len - 1);
+		if (!stats_ds_init(filename, &config->stats_datastores[i])) {
+			comm_cleanup(config);
+			return false;
+		}
+		config->stats_datastore_count ++;
+		// Store mapping for the namespace->callback.
+		config->stats_mappings[i].namespace = extract_model_uri_file(filename);
+		config->stats_mappings[i].callback = callbacks[i];
 	}
+
 	/*
 	 * Register the basic capabilities into the list. Hardcode the values - unfortunately,
 	 * the libnetconf has constants for these, but does not publish them.
@@ -285,6 +312,9 @@ void comm_cleanup(struct srv_config *config) {
 		if (config->stats_datastores[i].datastore)
 			ncds_free(config->stats_datastores[i].datastore);
 		config->stats_datastores[i].datastore = NULL;
+		if (config->stats_mappings[i].namespace)
+			free(config->stats_mappings[i].namespace);
+		config->stats_mappings[i].namespace = NULL;
 	}
 
 	free(config->stats_datastores);
