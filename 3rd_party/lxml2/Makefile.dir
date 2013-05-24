@@ -1,0 +1,3 @@
+
+LIBRARIES += 3rd_party/lxml2/liblxml2
+liblxml2_MODULES := lxml2

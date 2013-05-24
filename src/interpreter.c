@@ -1,6 +1,6 @@
 #include "interpreter.h"
 #include "register.h"
-#include "lxml2/lxml2.h"
+#include "../3rd_party/lxml2/lxml2.h"
 
 #include <lua.h>
 #include <lualib.h>
