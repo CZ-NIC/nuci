@@ -16,7 +16,6 @@
 struct nuci_ds_data {
 	bool holding_lock;
 	int lockfile;
-	pid_t pid;
 };
 
 void * nuci_ds_get_custom_data() {
@@ -40,10 +39,9 @@ int nuci_ds_init(void *data) {
 	struct nuci_ds_data *d = data;
 
 	d->holding_lock = false;
-	d->pid = getpid(); //from doc: no return value is reserved to indicate an error
 
 	//is important to have acces to lockfile before we start
-	d->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, 0666);
+	d->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 	if (d->lockfile == -1) {
 		return 1;
 	}
