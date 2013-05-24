@@ -60,6 +60,6 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
  *
  * TODO: Some way to pass the default operation and error handling. Also, maybe already parsed xml?
  */
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char **error);
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error);
 
 #endif

@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/file.h>
+#include <assert.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom.h>
@@ -217,21 +218,62 @@ static int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err**
 	return EXIT_FAILURE;
 }
 
-
 //Documentation for parameters defop and errop: http://libnetconf.googlecode.com/git/doc/doxygen/html/d3/d7a/netconf_8h.html#a5852fd110198481afb37cc8dcf0bf454
-static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
-	(void) data; //I'm "using" it.
-	(void) errop; //I'm "using" it.
-	(void) defop; //I'm "using" it.
-	*error = NULL;
-
+static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
 	//only running source for now
 	if (target != NC_DATASTORE_RUNNING) {
 		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
 		return EXIT_FAILURE;
 	}
 
-	fprintf(stderr, "Config content:\n%s\n", config);
+	const char *op = NULL, *err = NULL;
+	switch (defop) {
+		case NC_EDIT_DEFOP_NOTSET:
+			op = "notset";
+			break;
+		case NC_EDIT_DEFOP_MERGE:
+			op = "merge";
+			break;
+		case NC_EDIT_DEFOP_REPLACE:
+			op = "replace";
+			break;
+		case NC_EDIT_DEFOP_NONE:
+			op = "none";
+			break;
+		default:
+			assert(0);
+	}
+
+	switch (errop) {
+		case NC_EDIT_ERROPT_NOTSET:
+			op = "notset";
+			break;
+		case NC_EDIT_ERROPT_STOP:
+			op = "stop";
+			break;
+		case NC_EDIT_ERROPT_CONT:
+			op = "cont";
+			break;
+		case NC_EDIT_ERROPT_ROLLBACK:
+			op = "rollback";
+			break;
+		default:
+			assert(0);
+	}
+
+	struct nuci_ds_data *d = data;
+	const char *errstr = NULL;
+	// TODO: We may need better error handling. Do we want an error type?
+	interpreter_set_config(d->interpreter, d->datastore, config, op, err, &errstr);
+
+	if (errstr) {
+		// Failed :-(
+		*error = nc_err_new(NC_ERR_OP_FAILED);
+		nc_err_set(*error, NC_ERR_PARAM_TYPE, "application");
+		nc_err_set(*error, NC_ERR_PARAM_SEVERITY, "error");
+		nc_err_set(*error, NC_ERR_PARAM_MSG, errstr);
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }

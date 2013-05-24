@@ -371,7 +371,8 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 		return lua_tostring(lua, -2);
 }
 
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char **error) {
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error) {
+	// TODO: The operations
 	assert(error);
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
