@@ -2,7 +2,7 @@
 <module name="nuci-config"
         xmlns="urn:ietf:params:xml:ns:yang:yin:1">
   <yang-version value="1"/>
-  <namespace uri="http://www.nic.cz/ns/router/config"/>
+  <namespace uri="Namespace"/>
   <container name="data">
     <presence value="Statistics"/>
     <description>

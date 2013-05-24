@@ -181,9 +181,20 @@ static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** 
 		return NULL;
 	}
 
-	(void) d; //only fot this moment
+	// Call out to lua
+	const char *errstr = NULL;
+	const char *result = interpreter_get_config(d->interpreter, d->datastore, &errstr);
 
-	return strdup("<this-is-myconfiguration-content/>");
+	if (errstr) {
+		// Failed :-(
+		*error = nc_err_new(NC_ERR_OP_FAILED);
+		nc_err_set(*error, NC_ERR_PARAM_TYPE, "application");
+		nc_err_set(*error, NC_ERR_PARAM_SEVERITY, "error");
+		nc_err_set(*error, NC_ERR_PARAM_MSG, errstr);
+		return NULL;
+	}
+
+	return strdup(result);
 }
 
 static int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
