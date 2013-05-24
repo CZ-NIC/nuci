@@ -13,12 +13,16 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
-struct nuci_ds_data {
+struct nuci_lock_info {
 	bool holding_lock;
 	int lockfile;
 };
 
-void * nuci_ds_get_custom_data() {
+struct nuci_ds_data {
+	struct nuci_lock_info *lock_info;
+};
+
+struct nuci_ds_data *nuci_ds_get_custom_data() {
 	struct nuci_ds_data *data = calloc(1, sizeof(struct nuci_ds_data));
 
 	if (data == NULL) {
@@ -38,11 +42,11 @@ int nuci_ds_init(void *data) {
 
 	struct nuci_ds_data *d = data;
 
-	d->holding_lock = false;
+	d->lock_info->holding_lock = false;
 
 	//is important to have acces to lockfile before we start
-	d->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-	if (d->lockfile == -1) {
+	d->lock_info->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+	if (d->lock_info->lockfile == -1) {
 		return 1;
 	}
 
@@ -71,12 +75,12 @@ static bool test_and_set_lock(void *data) {
 	struct nuci_ds_data *d = data;
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	int lockinfo = flock(d->lockfile, LOCK_EX | LOCK_NB);
+	int lockinfo = flock(d->lock_info->lockfile, LOCK_EX | LOCK_NB);
 	if (lockinfo == -1) {
 		return false;
 	}
 
-	d->holding_lock = true;
+	d->lock_info->holding_lock = true;
 
 	return true;
 }
@@ -85,12 +89,12 @@ static bool release_lock(void *data) {
 	struct nuci_ds_data *d = data;
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	int lockinfo = flock(d->lockfile, LOCK_UN);
+	int lockinfo = flock(d->lock_info->lockfile, LOCK_UN);
 	if (lockinfo == -1) {
 		return false;
 	}
 
-	d->holding_lock = false;
+	d->lock_info->holding_lock = false;
 
 	return true;
 }
@@ -106,7 +110,7 @@ int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	}
 
 	//I currently have lock. No double-locking.
-	if (d->holding_lock) {
+	if (d->lock_info->holding_lock) {
 		*error = nc_err_new(NC_ERR_LOCK_DENIED);
 		return EXIT_FAILURE;
 	}
@@ -138,7 +142,7 @@ int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	}
 
 	//I have lock -> release it.
-	if (d->holding_lock) { //if a have lock
+	if (d->lock_info->holding_lock) { //if a have lock
 		if (!release_lock(data)) { //release it
 			*error = nc_err_new(NC_ERR_OP_FAILED);
 			return EXIT_FAILURE;
@@ -213,7 +217,6 @@ const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
 	.free = nuci_ds_free,
 	.was_changed = nuci_ds_was_changed,
 	.rollback = nuci_ds_rollback,
-	//.get_lockinfo = nuci_ds_get_lockinfo, //In library is not used
 	.lock = nuci_ds_lock,
 	.unlock = nuci_ds_unlock,
 	.getconfig = nuci_ds_getconfig,
