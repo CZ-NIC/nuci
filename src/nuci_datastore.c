@@ -246,16 +246,16 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *confi
 
 	switch (errop) {
 		case NC_EDIT_ERROPT_NOTSET:
-			op = "notset";
+			err = "notset";
 			break;
 		case NC_EDIT_ERROPT_STOP:
-			op = "stop";
+			err = "stop";
 			break;
 		case NC_EDIT_ERROPT_CONT:
-			op = "cont";
+			err = "cont";
 			break;
 		case NC_EDIT_ERROPT_ROLLBACK:
-			op = "rollback";
+			err = "rollback";
 			break;
 		default:
 			assert(0);

@@ -381,9 +381,11 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	lua_getfield(lua, -1, "set_config"); // The function
 	lua_pushvalue(lua, -2); // The datastore is the first parameter
 	lua_pushstring(lua, config);
-	// Two parameters - the object and the config
+	lua_pushstring(lua, default_op);
+	lua_pushstring(lua, error_opt);
+	// Four parameters - the object, the config and the operations.
 	// Single result, if set, it is the error
-	lua_call(lua, 2, 1);
+	lua_call(lua, 4, 1);
 	if (!lua_isnil(lua, -1))
 		*error = lua_tostring(lua, -1);
 }
