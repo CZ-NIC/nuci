@@ -371,7 +371,7 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 		return lua_tostring(lua, -2);
 }
 
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error) {
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error, const char **err_type) {
 	// TODO: The operations
 	assert(error);
 	lua_State *lua = interpreter->state;
