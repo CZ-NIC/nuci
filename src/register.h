@@ -61,9 +61,13 @@ const char *const *get_stat_defs(const lua_callback **callbacks, size_t *size);
  *
  * The data store is something that stores and provides bits of configuration.
  *
- * The data store is called to store data only if the data element has the
- * correct namespace.
+ * Supply the corresponding path to the model.
  */
-void register_datastore_provider(const char *ns, lua_datastore datastore);
+void register_datastore_provider(const char *model_path, lua_datastore datastore);
+
+/*
+ * Similar to get_stat_defs, but for the datastore providers.
+ */
+const char *const *get_datastore_providers(const lua_datastore **datastores, size_t *size);
 
 #endif
