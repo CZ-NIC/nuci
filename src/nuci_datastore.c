@@ -56,7 +56,7 @@ struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info) {
 /*
  * This is first functon in standard workflow with error detection and distribution.
  */
-int nuci_ds_init(void *data) {
+static int nuci_ds_init(void *data) {
 	(void) data;
 	// Empty for now.
 	return 0;
@@ -66,14 +66,14 @@ static void nuci_ds_free(void *data) {
 	free(data);
 }
 
-int nuci_ds_was_changed(void *data) {
+static int nuci_ds_was_changed(void *data) {
 	(void) data; //I'm "using" it.
 
 	//always was changed
 	return 1;
 }
 
-int nuci_ds_rollback(void *data) {
+static int nuci_ds_rollback(void *data) {
 	(void) data; //I'm "using" it.
 
 	//error every time
@@ -108,7 +108,7 @@ static bool release_lock(void *data) {
 	return true;
 }
 
-int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
+static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
@@ -140,7 +140,7 @@ int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	return EXIT_SUCCESS;
 }
 
-int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
+static int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
@@ -182,7 +182,7 @@ static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** 
 	return strdup("<this-is-myconfiguration-content/>");
 }
 
-int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
+static int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
 	(void) data; //I'm "using" it.
 	(void) target; //I'm "using" it.
 	(void) source; //I'm "using" it.
@@ -193,7 +193,7 @@ int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, cha
 	return EXIT_FAILURE;
 }
 
-int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
+static int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
 	(void) data; //I'm "using" it.
 	(void) target; //I'm "using" it.
 	*error = NULL;
