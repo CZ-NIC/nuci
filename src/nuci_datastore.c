@@ -45,7 +45,7 @@ void lock_info_free(struct nuci_lock_info *info) {
 	free(info);
 }
 
-struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info) {
+struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info, struct interpreter *interpreter, lua_datastore datastore) {
 	struct nuci_ds_data *data = calloc(1, sizeof *data);
 
 	data->lock_info = info;

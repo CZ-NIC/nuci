@@ -45,7 +45,7 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
-static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info) {
+static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
 	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
@@ -56,7 +56,7 @@ static bool config_ds_init(const char *datastore_model_path, struct datastore *d
 	}
 
 	// Set the callbacks
-	ncds_custom_set_data(datastore->datastore, nuci_ds_get_custom_data(lock_info), ds_funcs);
+	ncds_custom_set_data(datastore->datastore, nuci_ds_get_custom_data(lock_info, interpreter, lua_datastore), ds_funcs);
 
 	// Activate datastore structure for use.
 	datastore->id = ncds_init(datastore->datastore);
@@ -165,7 +165,7 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 		char filename[len];
 		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, datastore_paths[i]);
 		assert(print_len == len - 1);
-		if (!config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info)) {
+		if (!config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_)) {
 			comm_cleanup(config);
 			return false;
 		}
