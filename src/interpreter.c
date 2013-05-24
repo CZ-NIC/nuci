@@ -372,7 +372,6 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 }
 
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error, const char **err_type) {
-	// TODO: The operations
 	assert(error);
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
@@ -384,8 +383,10 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	lua_pushstring(lua, default_op);
 	lua_pushstring(lua, error_opt);
 	// Four parameters - the object, the config and the operations.
-	// Single result, if set, it is the error
-	lua_call(lua, 4, 1);
+	// Two results. Error string and error type (the other is optional).
+	lua_call(lua, 4, 2);
+	if (!lua_isnil(lua, -2))
+		*error = lua_tostring(lua, -2);
 	if (!lua_isnil(lua, -1))
-		*error = lua_tostring(lua, -1);
+		*err_type = lua_tostring(lua, -1);
 }

@@ -5,6 +5,6 @@ end
 function datastore:set_config(config, defop, errop)
 	self.config = config;
 	print("Op: " .. defop .. " errop: " .. errop .. " config: " .. config);
-	return "The config is " .. config;
+	return "The config is " .. config, "missing attribute";
 end
 register_datastore_provider("test.yin", datastore)

@@ -296,10 +296,12 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *confi
 	interpreter_set_config(d->interpreter, d->datastore, config, op, err, &errstr, &errtype);
 
 	if (errstr) {
+		// Thinking about this, it is probably still not powerful enough. We'll need to
+		// think of something else. Maybe return the error as table instead?
 		NC_ERR errtype_value = NC_ERR_OP_FAILED; // Fallback. It seems to be the most generic error.
 		if (errtype)
 			for (const struct errtype_def *def = errtype_def; def->string; def ++)
-				if (strcasecmp(def->string, errtype)) {
+				if (strcasecmp(def->string, errtype) == 0) {
 					errtype_value = def->value;
 					break;
 				}
