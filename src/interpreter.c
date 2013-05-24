@@ -361,7 +361,10 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.
-	lua_call(lua, 1, 2);
+	if (lua_pcall(lua, 1, 2, 0) != 0) {
+		*error = lua_tostring(lua, -1);
+		return NULL;
+	}
 	// Convert the error only if there's one.
 	if (!lua_isnil(lua, -1))
 		*error = lua_tostring(lua, -1);
@@ -384,7 +387,10 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	lua_pushstring(lua, error_opt);
 	// Four parameters - the object, the config and the operations.
 	// Two results. Error string and error type (the other is optional).
-	lua_call(lua, 4, 2);
+	if (lua_pcall(lua, 4, 2, 0)) {
+		*error = lua_tostring(lua, -1);
+		return;
+	}
 	if (!lua_isnil(lua, -2))
 		*error = lua_tostring(lua, -2);
 	if (!lua_isnil(lua, -1))
