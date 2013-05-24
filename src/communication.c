@@ -50,7 +50,8 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	}
 
 	// Set the callbacks
-	ncds_custom_set_data(config->config_ds.datastore, nuci_ds_get_custom_data(lock_info_create()), ds_funcs);
+	config->lock_info = lock_info_create();
+	ncds_custom_set_data(config->config_ds.datastore, nuci_ds_get_custom_data(config->lock_info), ds_funcs);
 
 	// Activate datastore structure for use.
 	config->config_ds.id = ncds_init(config->config_ds.datastore);
@@ -298,6 +299,9 @@ void comm_cleanup(struct srv_config *config) {
 	if (config->config_ds.datastore)
 		ncds_free(config->config_ds.datastore);
 	config->config_ds.datastore = NULL;
+
+	if (config->lock_info)
+		lock_info_free(config->lock_info);
 
 	for (size_t i = 0; i < config->stats_datastore_count; i ++) {
 		if (config->stats_datastores[i].datastore)

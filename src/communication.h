@@ -13,6 +13,7 @@ struct datastore {
 };
 
 struct stats_mapping;
+struct nuci_lock_info;
 
 /*
  * Holds server configuration
@@ -20,6 +21,8 @@ struct stats_mapping;
 struct srv_config {
 	// The lua interpreter
 	struct interpreter *interpreter;
+	// Lock info (to be freed at the end)
+	struct nuci_lock_info *lock_info;
 	// The session (connection) to the client.
 	struct nc_session *session;
 	// The configuration data store.
