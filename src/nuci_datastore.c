@@ -13,6 +13,11 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+struct nuci_ds_data {
+	bool holding_lock;
+	int lockfile;
+	pid_t pid;
+};
 
 void * nuci_ds_get_custom_data() {
 	struct nuci_ds_data *data = calloc(1, sizeof(struct nuci_ds_data));
@@ -23,7 +28,6 @@ void * nuci_ds_get_custom_data() {
 
 	return (void *)data;
 }
-
 
 /*
  * This is first functon in standard workflow with error detection and distribution.
