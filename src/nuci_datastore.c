@@ -21,6 +21,8 @@ struct nuci_lock_info {
 
 struct nuci_ds_data {
 	struct nuci_lock_info *lock_info;
+	struct interpreter *interpreter;
+	lua_datastore datastore;
 };
 
 struct nuci_lock_info *lock_info_create(void) {
@@ -49,6 +51,8 @@ struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info, struct
 	struct nuci_ds_data *data = calloc(1, sizeof *data);
 
 	data->lock_info = info;
+	data->interpreter = interpreter;
+	data->datastore = datastore;
 
 	return data;
 }
