@@ -5,8 +5,8 @@
  * Created on November 19, 2012, 3:18 PM
  */
 
-#ifndef __LUA_LIBXML2_H__
-#define	__LUA_LIBXML2_H__
+#ifndef LUA_LIBXML2_H
+#define LUA_LIBXML2_H
 
 #define lua_c
 
@@ -39,4 +39,4 @@ void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
 void luaL_setmetatable (lua_State *L, const char *tname);
 // ================= END of 5.2 Features INJECTION ====================
 
-#endif	/* __LUA_LIBXML2_H__ */
+#endif /* LUA_LIBXML2_H */

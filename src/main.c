@@ -43,7 +43,7 @@ int main(int argc, const char *argv[]) {
 
 	//Initialize libxml2 library
 	xmlInitParser();
-        LIBXML_TEST_VERSION
+		LIBXML_TEST_VERSION
 
 	struct interpreter *interpreter = interpreter_create();
 	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
