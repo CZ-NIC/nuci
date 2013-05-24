@@ -37,14 +37,10 @@ int nuci_ds_init(void *data) {
 		return 1;
 	}
 
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 
 	d->holding_lock = false;
 	d->pid = getpid(); //from doc: no return value is reserved to indicate an error
-
-	fprintf(stderr, "=====================================================\n");
-	fprintf(stderr, "My PID is %d\n", d->pid);
-	fprintf(stderr, "=====================================================\n");
 
 	//is important to have acces to lockfile before we start
 	d->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, 0666);
@@ -74,7 +70,7 @@ int nuci_ds_rollback(void *data) {
 }
 
 static bool test_and_set_lock(void *data) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
 	int lockinfo = flock(d->lockfile, LOCK_EX | LOCK_NB);
@@ -88,7 +84,7 @@ static bool test_and_set_lock(void *data) {
 }
 
 static bool release_lock(void *data) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
 	int lockinfo = flock(d->lockfile, LOCK_UN);
@@ -102,7 +98,7 @@ static bool release_lock(void *data) {
 }
 
 int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 	*error = NULL;
 
 	//only running target for now
@@ -134,7 +130,7 @@ int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 }
 
 int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 	*error = NULL;
 
 	//only running target for now
@@ -161,7 +157,7 @@ int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 }
 
 static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 	*error = NULL;
 
 	//only running target for now
@@ -227,13 +223,3 @@ const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
 	.deleteconfig = nuci_ds_deleteconfig,
 	.editconfig = nuci_ds_editconfig
 };
-
-/*
- * In library is not used
-const struct ncds_lockinfo* nuci_ds_get_lockinfo(void *data, NC_DATASTORE target) {
-	//only running target for now
-
-
-	return 0;
-}
-*/
