@@ -50,7 +50,7 @@ static bool config_ds_init(const char *datastore_model_path, struct srv_config *
 	}
 
 	// Set the callbacks
-	ncds_custom_set_data(config->config_ds.datastore, nuci_ds_get_custom_data(), ds_funcs);
+	ncds_custom_set_data(config->config_ds.datastore, nuci_ds_get_custom_data(lock_info_create()), ds_funcs);
 
 	// Activate datastore structure for use.
 	config->config_ds.id = ncds_init(config->config_ds.datastore);

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/file.h>
 
@@ -22,10 +23,32 @@ struct nuci_ds_data {
 	struct nuci_lock_info *lock_info;
 };
 
-struct nuci_ds_data *nuci_ds_get_custom_data() {
+struct nuci_lock_info *lock_info_create(void) {
+	struct nuci_lock_info *info = calloc(1, sizeof(struct nuci_lock_info));
+
+	info->holding_lock = false;
+
+	//is important to have acces to lockfile before we start
+	info->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+	if (info->lockfile == -1) {
+		fprintf(stderr, "Couldn't create lock file %s: %s", NUCI_LOCKFILE, strerror(errno));
+		abort();
+	}
+	return info;
+}
+
+void lock_info_free(struct nuci_lock_info *info) {
+	if (info->lockfile != -1) {
+		close(info->lockfile);
+	}
+
+	free(info);
+}
+
+struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info) {
 	struct nuci_ds_data *data = calloc(1, sizeof *data);
 
-	data->lock_info = calloc(1, sizeof *data->lock_info);
+	data->lock_info = info;
 
 	return data;
 }
@@ -34,20 +57,8 @@ struct nuci_ds_data *nuci_ds_get_custom_data() {
  * This is first functon in standard workflow with error detection and distribution.
  */
 int nuci_ds_init(void *data) {
-	if (data == NULL) {
-		return 1;
-	}
-
-	struct nuci_ds_data *d = data;
-
-	d->lock_info->holding_lock = false;
-
-	//is important to have acces to lockfile before we start
-	d->lock_info->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-	if (d->lock_info->lockfile == -1) {
-		return 1;
-	}
-
+	(void) data;
+	// Empty for now.
 	return 0;
 }
 
