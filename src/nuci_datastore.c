@@ -23,13 +23,11 @@ struct nuci_ds_data {
 };
 
 struct nuci_ds_data *nuci_ds_get_custom_data() {
-	struct nuci_ds_data *data = calloc(1, sizeof(struct nuci_ds_data));
+	struct nuci_ds_data *data = calloc(1, sizeof *data);
 
-	if (data == NULL) {
-		return NULL; //error will be catched somewhere else
-	}
+	data->lock_info = calloc(1, sizeof *data->lock_info);
 
-	return (void *)data;
+	return data;
 }
 
 /*
