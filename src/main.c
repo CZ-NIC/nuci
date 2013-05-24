@@ -1,7 +1,6 @@
 #include "communication.h"
 #include "interpreter.h"
 #include "register.h"
-#include "spec_build.h"
 
 #include <stdio.h>
 #include <stdlib.h>
