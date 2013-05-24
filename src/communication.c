@@ -143,7 +143,7 @@ static bool stats_ds_init(const char *datastore_model_path, struct datastore *da
 	return true;
 }
 
-bool comm_init(const char *config_model_path, struct srv_config *config, struct interpreter *interpreter_) {
+bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	// Wipe it out, so we have NULLs everywhere we didn't set something yet
 	memset(config, 0, sizeof *config);
 	comm_test_values();
