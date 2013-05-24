@@ -2,16 +2,10 @@
 #define COMMUNICATION_H
 
 #include <stdbool.h>
-#include <libnetconf.h>
+#include <stddef.h>
 
 struct interpreter;
-
-// One data store
-struct datastore {
-	ncds_id id;
-	struct ncds_ds *datastore;
-};
-
+struct datastore;
 struct stats_mapping;
 struct nuci_lock_info;
 
@@ -26,7 +20,8 @@ struct srv_config {
 	// The session (connection) to the client.
 	struct nc_session *session;
 	// The configuration data store.
-	struct datastore config_ds;
+	struct datastore *config_datastores;
+	size_t config_datastore_count;
 	// The statistics data stores
 	struct datastore *stats_datastores;
 	struct stats_mapping *stats_mappings;
