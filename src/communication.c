@@ -115,15 +115,12 @@ static char *get_stats(const char *model, const char *running, struct nc_err **e
 		}
 	free(model_uri);
 	assert(callback_found); // We should not be called with namespace we don't know
-	const char *error = NULL;
-	const char *result = interpreter_call_str(global_srv_config.interpreter, callback, &error);
 
-	if (error) {
-		*e = nc_err_new(NC_ERR_OP_FAILED);
-		nc_err_set(*e, NC_ERR_PARAM_TYPE, "application");
-		nc_err_set(*e, NC_ERR_PARAM_SEVERITY, "error");
-		nc_err_set(*e, NC_ERR_PARAM_MSG, error);
+	const char *result = interpreter_call_str(global_srv_config.interpreter, callback);
+	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
 		return NULL;
+	} else {
+		return strdup(result);
 	}
 
 	return strdup(result);

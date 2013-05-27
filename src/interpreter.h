@@ -40,10 +40,11 @@ typedef int lua_datastore;
  * allocated by lua and will disappear some time later (it can any time
  * any more lua call is called).
  *
- * The error is set in case something goes wrong (and the result is then
+ * In case something goes wrong, the error is flagged (see flag_error and
+ * nc_err_create_from_lua) and NULL is returned.
  * NULL).
  */
-const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback, const char **error);
+const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback);
 
 /*
  * Call the get_config method of the data store, returning the result and storing the error into
