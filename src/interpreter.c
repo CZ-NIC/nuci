@@ -365,7 +365,10 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.
-	lua_call(lua, 1, 2);
+	if (lua_pcall(lua, 1, 2, 0) != 0) {
+		*error = lua_tostring(lua, -1);
+		return NULL;
+	}
 	// Convert the error only if there's one.
 	if (!lua_isnil(lua, -1))
 		*error = lua_tostring(lua, -1);
@@ -375,7 +378,7 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 		return lua_tostring(lua, -2);
 }
 
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char **error) {
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error, const char **err_type) {
 	assert(error);
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
@@ -384,9 +387,16 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	lua_getfield(lua, -1, "set_config"); // The function
 	lua_pushvalue(lua, -2); // The datastore is the first parameter
 	lua_pushstring(lua, config);
-	// Two parameters - the object and the config
-	// Single result, if set, it is the error
-	lua_call(lua, 2, 1);
-	if (!lua_isnil(lua, -1))
+	lua_pushstring(lua, default_op);
+	lua_pushstring(lua, error_opt);
+	// Four parameters - the object, the config and the operations.
+	// Two results. Error string and error type (the other is optional).
+	if (lua_pcall(lua, 4, 2, 0)) {
 		*error = lua_tostring(lua, -1);
+		return;
+	}
+	if (!lua_isnil(lua, -2))
+		*error = lua_tostring(lua, -2);
+	if (!lua_isnil(lua, -1))
+		*err_type = lua_tostring(lua, -1);
 }

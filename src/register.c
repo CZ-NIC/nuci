@@ -70,7 +70,21 @@ const char *const *get_stat_defs(const lua_callback **callbacks, size_t *size) {
 	return stats_modules.data;
 }
 
-void register_datastore_provider(const char *ns, lua_datastore datastore) {
-	// TODO: Strdup the data store
-	fprintf(stderr, "Registering new data store part %d for ns %s\n", datastore, ns);
+static struct string_array datastore_models = ARRAY_INITIALIZER;
+static lua_datastore *datastores;
+static size_t datastore_count;
+
+void register_datastore_provider(const char *model_path, lua_datastore datastore) {
+	insert_string(&datastore_models, model_path);
+	datastores = realloc(datastores, (++ datastore_count) * sizeof *datastores);
+	datastores[datastore_count - 1] = datastore;
+}
+
+const char *const *get_datastore_providers(const lua_datastore **datastores_, size_t *size) {
+	check_array(&stats_modules);
+	if (datastores_)
+		*datastores_ = datastores;
+	if (size)
+		*size = datastore_count;
+	return datastore_models.data;
 }

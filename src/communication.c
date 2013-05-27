@@ -13,6 +13,12 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+// One data store
+struct datastore {
+	ncds_id id;
+	struct ncds_ds *datastore;
+};
+
 /**
  * @brief Message & reply
  */
@@ -39,22 +45,22 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
-static bool config_ds_init(const char *datastore_model_path, struct srv_config *config) {
+static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
-	config->config_ds.datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
+	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
 
-	if (config->config_ds.datastore == NULL) {
+	if (datastore->datastore == NULL) {
 		clb_print_error("Datastore preparing failed.");
 		return false;
 	}
 
 	// Set the callbacks
-	ncds_custom_set_data(config->config_ds.datastore, nuci_ds_get_custom_data(), ds_funcs);
+	ncds_custom_set_data(datastore->datastore, nuci_ds_get_custom_data(lock_info, interpreter, lua_datastore), ds_funcs);
 
 	// Activate datastore structure for use.
-	config->config_ds.id = ncds_init(config->config_ds.datastore);
-	if (config->config_ds.id <= 0) { //Optionally: ncds_init has 4 different error return types
+	datastore->id = ncds_init(datastore->datastore);
+	if (datastore->id <= 0) { //Optionally: ncds_init has 4 different error return types
 		clb_print_error("Couldn't activate the config data store.");
 		return false;
 	}
@@ -137,7 +143,7 @@ static bool stats_ds_init(const char *datastore_model_path, struct datastore *da
 	return true;
 }
 
-bool comm_init(const char *config_model_path, struct srv_config *config, struct interpreter *interpreter_) {
+bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	// Wipe it out, so we have NULLs everywhere we didn't set something yet
 	memset(config, 0, sizeof *config);
 	comm_test_values();
@@ -148,12 +154,31 @@ bool comm_init(const char *config_model_path, struct srv_config *config, struct 
 		return false;
 	}
 
-	// Get the config data store
-	if (!config_ds_init(config_model_path, config)) {
-		comm_cleanup(config);
-		return false;
+	config->lock_info = lock_info_create();
+
+	size_t config_datastore_count;
+	const lua_datastore *lua_datastores;
+	const char *const *datastore_paths = get_datastore_providers(&lua_datastores, &config_datastore_count);
+	config->config_datastores = calloc(config_datastore_count, sizeof *config->config_datastores);
+	for (size_t i = 0; i < config_datastore_count; i ++) {
+		size_t len = strlen(PLUGIN_PATH) + strlen(datastore_paths[i]) + 2; // For the '/' and for '\0'
+		char filename[len];
+		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, datastore_paths[i]);
+		assert(print_len == len - 1);
+		if (!config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_)) {
+			comm_cleanup(config);
+			return false;
+		}
+		/*
+		 * Trick. Keep the count accurate during the creation (don't set it in one jump at the
+		 * beginning or end, so it is correct even if the creation fail and we abort it.
+		 *
+		 * Used in the free at the end.
+		 */
+		config->config_datastore_count ++;
 	}
 
+	// FIXME: There are two very similar parts of code. Can we unify them a bit?
 	// Create the statistics data stores.
 	size_t stats_plugin_count;
 	const lua_callback *callbacks;
@@ -169,6 +194,12 @@ bool comm_init(const char *config_model_path, struct srv_config *config, struct 
 			comm_cleanup(config);
 			return false;
 		}
+		/*
+		 * Trick. Keep the count accurate during the creation (don't set it in one jump at the
+		 * beginning or end, so it is correct even if the creation fail and we abort it.
+		 *
+		 * Used in the free at the end.
+		 */
 		config->stats_datastore_count ++;
 		// Store mapping for the namespace->callback.
 		config->stats_mappings[i].namespace = extract_model_uri_file(filename);
@@ -310,9 +341,14 @@ void comm_cleanup(struct srv_config *config) {
 	config->session = NULL;
 
 	// Close data stores and free memory for service info around them
-	if (config->config_ds.datastore)
-		ncds_free(config->config_ds.datastore);
-	config->config_ds.datastore = NULL;
+	for (size_t i = 0; i < config->config_datastore_count; i ++) {
+		if (config->config_datastores[i].datastore)
+			ncds_free(config->config_datastores[i].datastore);
+		config->config_datastores[i].datastore = NULL;
+	}
+
+	if (config->lock_info)
+		lock_info_free(config->lock_info);
 
 	for (size_t i = 0; i < config->stats_datastore_count; i ++) {
 		if (config->stats_datastores[i].datastore)

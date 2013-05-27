@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/file.h>
+#include <assert.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom.h>
@@ -13,41 +15,55 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+struct nuci_lock_info {
+	bool holding_lock;
+	int lockfile;
+};
 
-void * nuci_ds_get_custom_data() {
-	struct nuci_ds_data *data = calloc(1, sizeof(struct nuci_ds_data));
+struct nuci_ds_data {
+	struct nuci_lock_info *lock_info;
+	struct interpreter *interpreter;
+	lua_datastore datastore;
+};
 
-	if (data == NULL) {
-		return NULL; //error will be catched somewhere else
+struct nuci_lock_info *lock_info_create(void) {
+	struct nuci_lock_info *info = calloc(1, sizeof(struct nuci_lock_info));
+
+	info->holding_lock = false;
+
+	//is important to have acces to lockfile before we start
+	info->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+	if (info->lockfile == -1) {
+		fprintf(stderr, "Couldn't create lock file %s: %s", NUCI_LOCKFILE, strerror(errno));
+		abort();
 	}
-
-	return (void *)data;
+	return info;
 }
 
+void lock_info_free(struct nuci_lock_info *info) {
+	if (info->lockfile != -1) {
+		close(info->lockfile);
+	}
+
+	free(info);
+}
+
+struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info, struct interpreter *interpreter, lua_datastore datastore) {
+	struct nuci_ds_data *data = calloc(1, sizeof *data);
+
+	data->lock_info = info;
+	data->interpreter = interpreter;
+	data->datastore = datastore;
+
+	return data;
+}
 
 /*
  * This is first functon in standard workflow with error detection and distribution.
  */
-int nuci_ds_init(void *data) {
-	if (data == NULL) {
-		return 1;
-	}
-
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
-
-	d->holding_lock = false;
-	d->pid = getpid(); //from doc: no return value is reserved to indicate an error
-
-	fprintf(stderr, "=====================================================\n");
-	fprintf(stderr, "My PID is %d\n", d->pid);
-	fprintf(stderr, "=====================================================\n");
-
-	//is important to have acces to lockfile before we start
-	d->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, 0666);
-	if (d->lockfile == -1) {
-		return 1;
-	}
-
+static int nuci_ds_init(void *data) {
+	(void) data;
+	// Empty for now.
 	return 0;
 }
 
@@ -55,14 +71,14 @@ static void nuci_ds_free(void *data) {
 	free(data);
 }
 
-int nuci_ds_was_changed(void *data) {
+static int nuci_ds_was_changed(void *data) {
 	(void) data; //I'm "using" it.
 
 	//always was changed
 	return 1;
 }
 
-int nuci_ds_rollback(void *data) {
+static int nuci_ds_rollback(void *data) {
 	(void) data; //I'm "using" it.
 
 	//error every time
@@ -70,35 +86,35 @@ int nuci_ds_rollback(void *data) {
 }
 
 static bool test_and_set_lock(void *data) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	int lockinfo = flock(d->lockfile, LOCK_EX | LOCK_NB);
+	int lockinfo = flock(d->lock_info->lockfile, LOCK_EX | LOCK_NB);
 	if (lockinfo == -1) {
 		return false;
 	}
 
-	d->holding_lock = true;
+	d->lock_info->holding_lock = true;
 
 	return true;
 }
 
 static bool release_lock(void *data) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	int lockinfo = flock(d->lockfile, LOCK_UN);
+	int lockinfo = flock(d->lock_info->lockfile, LOCK_UN);
 	if (lockinfo == -1) {
 		return false;
 	}
 
-	d->holding_lock = false;
+	d->lock_info->holding_lock = false;
 
 	return true;
 }
 
-int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
+	struct nuci_ds_data *d = data;
 	*error = NULL;
 
 	//only running target for now
@@ -108,7 +124,7 @@ int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	}
 
 	//I currently have lock. No double-locking.
-	if (d->holding_lock) {
+	if (d->lock_info->holding_lock) {
 		*error = nc_err_new(NC_ERR_LOCK_DENIED);
 		return EXIT_FAILURE;
 	}
@@ -129,8 +145,8 @@ int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	return EXIT_SUCCESS;
 }
 
-int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+static int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
+	struct nuci_ds_data *d = data;
 	*error = NULL;
 
 	//only running target for now
@@ -140,7 +156,7 @@ int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	}
 
 	//I have lock -> release it.
-	if (d->holding_lock) { //if a have lock
+	if (d->lock_info->holding_lock) { //if a have lock
 		if (!release_lock(data)) { //release it
 			*error = nc_err_new(NC_ERR_OP_FAILED);
 			return EXIT_FAILURE;
@@ -157,7 +173,7 @@ int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 }
 
 static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
-	struct nuci_ds_data *d = (struct nuci_ds_data *)data;
+	struct nuci_ds_data *d = data;
 	*error = NULL;
 
 	//only running target for now
@@ -166,12 +182,23 @@ static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** 
 		return NULL;
 	}
 
-	(void) d; //only fot this moment
+	// Call out to lua
+	const char *errstr = NULL;
+	const char *result = interpreter_get_config(d->interpreter, d->datastore, &errstr);
 
-	return strdup("<this-is-myconfiguration-content/>");
+	if (errstr) {
+		// Failed :-(
+		*error = nc_err_new(NC_ERR_OP_FAILED);
+		nc_err_set(*error, NC_ERR_PARAM_TYPE, "application");
+		nc_err_set(*error, NC_ERR_PARAM_SEVERITY, "error");
+		nc_err_set(*error, NC_ERR_PARAM_MSG, errstr);
+		return NULL;
+	}
+
+	return strdup(result);
 }
 
-int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
+static int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
 	(void) data; //I'm "using" it.
 	(void) target; //I'm "using" it.
 	(void) source; //I'm "using" it.
@@ -181,7 +208,7 @@ int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, cha
 	return EXIT_FAILURE;
 }
 
-int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
+static int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
 	(void) data; //I'm "using" it.
 	(void) target; //I'm "using" it.
 
@@ -189,21 +216,100 @@ int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err** error)
 	return EXIT_FAILURE;
 }
 
+struct errtype_def {
+	const char *string;
+	NC_ERR value;
+};
+
+static const struct errtype_def errtype_def[] = {
+	{ "empty", NC_ERR_EMPTY },
+	{ "in use", NC_ERR_IN_USE },
+	{ "invalid value", NC_ERR_INVALID_VALUE },
+	{ "too big", NC_ERR_TOO_BIG },
+	{ "missing attribute", NC_ERR_MISSING_ATTR },
+	{ "bad attribute", NC_ERR_BAD_ATTR },
+	{ "unknown attribute", NC_ERR_UNKNOWN_ATTR },
+	{ "missing element", NC_ERR_MISSING_ELEM },
+	{ "bad element", NC_ERR_BAD_ELEM },
+	{ "unknown element", NC_ERR_UNKNOWN_ELEM },
+	{ "unknown namespace", NC_ERR_UNKNOWN_NS },
+	{ "access denied", NC_ERR_ACCESS_DENIED },
+	{ "lock denied", NC_ERR_LOCK_DENIED },
+	{ "resource denied", NC_ERR_RES_DENIED },
+	{ "rollback failed", NC_ERR_ROLLBACK_FAILED },
+	{ "data exists", NC_ERR_DATA_EXISTS },
+	{ "data missing", NC_ERR_DATA_MISSING },
+	{ "operation not supported", NC_ERR_OP_NOT_SUPPORTED },
+	{ "operation failed", NC_ERR_OP_FAILED },
+	{ "malformed message", NC_ERR_MALFORMED_MSG },
+	{ NULL, NC_ERR_OP_FAILED }
+};
 
 //Documentation for parameters defop and errop: http://libnetconf.googlecode.com/git/doc/doxygen/html/d3/d7a/netconf_8h.html#a5852fd110198481afb37cc8dcf0bf454
-static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char * config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
-	(void) data; //I'm "using" it.
-	(void) errop; //I'm "using" it.
-	(void) defop; //I'm "using" it.
-	*error = NULL;
-
+static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
 	//only running source for now
 	if (target != NC_DATASTORE_RUNNING) {
 		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
 		return EXIT_FAILURE;
 	}
 
-	fprintf(stderr, "Config content:\n%s\n", config);
+	const char *op = NULL, *err = NULL;
+	switch (defop) {
+		case NC_EDIT_DEFOP_NOTSET:
+			op = "notset";
+			break;
+		case NC_EDIT_DEFOP_MERGE:
+			op = "merge";
+			break;
+		case NC_EDIT_DEFOP_REPLACE:
+			op = "replace";
+			break;
+		case NC_EDIT_DEFOP_NONE:
+			op = "none";
+			break;
+		default:
+			assert(0);
+	}
+
+	switch (errop) {
+		case NC_EDIT_ERROPT_NOTSET:
+			err = "notset";
+			break;
+		case NC_EDIT_ERROPT_STOP:
+			err = "stop";
+			break;
+		case NC_EDIT_ERROPT_CONT:
+			err = "cont";
+			break;
+		case NC_EDIT_ERROPT_ROLLBACK:
+			err = "rollback";
+			break;
+		default:
+			assert(0);
+	}
+
+	struct nuci_ds_data *d = data;
+	const char *errstr = NULL, *errtype = NULL;
+	// TODO: We may need better error handling. Do we want an error type?
+	interpreter_set_config(d->interpreter, d->datastore, config, op, err, &errstr, &errtype);
+
+	if (errstr) {
+		// Thinking about this, it is probably still not powerful enough. We'll need to
+		// think of something else. Maybe return the error as table instead?
+		NC_ERR errtype_value = NC_ERR_OP_FAILED; // Fallback. It seems to be the most generic error.
+		if (errtype)
+			for (const struct errtype_def *def = errtype_def; def->string; def ++)
+				if (strcasecmp(def->string, errtype) == 0) {
+					errtype_value = def->value;
+					break;
+				}
+		// Failed :-(
+		*error = nc_err_new(errtype_value);
+		nc_err_set(*error, NC_ERR_PARAM_TYPE, "application");
+		nc_err_set(*error, NC_ERR_PARAM_SEVERITY, "error");
+		nc_err_set(*error, NC_ERR_PARAM_MSG, errstr);
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }
@@ -213,7 +319,6 @@ const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
 	.free = nuci_ds_free,
 	.was_changed = nuci_ds_was_changed,
 	.rollback = nuci_ds_rollback,
-	//.get_lockinfo = nuci_ds_get_lockinfo, //In library is not used
 	.lock = nuci_ds_lock,
 	.unlock = nuci_ds_unlock,
 	.getconfig = nuci_ds_getconfig,
@@ -221,13 +326,3 @@ const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
 	.deleteconfig = nuci_ds_deleteconfig,
 	.editconfig = nuci_ds_editconfig
 };
-
-/*
- * In library is not used
-const struct ncds_lockinfo* nuci_ds_get_lockinfo(void *data, NC_DATASTORE target) {
-	//only running target for now
-
-
-	return 0;
-}
-*/
