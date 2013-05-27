@@ -176,18 +176,16 @@ int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, cha
 	(void) target; //I'm "using" it.
 	(void) source; //I'm "using" it.
 	(void) config; //I'm "using" it.
-	*error = NULL;
 
-	//failed every time
+	*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
 	return EXIT_FAILURE;
 }
 
 int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err** error) {
 	(void) data; //I'm "using" it.
 	(void) target; //I'm "using" it.
-	*error = NULL;
 
-	//failed every time
+	*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
 	return EXIT_FAILURE;
 }
 
