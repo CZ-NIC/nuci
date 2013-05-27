@@ -230,12 +230,14 @@ static bool comm_send_reply(struct nc_session *session, struct rpc_communication
 }
 
 void comm_start_loop(const struct srv_config *config) {
-	while (true) {
+	bool loop = true; //Break is not enough for handling close-session request
+
+	while (loop) {
 		struct rpc_communication communication;
 		// Make sure there's no garbage if we don't set something in it.
 		memset(&communication, 0, sizeof communication);
 
-		//check session status
+		//Check session status
 		NC_SESSION_STATUS session_status = nc_session_get_status(config->session);
 		if (session_status == NC_SESSION_STATUS_CLOSING  || session_status == NC_SESSION_STATUS_CLOSED || session_status == NC_SESSION_STATUS_ERROR) {
 			break;
@@ -261,21 +263,34 @@ void comm_start_loop(const struct srv_config *config) {
 			continue;
 		}
 
-		//Reply to the client's request
-		communication.reply = ncds_apply_rpc2all(config->session, communication.msg, NULL);
+		//Get more informations about request
+		NC_RPC_TYPE req_type = nc_rpc_get_type(communication.msg);
+		NC_OP req_op = nc_rpc_get_op(communication.msg);
 
-		if (communication.reply == NULL || communication.reply == NCDS_RPC_NOT_APPLICABLE) {
-			//NC_ERR_UNKNOWN_ELEM sounds good for now
-			communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
-			if (!comm_send_reply(config->session, &communication)) {
-				clb_print_error("Couldn't send error reply");
+		//Handle session request-class
+		if (req_type == NC_RPC_SESSION) {
+			switch(req_op) {
+			case NC_OP_CLOSESESSION:
+				//Stop loop is OK: session will be physically killed by comm_cleanup()
+				loop = false;
+				communication.reply = nc_reply_ok();
+				break;
+
+			default:
+				communication.reply = nc_reply_error(nc_err_new(NC_ERR_OP_NOT_SUPPORTED));
 				break;
 			}
+		} else {
+			//Reply to the client's request
+			communication.reply = ncds_apply_rpc2all(config->session, communication.msg, NULL);
 
-			continue;
+			if (communication.reply == NULL || communication.reply == NCDS_RPC_NOT_APPLICABLE) {
+				//NC_ERR_UNKNOWN_ELEM sounds good for now
+				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
+			}
 		}
 
-		//send non-error reply
+		//send reply
 		if (!comm_send_reply(config->session, &communication)) {
 			clb_print_error("Couldn't send reply");
 			break;
