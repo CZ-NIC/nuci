@@ -47,19 +47,19 @@ typedef int lua_datastore;
 const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback);
 
 /*
- * Call the get_config method of the data store, returning the result and storing the error into
- * error.
+ * Call the get_config method of the data store. The result is owned by lua and may
+ * disappear any time more lua is called.
  *
- * Both the result and the error string may disappear any time more lua code is called.
+ * In case of error, NULL is returned and the error is flagged. 
  */
-const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore, const char **error);
+const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore);
 
 /*
  * Call the set_config method of the data store, possibly storing the data there.
  *
- * The error may disappear any time more lua code is called.
+ * In case of error, it is flagged by flag_error.
  */
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error, const char **err_type);
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt);
 
 
 // Error handling

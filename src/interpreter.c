@@ -360,8 +360,7 @@ const char *interpreter_call_str(struct interpreter *interpreter, lua_callback c
 	}
 }
 
-const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore, const char **error) {
-	assert(error);
+const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Pick up the data store
@@ -371,20 +370,22 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.
 	if (lua_pcall(lua, 1, 2, 0) != 0) {
-		*error = lua_tostring(lua, -1);
+		flag_error(interpreter, true, -1);
 		return NULL;
 	}
 	// Convert the error only if there's one.
-	if (!lua_isnil(lua, -1))
-		*error = lua_tostring(lua, -1);
+	if (!lua_isnil(lua, -1)) {
+		flag_error(interpreter, true, -1);
+		return NULL;
+	}
+	flag_error(interpreter, false, 0);
 	if (lua_isnil(lua, -2))
 		return NULL;
 	else
 		return lua_tostring(lua, -2);
 }
 
-void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error, const char **err_type) {
-	assert(error);
+void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Pick up the data store
@@ -395,15 +396,14 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	lua_pushstring(lua, default_op);
 	lua_pushstring(lua, error_opt);
 	// Four parameters - the object, the config and the operations.
-	// Two results. Error string and error type (the other is optional).
-	if (lua_pcall(lua, 4, 2, 0)) {
-		*error = lua_tostring(lua, -1);
-		return;
-	}
-	if (!lua_isnil(lua, -2))
-		*error = lua_tostring(lua, -2);
-	if (!lua_isnil(lua, -1))
-		*err_type = lua_tostring(lua, -1);
+	// One result - the error. In case pcall fails, it sets the last parameter,
+	// which is the same as what the lua function should do. No need to
+	// distinguish.
+	lua_pcall(lua, 4, 1, 0);
+	if (lua_isnil(lua, -1))
+		flag_error(interpreter, false, 0);
+	else
+		flag_error(interpreter, true, -1);
 }
 
 void flag_error(struct interpreter *interpreter, bool error, int err_index) {

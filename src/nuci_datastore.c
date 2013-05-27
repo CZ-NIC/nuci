@@ -183,19 +183,13 @@ static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** 
 	}
 
 	// Call out to lua
-	const char *errstr = NULL;
-	const char *result = interpreter_get_config(d->interpreter, d->datastore, &errstr);
+	const char *result = interpreter_get_config(d->interpreter, d->datastore);
 
-	if (errstr) {
-		// Failed :-(
-		*error = nc_err_new(NC_ERR_OP_FAILED);
-		nc_err_set(*error, NC_ERR_PARAM_TYPE, "application");
-		nc_err_set(*error, NC_ERR_PARAM_SEVERITY, "error");
-		nc_err_set(*error, NC_ERR_PARAM_MSG, errstr);
+	*error = nc_err_create_from_lua(d->interpreter);
+	if (result)
+		return strdup(result);
+	else
 		return NULL;
-	}
-
-	return strdup(result);
 }
 
 static int nuci_ds_copyconfig(void *data, NC_DATASTORE target, NC_DATASTORE source, char* config, struct nc_err** error) {
@@ -289,29 +283,9 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *confi
 	}
 
 	struct nuci_ds_data *d = data;
-	const char *errstr = NULL, *errtype = NULL;
-	// TODO: We may need better error handling. Do we want an error type?
-	interpreter_set_config(d->interpreter, d->datastore, config, op, err, &errstr, &errtype);
+	interpreter_set_config(d->interpreter, d->datastore, config, op, err);
 
-	if (errstr) {
-		// Thinking about this, it is probably still not powerful enough. We'll need to
-		// think of something else. Maybe return the error as table instead?
-		NC_ERR errtype_value = NC_ERR_OP_FAILED; // Fallback. It seems to be the most generic error.
-		if (errtype)
-			for (const struct errtype_def *def = errtype_def; def->string; def ++)
-				if (strcasecmp(def->string, errtype) == 0) {
-					errtype_value = def->value;
-					break;
-				}
-		// Failed :-(
-		*error = nc_err_new(errtype_value);
-		nc_err_set(*error, NC_ERR_PARAM_TYPE, "application");
-		nc_err_set(*error, NC_ERR_PARAM_SEVERITY, "error");
-		nc_err_set(*error, NC_ERR_PARAM_MSG, errstr);
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
+	return (*error = nc_err_create_from_lua(d->interpreter)) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {
