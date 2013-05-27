@@ -3,6 +3,7 @@
 #include "../3rd_party/lxml2/lxml2.h"
 
 #include <libnetconf.h>
+#include <uci.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -273,6 +274,29 @@ static int xml_escape_lua(lua_State *lua) {
 	return 1;
 }
 
+static int uci_list_configs_lua(lua_State *lua) {
+	struct uci_context *ctx = uci_alloc_context();
+	if (!ctx)
+		luaL_error(lua, "Can't create UCI context");
+	char **configs = NULL;
+	if ((uci_list_configs(ctx, &configs) != UCI_OK) || !configs) {
+		uci_free_context(ctx);
+		luaL_error(lua, "Can't load configs");
+	}
+	int idx = 1;
+	lua_newtable(lua);
+	int tindex = lua_gettop(lua);
+	for (char **config = configs; *config; config ++) {
+		lua_pushnumber(lua, idx ++);
+		lua_pushstring(lua, *config);
+		lua_settable(lua, tindex);
+		// Don't free here. Uci allocates the whole thing in one block of memory.
+	}
+	free(configs);
+	uci_free_context(ctx);
+	return 1;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -295,6 +319,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "register_datastore_provider", register_datastore_provider_lua);
 	add_func(result, "run_command", run_command_lua);
 	add_func(result, "xml_escape", xml_escape_lua);
+	add_func(result, "uci_list_configs", uci_list_configs_lua);
 
 	lxml2_init(result->state);
 
