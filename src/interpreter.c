@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "register.h"
+#include "../3rd_party/lxml2/lxml2.h"
 
 #include <lua.h>
 #include <lualib.h>
@@ -291,6 +292,9 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "register_datastore_provider", register_datastore_provider_lua);
 	add_func(result, "run_command", run_command_lua);
 	add_func(result, "xml_escape", xml_escape_lua);
+
+	lxml2_init(result->state);
+
 	return result;
 }
 

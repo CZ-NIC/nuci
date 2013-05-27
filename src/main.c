@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <libnetconf.h>
+#include <libxml/parser.h>
 
 void callback_print(NC_VERB_LEVEL level, const char *msg) {
 	const char *level_message = "<UNKNOWN>";
@@ -36,6 +37,10 @@ int main(int argc, const char *argv[]) {
 	nc_verbosity(NC_VERB_DEBUG);
 	nc_callback_print(callback_print);
 
+	//Initialize libxml2 library
+	xmlInitParser();
+		LIBXML_TEST_VERSION
+
 	struct interpreter *interpreter = interpreter_create();
 	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
 		return 1;
@@ -51,6 +56,10 @@ int main(int argc, const char *argv[]) {
 	comm_cleanup(&global_srv_config);
 
 	interpreter_destroy(interpreter);
+
+	//Clean up phase of libxml2
+	xmlCleanupParser();
+	xmlMemoryDump();
 
 	return 0;
 }
