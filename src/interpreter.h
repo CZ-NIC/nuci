@@ -60,4 +60,23 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
  */
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt, const char **error, const char **err_type);
 
+
+// Error handling
+
+/*
+ * Flag if the last operation failed with error. If so, the error_index
+ * is the position on lua stack containing the error description, which
+ * is either lua string or lua table. It makes sure the error gets on
+ * top of the stack, for future use by nc_err_create_from_lua.
+ */
+void flag_error(struct interpreter *interpreter, bool error, int error_index);
+
+struct nc_err;
+/*
+ * Turn the error on top of stack to the libnetconf's error structure. Returns
+ * NULL if there was no error. It is expected to be called sometime after
+ * flag_error (though from different function probably).
+ */
+struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter);
+
 #endif

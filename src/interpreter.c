@@ -2,6 +2,8 @@
 #include "register.h"
 #include "../3rd_party/lxml2/lxml2.h"
 
+#include <libnetconf.h>
+
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -273,6 +275,7 @@ static int xml_escape_lua(lua_State *lua) {
 
 struct interpreter {
 	lua_State *state;
+	bool last_error; // Was there error?
 };
 
 static void add_func(struct interpreter *interpreter, const char *name, lua_CFunction function) {
@@ -399,4 +402,23 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 		*error = lua_tostring(lua, -2);
 	if (!lua_isnil(lua, -1))
 		*err_type = lua_tostring(lua, -1);
+}
+
+void flag_error(struct interpreter *interpreter, bool error, int err_index) {
+	interpreter->last_error = error;
+	if (error) {
+		lua_pushvalue(interpreter->state, err_index);
+	}
+}
+
+struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter) {
+	if (interpreter->last_error) {
+		struct nc_err *error = nc_err_new(NC_ERR_OP_FAILED);
+		nc_err_set(error, NC_ERR_PARAM_TYPE, "application");
+		nc_err_set(error, NC_ERR_PARAM_SEVERITY, "error");
+		nc_err_set(error, NC_ERR_PARAM_MSG, lua_tostring(interpreter->state, -1));
+		return error;
+	} else {
+		return NULL;
+	}
 }
