@@ -413,13 +413,97 @@ void flag_error(struct interpreter *interpreter, bool error, int err_index) {
 	}
 }
 
+static const char *get_err_value(lua_State *lua, int eindex, const char *name, const char *def) {
+	lua_getfield(lua, eindex, name);
+	const char *result = lua_tostring(lua, -1);
+	if (!result)
+		result = def;
+	return result;
+}
+
+struct errtype_def {
+	const char *string;
+	NC_ERR value;
+};
+
+static const struct errtype_def errtype_def[] = {
+	{ "empty", NC_ERR_EMPTY },
+	{ "in use", NC_ERR_IN_USE },
+	{ "invalid value", NC_ERR_INVALID_VALUE },
+	{ "too big", NC_ERR_TOO_BIG },
+	{ "missing attribute", NC_ERR_MISSING_ATTR },
+	{ "bad attribute", NC_ERR_BAD_ATTR },
+	{ "unknown attribute", NC_ERR_UNKNOWN_ATTR },
+	{ "missing element", NC_ERR_MISSING_ELEM },
+	{ "bad element", NC_ERR_BAD_ELEM },
+	{ "unknown element", NC_ERR_UNKNOWN_ELEM },
+	{ "unknown namespace", NC_ERR_UNKNOWN_NS },
+	{ "access denied", NC_ERR_ACCESS_DENIED },
+	{ "lock denied", NC_ERR_LOCK_DENIED },
+	{ "resource denied", NC_ERR_RES_DENIED },
+	{ "rollback failed", NC_ERR_ROLLBACK_FAILED },
+	{ "data exists", NC_ERR_DATA_EXISTS },
+	{ "data missing", NC_ERR_DATA_MISSING },
+	{ "operation not supported", NC_ERR_OP_NOT_SUPPORTED },
+	{ "operation failed", NC_ERR_OP_FAILED },
+	{ "malformed message", NC_ERR_MALFORMED_MSG },
+	{ NULL, NC_ERR_OP_FAILED }
+};
+
+struct errfield {
+	const char *name;
+	const char *def;
+	NC_ERR_PARAM param;
+};
+
+static const struct errfield errfields[] = {
+	{ "msg", "Unspecified error", NC_ERR_PARAM_MSG },
+	{ "type", "application", NC_ERR_PARAM_TYPE },
+	{ "tag", NULL, NC_ERR_PARAM_TAG },
+	{ "severity", "error", NC_ERR_PARAM_SEVERITY },
+	{ "app_tag", NULL, NC_ERR_PARAM_APPTAG },
+	{ "path", NULL, NC_ERR_PARAM_PATH },
+	{ "info_badattr", NULL, NC_ERR_PARAM_INFO_BADATTR },
+	{ "info_badelem", NULL, NC_ERR_PARAM_INFO_BADELEM },
+	{ "info_badns", NULL, NC_ERR_PARAM_INFO_BADNS },
+	{ "info_sid", NULL, NC_ERR_PARAM_INFO_SID },
+	{ .name = NULL }
+};
+
 struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter) {
 	if (interpreter->last_error) {
-		struct nc_err *error = nc_err_new(NC_ERR_OP_FAILED);
-		nc_err_set(error, NC_ERR_PARAM_TYPE, "application");
-		nc_err_set(error, NC_ERR_PARAM_SEVERITY, "error");
-		nc_err_set(error, NC_ERR_PARAM_MSG, lua_tostring(interpreter->state, -1));
-		return error;
+		lua_State *lua = interpreter->state;
+		if (lua_isstring(lua, -1)) {
+			// The easy interface for errors - just error string
+			struct nc_err *error = nc_err_new(NC_ERR_OP_FAILED);
+			nc_err_set(error, NC_ERR_PARAM_TYPE, "application");
+			nc_err_set(error, NC_ERR_PARAM_SEVERITY, "error");
+			nc_err_set(error, NC_ERR_PARAM_MSG, lua_tostring(interpreter->state, -1));
+			return error;
+		} else {
+			lua_checkstack(lua, 20);
+			if (!lua_istable(lua, -1)) {
+				lua_pushstring(lua, "Error definition must be either string or table");
+				return nc_err_create_from_lua(interpreter);
+			}
+			int eindex = lua_gettop(lua);
+			const char *error = get_err_value(lua, eindex, "error", "empty");
+			NC_ERR errtype_value = NC_ERR_EMPTY; // Fallback to no error
+			for (const struct errtype_def *def = errtype_def; def->string; def ++)
+				if (strcasecmp(def->string, error) == 0) {
+					errtype_value = def->value;
+					break;
+				}
+			struct nc_err *result = nc_err_new(errtype_value);
+			for (const struct errfield *field = errfields; field->name; field ++) {
+				const char *value = get_err_value(lua, eindex, field->name, field->def);
+				if (value)
+					nc_err_set(result, field->param, value);
+			}
+			// Drop the extra values added now
+			lua_pop(lua, lua_gettop(lua) - eindex);
+			return result;
+		}
 	} else {
 		return NULL;
 	}

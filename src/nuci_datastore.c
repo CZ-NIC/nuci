@@ -210,35 +210,6 @@ static int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err**
 	return EXIT_FAILURE;
 }
 
-struct errtype_def {
-	const char *string;
-	NC_ERR value;
-};
-
-static const struct errtype_def errtype_def[] = {
-	{ "empty", NC_ERR_EMPTY },
-	{ "in use", NC_ERR_IN_USE },
-	{ "invalid value", NC_ERR_INVALID_VALUE },
-	{ "too big", NC_ERR_TOO_BIG },
-	{ "missing attribute", NC_ERR_MISSING_ATTR },
-	{ "bad attribute", NC_ERR_BAD_ATTR },
-	{ "unknown attribute", NC_ERR_UNKNOWN_ATTR },
-	{ "missing element", NC_ERR_MISSING_ELEM },
-	{ "bad element", NC_ERR_BAD_ELEM },
-	{ "unknown element", NC_ERR_UNKNOWN_ELEM },
-	{ "unknown namespace", NC_ERR_UNKNOWN_NS },
-	{ "access denied", NC_ERR_ACCESS_DENIED },
-	{ "lock denied", NC_ERR_LOCK_DENIED },
-	{ "resource denied", NC_ERR_RES_DENIED },
-	{ "rollback failed", NC_ERR_ROLLBACK_FAILED },
-	{ "data exists", NC_ERR_DATA_EXISTS },
-	{ "data missing", NC_ERR_DATA_MISSING },
-	{ "operation not supported", NC_ERR_OP_NOT_SUPPORTED },
-	{ "operation failed", NC_ERR_OP_FAILED },
-	{ "malformed message", NC_ERR_MALFORMED_MSG },
-	{ NULL, NC_ERR_OP_FAILED }
-};
-
 //Documentation for parameters defop and errop: http://libnetconf.googlecode.com/git/doc/doxygen/html/d3/d7a/netconf_8h.html#a5852fd110198481afb37cc8dcf0bf454
 static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
 	//only running source for now
