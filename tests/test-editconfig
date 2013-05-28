@@ -14,7 +14,11 @@ cat <<ENDXML | socat STDIO EXEC:./bin/nuci,pty
       <running/>
     </target>
     <config>
-      <data xmlns="Namespace">Blabla. Uf.</data>
+      <uci xmlns="http://www.nic.cz/ns/router/uci-raw">
+        <config>
+          <name>test</name>
+	</config>
+      </uci>
     </config>
   </edit-config>
 </rpc>
