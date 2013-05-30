@@ -51,10 +51,14 @@ static int register_stat_generator_lua(lua_State *lua) {
 
 static int register_datastore_provider_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
-	if (param_count != 2)
-		luaL_error(lua, "register_datastore_provider expects 2 parameter, %d given", param_count);
-	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry
-	register_datastore_provider(lua_tostring(lua, 1), datastore);
+	if (param_count != 1)
+		luaL_error(lua, "register_datastore_provider expects 1 parameter - the data store, %d given", param_count);
+	lua_getfield(lua, 1, "model_file");
+	const char *model_file = lua_tostring(lua, -1);
+	// Get the datastore to the top (there's more rumble on top of it now)
+	lua_pushvalue(lua, 1);
+	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry (there
+	register_datastore_provider(model_file, datastore);
 	return 0; // No results
 }
 

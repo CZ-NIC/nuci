@@ -78,4 +78,4 @@ function uci_datastore:set_config(config, defop, deferr)
 	};
 end
 
-register_datastore_provider("uci.yin", uci_datastore)
+register_datastore_provider(uci_datastore)
