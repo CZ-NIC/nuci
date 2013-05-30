@@ -30,7 +30,7 @@ static char *extract_model_uri(xmlDoc *doc) {
 	char *model_uri = NULL;
 	for (xmlNode *current = node->children; current; current = current->next) {
 		if (xmlStrcmp(current->name, (const xmlChar *) "namespace") == 0 && xmlStrcmp(current->ns->href, (const xmlChar *) "urn:ietf:params:xml:ns:yang:yin:1") == 0) {
-			xmlChar *uri = xmlGetProp(current, (const xmlChar *) "uri");
+			xmlChar *uri = xmlGetNoNsProp(current, (const xmlChar *) "uri");
 			// Get a proper string, not some xml* beast.
 			model_uri = strdup((const char *) uri);
 			xmlFree(uri);
