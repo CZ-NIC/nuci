@@ -186,8 +186,8 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	for (size_t i = 0; i < stats_plugin_count; i ++) {
 		char *filename = model_path(stats_specs[i]);
 		bool result = stats_ds_init(filename, &config->stats_datastores[i]);
-		free(filename);
 		if (!result) {
+			free(filename);
 			comm_cleanup(config);
 			return false;
 		}
@@ -200,6 +200,7 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 		config->stats_datastore_count ++;
 		// Store mapping for the namespace->callback.
 		config->stats_mappings[i].namespace = extract_model_uri_file(filename);
+		free(filename);
 		config->stats_mappings[i].callback = callbacks[i];
 	}
 
