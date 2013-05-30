@@ -59,8 +59,12 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	// Fill in some values into the provider
 	char *path = model_path(model_file);
 	lua_pushstring(lua, path);
-	free(path);
 	lua_setfield(lua, 1, "model_path");
+	char *ns = extract_model_uri_file(path);
+	lua_pushstring(lua, ns);
+	lua_setfield(lua, 1, "model_ns");
+	free(path);
+	free(ns);
 	// Get the datastore to the top (there's more rumble on top of it now)
 	lua_pushvalue(lua, 1);
 	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry (there
