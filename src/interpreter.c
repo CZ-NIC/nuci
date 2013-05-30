@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "register.h"
+#include "model.h"
 #include "../3rd_party/lxml2/lxml2.h"
 
 #include <libnetconf.h>
@@ -55,6 +56,11 @@ static int register_datastore_provider_lua(lua_State *lua) {
 		luaL_error(lua, "register_datastore_provider expects 1 parameter - the data store, %d given", param_count);
 	lua_getfield(lua, 1, "model_file");
 	const char *model_file = lua_tostring(lua, -1);
+	// Fill in some values into the provider
+	char *path = model_path(model_file);
+	lua_pushstring(lua, path);
+	free(path);
+	lua_setfield(lua, 1, "model_path");
 	// Get the datastore to the top (there's more rumble on top of it now)
 	lua_pushvalue(lua, 1);
 	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry (there
