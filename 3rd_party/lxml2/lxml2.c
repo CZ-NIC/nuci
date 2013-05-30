@@ -241,7 +241,7 @@ static const luaL_Reg lxml2xmlDoc[] = {
  */
 static void add_func(lua_State *L, const char *name, lua_CFunction function) {
 	lua_pushcfunction(L, function);
-	lua_setglobal(L, name);
+	lua_setfield(L, -2, name);
 }
 
 /*
