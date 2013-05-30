@@ -1,3 +1,5 @@
 
 LIBRARIES += 3rd_party/lxml2/liblxml2
 liblxml2_MODULES := lxml2
+liblxml2_EXE_CONFIGS := xml2
+liblxml2_PKG_CONFIGS := $(LUA_NAME)
