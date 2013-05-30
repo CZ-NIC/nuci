@@ -87,17 +87,25 @@ static int lxml2mod_ReadFile(lua_State *L)
 
 	xml2->doc = doc;
 
-	//don't do this in nuci
-	//lua_stack_dump(L, __func__);
 	return 1;
 }
 
-/* stop using module
-static const luaL_Reg lxml2mod[] = {
-	{ "ReadFile", lxml2mod_ReadFile },
-	{ NULL, NULL }
-};
-*/
+static int lxml2mod_ReadMemory(lua_State *L)
+{
+	size_t len;
+	const char *memory = luaL_checklstring(L, 1, &len);
+
+	xmlDocPtr doc = xmlReadMemory(memory, len, "<memory>", NULL, 0);
+	if (!doc)
+		return luaL_error(L, "Failed to read xml string");
+
+	struct lxml2Object *xml2 = lua_newuserdata(L, sizeof(*xml2));
+	luaL_setmetatable(L, LXML2_XMLDOC);
+
+	xml2->doc = doc;
+
+	return 1;
+}
 
 /*
  * lxml2xmlNode object handlers
@@ -245,6 +253,7 @@ int lxml2_init(lua_State *L)
 	// New table for the package
 	lua_newtable(L);
 	add_func(L, "ReadFile", lxml2mod_ReadFile);
+	add_func(L, "ReadMemory", lxml2mod_ReadMemory);
 	// Push the package as lxml2 (which pops it)
 	lua_setglobal(L, "lxml2");
 
