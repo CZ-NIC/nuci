@@ -13,6 +13,8 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#define LUA_PLUGIN_PATH PLUGIN_PATH "/lua_plugins"
+
 // One data store
 struct datastore {
 	ncds_id id;
@@ -158,9 +160,9 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	const char *const *datastore_paths = get_datastore_providers(&lua_datastores, &config_datastore_count);
 	config->config_datastores = calloc(config_datastore_count, sizeof *config->config_datastores);
 	for (size_t i = 0; i < config_datastore_count; i ++) {
-		size_t len = strlen(PLUGIN_PATH) + strlen(datastore_paths[i]) + 2; // For the '/' and for '\0'
+		size_t len = strlen(LUA_PLUGIN_PATH) + strlen(datastore_paths[i]) + 2; // For the '/' and for '\0'
 		char filename[len];
-		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, datastore_paths[i]);
+		size_t print_len = snprintf(filename, len, "%s/%s", LUA_PLUGIN_PATH, datastore_paths[i]);
 		assert(print_len == len - 1);
 		if (!config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_)) {
 			comm_cleanup(config);
@@ -183,9 +185,9 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	config->stats_datastores = calloc(stats_plugin_count, sizeof *config->stats_datastores);
 	config->stats_mappings = calloc(stats_plugin_count, sizeof *config->stats_mappings);
 	for (size_t i = 0; i < stats_plugin_count; i ++) {
-		size_t len = strlen(PLUGIN_PATH) + strlen(stats_specs[i]) + 2; // For the '/' and for '\0'
+		size_t len = strlen(LUA_PLUGIN_PATH) + strlen(stats_specs[i]) + 2; // For the '/' and for '\0'
 		char filename[len];
-		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, stats_specs[i]);
+		size_t print_len = snprintf(filename, len, "%s/%s", LUA_PLUGIN_PATH, stats_specs[i]);
 		assert(print_len == len - 1);
 		if (!stats_ds_init(filename, &config->stats_datastores[i])) {
 			comm_cleanup(config);

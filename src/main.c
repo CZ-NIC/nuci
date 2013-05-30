@@ -42,7 +42,7 @@ int main(int argc, const char *argv[]) {
 		LIBXML_TEST_VERSION
 
 	struct interpreter *interpreter = interpreter_create();
-	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH))
+	if (!interpreter_load_plugins(interpreter, PLUGIN_PATH "/lua_plugins"))
 		return 1;
 
 	bool init = comm_init(&global_srv_config, interpreter);
