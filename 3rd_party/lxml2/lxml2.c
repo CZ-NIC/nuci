@@ -129,12 +129,16 @@ static int lxml2xmlNode_name(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
-	if (cur)
+	if (cur) {
 		lua_pushstring(L, (const char *) cur->name);
-	else
-		lua_pushnil(L);
-
-	return 1;
+		if (cur->ns) {
+			lua_pushstring(L, (const char *) cur->ns->href);
+			return 2;
+		}
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 static int lxml2xmlNode_next(lua_State *L)
@@ -160,10 +164,31 @@ static int lxml2xmlNode_tostring(lua_State *L)
 	return 1;
 }
 
+static int lxml2xmlNode_iterate_next(lua_State *L)
+{
+	if (lua_isnil(L, 2)) { // The first iteration
+		// Copy the state
+		lua_pushvalue(L, 1);
+	} else {
+		lua_remove(L, 1); // Drop the state and call next on the value
+		lxml2xmlNode_next(L);
+	}
+	return 1;
+}
+
+static int lxml2xmlNode_iterate(lua_State *L)
+{
+	lua_pushcfunction(L, lxml2xmlNode_iterate_next); // The 'next' function
+	lxml2xmlNode_ChildrenNode(L); // The 'state'
+	// One implicit nil.
+	return 2;
+}
+
 static const luaL_Reg lxml2xmlNode[] = {
 	{ "ChildrenNode", lxml2xmlNode_ChildrenNode },
 	{ "Name", lxml2xmlNode_name },
 	{ "Next", lxml2xmlNode_next },
+	{ "iterate", lxml2xmlNode_iterate },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
