@@ -7,11 +7,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #define LUA_PLUGIN_PATH PLUGIN_PATH "/lua_plugins"
 
@@ -68,35 +67,6 @@ static bool config_ds_init(const char *datastore_model_path, struct datastore *d
 	}
 
 	return true;
-}
-
-/*
- * Take the model spec (yin) specs and extract the namespace uri of the model.
- * Pass the result onto the caller for free.
- */
-static char *extract_model_uri(xmlDoc *doc) {
-	assert(doc); // By now, someone should have validated the model before us.
-	xmlNode *node = xmlDocGetRootElement(doc);
-	assert(node);
-	char *model_uri = NULL;
-	for (xmlNode *current = node->children; current; current = current->next) {
-		if (xmlStrcmp(current->name, (const xmlChar *) "namespace") == 0 && xmlStrcmp(current->ns->href, (const xmlChar *) "urn:ietf:params:xml:ns:yang:yin:1") == 0) {
-			xmlChar *uri = xmlGetProp(current, (const xmlChar *) "uri");
-			// Get a proper string, not some xml* beast.
-			model_uri = strdup((const char *) uri);
-			xmlFree(uri);
-		}
-	}
-	xmlFreeDoc(doc);
-	return model_uri;
-}
-
-static char *extract_model_uri_string(const char *model) {
-	return extract_model_uri(xmlReadMemory(model, strlen(model), "model.xml", NULL, 0));
-}
-
-static char *extract_model_uri_file(const char *file) {
-	return extract_model_uri(xmlParseFile(file));
 }
 
 struct stats_mapping {
