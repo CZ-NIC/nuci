@@ -65,9 +65,15 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	lua_setfield(lua, 1, "model_ns");
 	free(path);
 	free(ns);
-	// Get the datastore to the top (there's more rumble on top of it now)
+	// We fill the model by running the lua XML parser
+	lua_getglobal(lua, "lxml2"); // The package
+	lua_getfield(lua, -1, "ReadFile"); // The function to call
+	lua_getfield(lua, 1, "model_path"); // The file name
+	lua_call(lua, 1, 1);
+	lua_setfield(lua, 1, "model"); // Copy the result into the datastore
+	// Get the datastore to the top (there's more rumble on top of it by now)
 	lua_pushvalue(lua, 1);
-	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry (there
+	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry
 	register_datastore_provider(model_file, datastore);
 	return 0; // No results
 }
