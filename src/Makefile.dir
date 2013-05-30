@@ -4,7 +4,8 @@ nuci_MODULES := main \
 	communication \
 	nuci_datastore \
 	interpreter \
-	register
+	register \
+	model
 
 nuci_PKG_CONFIGS := $(LUA_NAME) libnetconf
 nuci_EXE_CONFIGS := xml2
