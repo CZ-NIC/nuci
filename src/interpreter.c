@@ -323,6 +323,22 @@ struct interpreter *interpreter_create(void) {
 
 	lxml2_init(result->state);
 
+	// Set the package.path so our own libraries are found. Prepend to the list.
+	lua_getglobal(result->state, "package");
+	lua_getfield(result->state, -1, "path");
+	const char *old_path = lua_tostring(result->state, -1);
+	const char *path = PLUGIN_PATH "/lua_lib/?.lua;" PLUGIN_PATH "/lua_lib/?.luac";
+	size_t p_len = strlen(path) + 2 + strlen(old_path ? old_path : ""); // One for ;, one for \n
+	char path_data[p_len];
+	if (old_path) {
+		size_t len = sprintf(path_data, "%s;%s", path, old_path);
+		assert(len + 1 == p_len);
+		path = path_data;
+	}
+	lua_pop(result->state, 1); // Remove the old value
+	lua_pushstring(result->state, path); // Put the new one in
+	lua_setfield(result->state, -2, "path"); // Replace the old value
+	lua_pop(result->state, 1); // Remove the package table
 	return result;
 }
 

@@ -1,3 +1,8 @@
+print(LUA_PATH);
+print(package.path);
+
+require("req");
+
 datastore = { config = "Hello" }
 function datastore:get_config ()
 	return "<data xmlns:ns='Namespace'>" .. self.config .. "</data>";
