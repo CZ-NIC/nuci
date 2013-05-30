@@ -143,13 +143,6 @@ static int lxml2xmlNode_next(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlNode_gc(lua_State *L)
-{
-	(lua_State *) L;
-
-	return 0;
-}
-
 static int lxml2xmlNode_tostring(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
@@ -163,7 +156,7 @@ static const luaL_Reg lxml2xmlNode[] = {
 	{ "ChildrenNode", lxml2xmlNode_ChildrenNode },
 	{ "Name", lxml2xmlNode_name },
 	{ "Next", lxml2xmlNode_next },
-	{ "__gc", lxml2xmlNode_gc },
+	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
 };
@@ -236,7 +229,7 @@ static const luaL_Reg lxml2xmlDoc[] = {
 };
 
 /*
- * Register function as global for Lua
+ * Register function in the package on top of stack.
  */
 static void add_func(lua_State *L, const char *name, lua_CFunction function) {
 	lua_pushcfunction(L, function);
@@ -249,7 +242,11 @@ static void add_func(lua_State *L, const char *name, lua_CFunction function) {
 
 int lxml2_init(lua_State *L)
 {
+	// New table for the package
+	lua_newtable(L);
 	add_func(L, "ReadFile", lxml2mod_ReadFile);
+	// Push the package as lxml2 (which pops it)
+	lua_setglobal(L, "lxml2");
 
 	/*
 	 * Register metatables
