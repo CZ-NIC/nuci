@@ -72,10 +72,12 @@ function uci_datastore:get_config()
 end
 
 function uci_datastore:set_config(config, defop, deferr)
-	return {
-		error='operation not supported',
-		msg='Setting UCI data not yet supported. Wait for next version.'
-	};
+	ops, err = self:edit_config_ops(config, defop, deferr);
+	if err then
+		return err;
+	else
+		print("I have the operations");
+	end
 end
 
 register_datastore_provider(uci_datastore)

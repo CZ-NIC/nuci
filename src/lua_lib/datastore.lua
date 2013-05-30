@@ -1,3 +1,4 @@
+require("editconfig")
 --[[
 Create a skeleton data store.
 ]]
@@ -18,6 +19,15 @@ function datastore(model_file)
 	end
 	function result:call(rpc)
 		return "Custom RPCs are not implemented yet";
+	end
+	--[[
+	Helper function. Wrapper around the global editconfig, to get the
+	corresponding operations on the config.
+	]]
+	function result:edit_config_ops(config, defop, deferr)
+		local current = lxml2.ReadMemory(self:get_config());
+		local operation = lxml2.ReadMemory(config);
+		return editconfig(current, operation, self.model, defop, deferr);
 	end
 	--[[
 	Upon the registration, the core sets these:
