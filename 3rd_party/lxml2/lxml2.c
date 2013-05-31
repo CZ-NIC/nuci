@@ -203,12 +203,30 @@ static int lxml2xmlNode_getProp(lua_State *L)
 	return 1;
 }
 
+static int lxml2xmlNode_getText(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	if (cur->type == XML_TEXT_NODE) {// This is directly the text node, get the content
+		lua_pushstring(L, (const char *) cur->content);
+		return 1;
+	} else {// Scan the direct children if one of them is text. Pick the first one to be so.
+		for (xmlNodePtr child = cur->children; child; child = child->next)
+			if (child->type == XML_TEXT_NODE) {
+				lua_pushstring(L, (const char *) child->content);
+				return 1;
+			}
+		// No text found and run out of children.
+		return 0;
+	}
+}
+
 static const luaL_Reg lxml2xmlNode[] = {
 	{ "ChildrenNode", lxml2xmlNode_ChildrenNode },
 	{ "Name", lxml2xmlNode_name },
 	{ "Next", lxml2xmlNode_next },
 	{ "iterate", lxml2xmlNode_iterate },
 	{ "getProp", lxml2xmlNode_getProp },
+	{ "getText", lxml2xmlNode_getText },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
