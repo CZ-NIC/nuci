@@ -7,6 +7,5 @@ on the document.
 Returns either the table of modifications to perform on the config, or nil,
 error. The error can be directly passed as result of the operation.
 ]]
-function editconfig(current_config, command, module, defop, errop)
-	print(current_config, command, module, defop, errop);
+function editconfig(current_config, command, model, ns, defop, errop)
 end

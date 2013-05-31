@@ -67,7 +67,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	free(ns);
 	// We fill the model by running the lua XML parser
 	lua_getglobal(lua, "lxml2"); // The package
-	lua_getfield(lua, -1, "ReadFile"); // The function to call
+	lua_getfield(lua, -1, "read_file"); // The function to call
 	lua_getfield(lua, 1, "model_path"); // The file name
 	lua_call(lua, 1, 1);
 	lua_setfield(lua, 1, "model"); // Copy the result into the datastore

@@ -221,12 +221,12 @@ static int lxml2xmlNode_getText(lua_State *L)
 }
 
 static const luaL_Reg lxml2xmlNode[] = {
-	{ "ChildrenNode", lxml2xmlNode_ChildrenNode },
-	{ "Name", lxml2xmlNode_name },
-	{ "Next", lxml2xmlNode_next },
+	{ "first_child", lxml2xmlNode_ChildrenNode },
+	{ "name", lxml2xmlNode_name },
+	{ "next", lxml2xmlNode_next },
 	{ "iterate", lxml2xmlNode_iterate },
-	{ "getProp", lxml2xmlNode_getProp },
-	{ "getText", lxml2xmlNode_getText },
+	{ "attribute", lxml2xmlNode_getProp },
+	{ "text", lxml2xmlNode_getText },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
@@ -292,7 +292,7 @@ static int lxml2xmlDoc_tostring(lua_State *L)
 }
 
 static const luaL_Reg lxml2xmlDoc[] = {
-	{ "GetRootElement", lxml2xmlDoc_GetRootElement },
+	{ "root", lxml2xmlDoc_GetRootElement },
 	{ "NodeListGetString", lxml2xmlDoc_NodeListGetString },
 	{ "__gc", lxml2xmlDoc_gc },
 	{ "__tostring", lxml2xmlDoc_tostring },
@@ -315,8 +315,8 @@ int lxml2_init(lua_State *L)
 {
 	// New table for the package
 	lua_newtable(L);
-	add_func(L, "ReadFile", lxml2mod_ReadFile);
-	add_func(L, "ReadMemory", lxml2mod_ReadMemory);
+	add_func(L, "read_file", lxml2mod_ReadFile);
+	add_func(L, "read_memory", lxml2mod_ReadMemory);
 	// Push the package as lxml2 (which pops it)
 	lua_setglobal(L, "lxml2");
 

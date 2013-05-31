@@ -25,9 +25,9 @@ function datastore(model_file)
 	corresponding operations on the config.
 	]]
 	function result:edit_config_ops(config, defop, deferr)
-		local current = lxml2.ReadMemory(self:get_config());
-		local operation = lxml2.ReadMemory(config);
-		return editconfig(current, operation, self.model, defop, deferr);
+		local current = lxml2.read_memory(self:get_config());
+		local operation = lxml2.read_memory(config);
+		return editconfig(current, operation, self.model, self.model_ns, defop, deferr);
 	end
 	--[[
 	Upon the registration, the core sets these:
