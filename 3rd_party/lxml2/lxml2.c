@@ -1,5 +1,7 @@
 /*
 * Copyright (C) 2012 Alvin Difuntorum <alvinpd09@gmail.com>
+* Copyright (C) 2013 Robin Obůrka <robin.oburka@nic.cz>
+* Copyright (C) 2013 Michal Vaner <michal.vaner@nic.cz>
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the
@@ -184,11 +186,29 @@ static int lxml2xmlNode_iterate(lua_State *L)
 	return 2;
 }
 
+static int lxml2xmlNode_getProp(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	const char *name = luaL_checkstring(L, 2);
+	const char *ns = lua_tostring(L, 3);
+	xmlChar *prop;
+	printf("%s:%s:%s\n\n", name, ns, cur->name);
+	if (ns) {
+		prop = xmlGetNsProp(cur, (const xmlChar *) name, (const xmlChar *) ns);
+	} else {
+		prop = xmlGetNoNsProp(cur, (const xmlChar *) name);
+	}
+	lua_pushstring(L, (char *) prop);
+	xmlFree(prop);
+	return 1;
+}
+
 static const luaL_Reg lxml2xmlNode[] = {
 	{ "ChildrenNode", lxml2xmlNode_ChildrenNode },
 	{ "Name", lxml2xmlNode_name },
 	{ "Next", lxml2xmlNode_next },
 	{ "iterate", lxml2xmlNode_iterate },
+	{ "getProp", lxml2xmlNode_getProp },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
