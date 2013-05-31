@@ -380,4 +380,3 @@ int lxml2_init(lua_State *L)
 
 	return 1;
 }
-/* End of file */
