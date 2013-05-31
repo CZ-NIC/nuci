@@ -23,13 +23,52 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "lxml2.h"
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #define LXML2_XMLDOC		"xmlDocPtr"
 #define LXML2_XMLNODE		"xmlNodePtr"
+
+struct lxml2Object {
+	xmlDocPtr doc;
+};
+
+#define luaL_newlibtable(L,l)	\
+  lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+
+#define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
+
+// ================= BEGIN of 5.2 Features INJECTION ====================
+/*
+** set functions from list 'l' into table at top - 'nup'; each
+** function gets the 'nup' elements at the top as upvalues.
+** Returns with only the table at the stack.
+*/
+static void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+//It doesn't work with "static"
+  luaL_checkstack(L, nup, "too many upvalues");
+  for (; l->name != NULL; l++) {  /* fill the table with given functions */
+	int i;
+	for (i = 0; i < nup; i++)  /* copy upvalues to the top */
+	  lua_pushvalue(L, -nup);
+	lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
+	lua_setfield(L, -(nup + 2), l->name);
+  }
+  lua_pop(L, nup);  /* remove upvalues */
+}
+
+static void luaL_setmetatable (lua_State *L, const char *tname) {
+  luaL_getmetatable(L, tname);
+  lua_setmetatable(L, -2);
+}
+
+// ================= END of 5.2 Features INJECTION ====================
+
+
 
 /*
  * We doesn't need it now, but it should be useful.
@@ -192,7 +231,6 @@ static int lxml2xmlNode_getProp(lua_State *L)
 	const char *name = luaL_checkstring(L, 2);
 	const char *ns = lua_tostring(L, 3);
 	xmlChar *prop;
-	printf("%s:%s:%s\n\n", name, ns, cur->name);
 	if (ns) {
 		prop = xmlGetNsProp(cur, (const xmlChar *) name, (const xmlChar *) ns);
 	} else {
@@ -342,32 +380,4 @@ int lxml2_init(lua_State *L)
 
 	return 1;
 }
-
-// ================= BEGIN of 5.2 Features INJECTION ====================
-/*
-** set functions from list 'l' into table at top - 'nup'; each
-** function gets the 'nup' elements at the top as upvalues.
-** Returns with only the table at the stack.
-*/
-void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
-//It doesn't work with "static"
-  luaL_checkstack(L, nup, "too many upvalues");
-  for (; l->name != NULL; l++) {  /* fill the table with given functions */
-	int i;
-	for (i = 0; i < nup; i++)  /* copy upvalues to the top */
-	  lua_pushvalue(L, -nup);
-	lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
-	lua_setfield(L, -(nup + 2), l->name);
-  }
-  lua_pop(L, nup);  /* remove upvalues */
-}
-
-void luaL_setmetatable (lua_State *L, const char *tname) {
-//It doesn't work with "static"
-  luaL_getmetatable(L, tname);
-  lua_setmetatable(L, -2);
-}
-
-// ================= END of 5.2 Features INJECTION ====================
-
 /* End of file */
