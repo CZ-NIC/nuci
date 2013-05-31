@@ -1,7 +1,7 @@
 require("uci")
 require("datastore")
 
-local uci_datastore = datastore("uci.yin")
+local uci_datastore = datastore("uci-raw.yin")
 
 local function sort_by_index(input)
 	-- Sort by the value in ".index"
@@ -34,9 +34,9 @@ local function list_item(name, value)
 end
 
 local function list_section(section)
-	local result = '<section><type>' .. xml_escape(section[".type"]) .. "</type>";
-	if not section[".anonymous"] then
-		result = result .. "<name>" .. xml_escape(section[".name"]) .. "</name>";
+	local result = "<section><name>" .. xml_escape(section[".name"]) .. "</name><type>" .. xml_escape(section[".type"]) .. "</type>";
+	if section[".anonymous"] then
+		result = result .. "<anonymous/>";
 	end
 	for name, value in pairs(section) do
 		if not name:find("^%.") then -- Stuff starting with dot is special info, not values
