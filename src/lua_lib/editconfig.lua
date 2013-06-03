@@ -11,14 +11,22 @@ local function cmp_name_content(command_node, config_node, ns)
 end
 -- Names of valid node names in model, with empty data for future extentions
 local model_names = {
-	leaf={ cmp=cmp_elemname },
-	['leaf-list']={ cmp=cmp_name_content },
-	container={ cmp=cmp_elemname },
+	leaf={
+		cmp=cmp_elemname
+	},
+	['leaf-list']={
+		cmp=cmp_name_content
+	},
+	container={
+		cmp=cmp_elemname,
+		children=true
+	},
 	list={
 		cmp=function(node1, node2)
 			error("Comparing list not implemented yet");
 			-- TODO: Get the keys and compare them.
-		end
+		end,
+		children=true
 	}
 }
 
@@ -75,7 +83,52 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			end
 			print("Found model node " .. model_node:name() .. " for " .. command_name);
 			local config_node = config_identify(model_node, model_opts, command_node, config, ns);
-			print("Found config node " .. config_node:name() .. " for " .. command_name);
+			-- Is there an override for the operation here?
+			local operation = command_node:attribute('operation', netconf_ns) or defop;
+			if operation == merge and not model_opts.children then
+				-- Merge on leaf(like) element just replaces it.
+				operation = 'replace'
+			end
+			if config_node then
+				print("Found config node " .. config_node:name() .. " for " .. command_name);
+				-- The value exists
+				if operation == 'create' then
+					return {
+						msg="Can't create an element, such element already exists: " .. command_name,
+						tag="data exists",
+						info_badelem=command_name,
+						info_badns=command_ns
+					};
+				end
+				if operation == 'delete' then
+					-- Normalize
+					operation = 'remove';
+				end
+			else
+				print("Not found corresponding node")
+				-- The value does not exist in config now
+				if operation == 'none' or operation == 'delete' then
+					return {
+						msg="Missing element in configuration: " .. command_name,
+						tag="data missing",
+						info_badelem=command_name,
+						info_badns=command_ns
+					};
+				end
+				if operation == 'replace' or operation == 'merge' then
+					-- Normalize to something common
+					operation = 'create';
+				end
+			end
+			--[[
+			Now, after normalization, we have just 5 possible operations:
+			* none (recurse)
+			* merge (recurse)
+			* replace (translated to remove and create)
+			* create
+			* remove
+			]]
+			print("Performing operation " .. operation)
 		end
 		-- TODO Should we ignore items of different namespace (as per XML recommendations) or report it as unknown namespace?
 	end
