@@ -11,20 +11,6 @@
  */
 
 /*
- * Add a capability to the list in the <hello> message.
- *
- * The cap_uri is the uri to include there, even if the name sounds like a fish.
- */
-void register_capability(const char *cap_uri);
-
-/*
- * Return the complete list of all registered capabilities.
- *
- * An array of strings is returned, NULL terminated.
- */
-const char *const *get_capabilities();
-
-/*
  * Register (part of) the data store.
  *
  * The data store is something that stores and provides bits of configuration.

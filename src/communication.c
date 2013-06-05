@@ -135,11 +135,13 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	 * Register the basic capabilities into the list. Hardcode the values - unfortunately,
 	 * the libnetconf has constants for these, but does not publish them.
 	 */
-	register_capability("urn:ietf:params:netconf:base:1.0");
-	register_capability("urn:ietf:params:netconf:base:1.1");
-	register_capability("urn:ietf:params:netconf:capability:writable-running:1.0");
-	// Generate the capabilities for the library
-	struct nc_cpblts *capabilities = nc_cpblts_new(get_capabilities());
+	const char *const caps[] = {
+		"urn:ietf:params:netconf:base:1.0",
+		"urn:ietf:params:netconf:base:1.1",
+		"urn:ietf:params:netconf:capability:writable-running:1.0",
+		NULL
+	};
+	struct nc_cpblts *capabilities = nc_cpblts_new(caps);
 
 	// Accept NETCONF session from a client.
 	config->session = nc_session_accept(capabilities);

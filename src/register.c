@@ -28,17 +28,6 @@ static void insert_string(struct string_array *array, const char *string) {
 	array->data[array->used ++] = NULL;
 }
 
-static struct string_array capabilities = ARRAY_INITIALIZER;
-
-void register_capability(const char *cap_uri) {
-	insert_string(&capabilities, cap_uri);
-}
-
-const char *const *get_capabilities() {
-	check_array(&capabilities);
-	return capabilities.data;
-}
-
 static struct string_array datastore_models = ARRAY_INITIALIZER;
 static lua_datastore *datastores;
 static size_t datastore_count;
