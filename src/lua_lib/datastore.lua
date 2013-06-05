@@ -14,8 +14,13 @@ function datastore(model_file)
 		-- It is empty, so setting it always works
 	end
 	function result:get()
-		-- By default return the set of configuration.
-		return self:get_config();
+		--[[
+		Return empty set of statistics by default.
+
+		This differs from the libnetconf behaviour a little bit. But it looks
+		more sane, as config should not be returned as part of normal get.
+		]]
+		return "";
 	end
 	function result:call(rpc)
 		return "Custom RPCs are not implemented yet";
