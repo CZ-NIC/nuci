@@ -50,9 +50,11 @@ const char *interpreter_call_str(struct interpreter *interpreter, lua_callback c
  * Call the get_config method of the data store. The result is owned by lua and may
  * disappear any time more lua is called.
  *
- * In case of error, NULL is returned and the error is flagged. 
+ * This is meant for the methods get and get_config, which have the same interface.
+ *
+ * In case of error, NULL is returned and the error is flagged.
  */
-const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore);
+const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method);
 
 /*
  * Call the set_config method of the data store, possibly storing the data there.

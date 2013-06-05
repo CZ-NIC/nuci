@@ -421,12 +421,12 @@ const char *interpreter_call_str(struct interpreter *interpreter, lua_callback c
 	}
 }
 
-const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore) {
+const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Pick up the data store
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore);
-	lua_getfield(lua, -1, "get_config"); // The function
+	lua_getfield(lua, -1, method); // The function
 	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.

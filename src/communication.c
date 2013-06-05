@@ -18,6 +18,8 @@
 struct datastore {
 	ncds_id id;
 	struct ncds_ds *datastore;
+	char *ns;
+	lua_datastore lua;
 };
 
 /**
@@ -46,10 +48,36 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
+static char *get_ds_stats(const char *model, const char *running, struct nc_err **e) {
+	(void) running;
+	char *model_uri = extract_model_uri_string(model);
+	lua_datastore datastore;
+	bool found = false;
+	for (size_t i = 0; i < global_srv_config.config_datastore_count; i ++)
+		if (strcmp(model_uri, global_srv_config.config_datastores[i].ns) == 0) {
+			found = true;
+			datastore = global_srv_config.config_datastores[i].lua;
+			break;
+		}
+	free(model_uri);
+	assert(found); // We should not be called with namespace we don't know
+
+	const char *result = interpreter_get(global_srv_config.interpreter, datastore, "get");
+	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
+		return NULL;
+	} else {
+		return strdup(result);
+	}
+
+	return strdup(result);
+}
+
 static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
-	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
+	datastore->ns = extract_model_uri_file(datastore_model_path);
+	datastore->lua = lua_datastore;
+	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, get_ds_stats);
 
 	if (datastore->datastore == NULL) {
 		clb_print_error("Datastore preparing failed.");
@@ -313,6 +341,7 @@ void comm_cleanup(struct srv_config *config) {
 		if (config->config_datastores[i].datastore)
 			ncds_free(config->config_datastores[i].datastore);
 		config->config_datastores[i].datastore = NULL;
+		free(config->config_datastores[i].ns);
 	}
 
 	if (config->lock_info)
@@ -322,8 +351,7 @@ void comm_cleanup(struct srv_config *config) {
 		if (config->stats_datastores[i].datastore)
 			ncds_free(config->stats_datastores[i].datastore);
 		config->stats_datastores[i].datastore = NULL;
-		if (config->stats_mappings[i].namespace)
-			free(config->stats_mappings[i].namespace);
+		free(config->stats_mappings[i].namespace);
 		config->stats_mappings[i].namespace = NULL;
 	}
 

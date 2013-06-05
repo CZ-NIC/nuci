@@ -183,7 +183,7 @@ static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** 
 	}
 
 	// Call out to lua
-	const char *result = interpreter_get_config(d->interpreter, d->datastore);
+	const char *result = interpreter_get(d->interpreter, d->datastore, "get_config");
 
 	*error = nc_err_create_from_lua(d->interpreter);
 	if (result)
