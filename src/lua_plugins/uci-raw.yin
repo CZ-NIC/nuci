@@ -30,6 +30,7 @@
           </leaf>
           <leaf name="value">
             <type name="string"/>
+	    <mandatory value='true'/>
           </leaf>
         </list>
         <list name="list">
