@@ -25,26 +25,10 @@ void interpreter_destroy(struct interpreter *interpreter);
 bool interpreter_load_plugins(struct interpreter *interpreter, const char *path);
 
 /*
- * Every function in lua can be encoded into single int. Neat, isn't it?
- */
-typedef int lua_callback;
-
-/*
  * And, with the right tricks, we can even compress the whole datastore
  * lua object into a single int!
  */
 typedef int lua_datastore;
-
-/*
- * Call a callback and return the result as a string. The string is
- * allocated by lua and will disappear some time later (it can any time
- * any more lua call is called).
- *
- * In case something goes wrong, the error is flagged (see flag_error and
- * nc_err_create_from_lua) and NULL is returned.
- * NULL).
- */
-const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback);
 
 /*
  * Call the get_config method of the data store. The result is owned by lua and may

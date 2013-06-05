@@ -22,34 +22,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static int register_string(lua_State *lua, void (*function)(const char*), const char *name) {
-	int param_count = lua_gettop(lua);
-	if (param_count != 1)
-		luaL_error(lua, "%s expects 1 parameter, %d given", name, param_count);
-	const char *capability = lua_tostring(lua, 1);
-	if (!capability)
-		luaL_error(lua, "A non-string parameter passed to %s", name);
-	function(capability);
-	return 0; // No results from this function
-}
-
-static int register_capability_lua(lua_State *lua) {
-	return register_string(lua, register_capability, "register_capability");
-}
-
-static int register_submodel_lua(lua_State *lua) {
-	return register_string(lua, register_submodel, "register_submodel");
-}
-
-static int register_stat_generator_lua(lua_State *lua) {
-	int param_count = lua_gettop(lua);
-	if (param_count != 2)
-		luaL_error(lua, "register_stat_generator expects 2 parameter, %d given", param_count);
-	lua_callback callback = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the function to the registry
-	register_stat_generator(lua_tostring(lua, 1), callback);
-	return 0; // No results
-}
-
 static int register_datastore_provider_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)
@@ -333,9 +305,6 @@ struct interpreter *interpreter_create(void) {
 		.state = luaL_newstate()
 	};
 	luaL_openlibs(result->state);
-	add_func(result, "register_capability", register_capability_lua);
-	add_func(result, "register_submodel", register_submodel_lua);
-	add_func(result, "register_stat_generator", register_stat_generator_lua);
 	add_func(result, "register_datastore_provider", register_datastore_provider_lua);
 	add_func(result, "run_command", run_command_lua);
 	add_func(result, "xml_escape", xml_escape_lua);
@@ -396,29 +365,6 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 void interpreter_destroy(struct interpreter *interpreter) {
 	lua_close(interpreter->state);
 	free(interpreter);
-}
-
-const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback) {
-	lua_State *lua = interpreter->state;
-	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
-	// Copy the function to the stack
-	lua_rawgeti(lua, LUA_REGISTRYINDEX, callback);
-	/*
-	 * No parameters for the callback functions, none pushed. We want up to 2 results.
-	 *
-	 * In case an error is returned, there's just single value on stack, which is the
-	 * error message. However, the follow-up error handler looks at the last value on
-	 * stack for error, which works both for the case function returns error itself
-	 * and for lua interpreter errors. So no need to check return value of lua_pcall.
-	 */
-	lua_pcall(lua, 0, 2, 0);
-	if (!lua_isnil(lua, -1)) { // There's an error
-		flag_error(interpreter, true, -1);
-		return NULL;
-	} else {
-		flag_error(interpreter, false, 0);
-		return lua_tostring(lua, -2); // The result.
-	}
 }
 
 const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
