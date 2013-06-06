@@ -86,6 +86,8 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			local config_node = config_identify(model_node, model_opts, command_node, config, ns);
 			-- Is there an override for the operation here?
 			local operation = command_node:attribute('operation', netconf_ns) or defop;
+			-- What we are asked to do (may be different from what we actually do)
+			local asked_operation = operation;
 			if operation == merge and not model_opts.children then
 				-- Merge on leaf(like) element just replaces it.
 				operation = 'replace'
@@ -104,6 +106,10 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				if operation == 'delete' then
 					-- Normalize
 					operation = 'remove';
+				end
+				if operation == 'merge' then
+					-- We are in containerish node, that has no value, so just recurse
+					operation = 'none';
 				end
 			else
 				print("Not found corresponding node")
@@ -124,12 +130,20 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			--[[
 			Now, after normalization, we have just 5 possible operations:
 			* none (recurse)
-			* merge (recurse)
 			* replace (translated to remove and create)
 			* create
 			* remove
 			]]
 			print("Performing operation " .. operation)
+			if operation == 'remove' or operation == 'replace' then
+				-- TODO: Remove here
+			end
+			if operation == 'create' or operation == 'replace' then
+				-- TODO: Create here
+			end
+			if operation == 'none' then
+				-- TODO: Recurse
+			end
 		else
 			return {
 				msg="Element in foreing namespace found",
