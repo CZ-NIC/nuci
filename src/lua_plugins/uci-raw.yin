@@ -49,9 +49,16 @@
           <leaf name="name">
             <type name="uci-name"/>
           </leaf>
-          <leaf-list name="value">
-            <type name="string"/>
-          </leaf-list>
+	  <list>
+	    <key value='index'/>
+	    <leaf name='index'>
+	      <type name='uint32'/>
+	    </leaf>
+	    <leaf name='content'>
+	      <type name='string'/>
+	      <mandatory value='true'/>
+	    </leaf>
+	  </list>
         </list>
       </list>
     </list>
