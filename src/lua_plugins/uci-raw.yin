@@ -3,6 +3,17 @@
   <yang-version value="1"/>
   <namespace uri="http://www.nic.cz/ns/router/uci-raw"/>
   <prefix value="uci-raw"/>
+  <typedef name="uci-name">
+    <description>
+      <text>Type for UCI identifiers and file names.</text>
+    </description>
+    <reference>
+      <text>http://wiki.openwrt.org/doc/uci#file.syntax</text>
+    </reference>
+    <type name="string">
+      <pattern value="[a-z0-9_]+"/>
+    </type>
+  </typedef>
   <container name="uci">
     <description>
       <text>Top-level container for all UCI configurations.</text>
@@ -10,12 +21,12 @@
     <list name="config">
       <key value="name"/>
       <leaf name="name">
-        <type name="string"/>
+        <type name="uci-name"/>
       </leaf>
       <list name="section">
         <key value="name type"/>
         <leaf name="name">
-          <type name="string"/>
+          <type name="uci-name"/>
         </leaf>
         <leaf name="type">
           <type name="string"/>
@@ -26,16 +37,17 @@
         <list name="option">
           <key value="name"/>
           <leaf name="name">
-            <type name="string"/>
+            <type name="uci-name"/>
           </leaf>
           <leaf name="value">
             <type name="string"/>
+	    <mandatory value='true'/>
           </leaf>
         </list>
         <list name="list">
           <key value="name"/>
           <leaf name="name">
-            <type name="string"/>
+            <type name="uci-name"/>
           </leaf>
           <leaf-list name="value">
             <type name="string"/>
