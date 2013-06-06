@@ -135,20 +135,36 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			* remove
 			]]
 			print("Performing operation " .. operation)
-			if operation == 'remove' or operation == 'replace' then
-				-- TODO: Remove here
+			local function add_op(name)
+				print("Adding operation " .. name .. ' on ' .. command_node:name());
+				table.insert(ops, {
+					op=name,
+					command_node=command_node,
+					model_node=model_node,
+					config_node=config_node
+				});
+			end
+			if (operation == 'remove' or operation == 'replace') and config_node then
+				add_op('remove-tree');
 			end
 			if operation == 'create' or operation == 'replace' then
-				-- TODO: Create here
+				add_op('add-tree');
 			end
 			if operation == 'none' then
-				-- TODO: Recurse
+				-- We recurse to the rest
+				add_op('enter');
+				local err = children_perform(config_node, command_node, model_node, ns, asked_operation, errop, ops);
+				if err then
+					return err;
+				end
+				add_op('leave');
 			end
-		else
+		elseif command_ns then
+			-- Skip empty namespaced stuff, that's just the whitespace between the nodes
 			return {
 				msg="Element in foreing namespace found",
 				tag="unknown namespace",
-				info_badns="command_ns"
+				info_badns=command_ns
 			};
 		end
 	end
@@ -170,7 +186,7 @@ function editconfig(config, command, model, ns, defop, errop)
 	local config_node = config:root();
 	local command_node = command:root();
 	local model_node = model:root();
-	local ops = {}
-	err = children_perform(config_node, command_node, model_node, ns, defop, errop, ops)
-	return ops, err
+	local ops = {};
+	err = children_perform(config_node, command_node, model_node, ns, defop, errop, ops);
+	return ops, err;
 end
