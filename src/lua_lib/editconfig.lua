@@ -28,6 +28,7 @@ local model_names = {
 		end,
 		children=true
 	}
+	-- TODO: AnyXML. What to do with that?
 }
 
 local netconf_ns = 'urn:ietf:params:netconf:base:1.0'
