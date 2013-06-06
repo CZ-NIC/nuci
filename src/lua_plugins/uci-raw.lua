@@ -20,16 +20,16 @@ local function sort_by_index(input)
 end
 
 local function list_item(name, value)
-	local kind = 'list';
-	if type(value) ~= 'table' then
-		value = { value };
-		kind = 'option';
+	local result;
+	if type(value) == 'table' then
+		result = '<list><name>' .. xml_escape(name) .. '</name>';
+		for index, value in ipairs(value) do
+			result = result .. '<value><index>' .. xml_escape(index) .. '</index><content>' .. xml_escape(value) .. '</content></value>';
+		end
+		result = result .. '</list>';
+	else
+		result = '<option><name>' .. xml_escape(name) .. '</name><value>' .. xml_escape(value) .. '</value></option>';
 	end
-	local result = '<' .. kind .. '><name>' .. xml_escape(name) .. '</name>';
-	for _, v in ipairs(value) do
-		result = result .. '<value>' .. xml_escape(v) .. '</value>';
-	end
-	result = result .. '</' .. kind .. '>';
 	return result;
 end
 
