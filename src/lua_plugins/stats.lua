@@ -1,4 +1,5 @@
 require("uci");
+require("datastore");
 
 -- trim whitespace from right end of string
 local function trimr(s)
@@ -34,7 +35,6 @@ local commands = {
 		while s do
 			local interface = out:sub(position, s - 1);
 			local name = interface:gmatch('([^:]*):')();
-			print(name);
 			local addresses = interfaces[name] or ''
 			for kind, addr in interface:gmatch('        (%S+)%s+(%S+)') do
 				if kind == 'HWaddr' then
@@ -49,11 +49,7 @@ local commands = {
 			interfaces[name] = addresses
 			position = e + 1;
 			s, e = out:find('\n\n', position, true);
-			print(name .. ': ' .. interfaces[name]);
 		end
-		print(interfaces);
-		print(interfaces['eth0']);
-		print(next(interfaces));
 		local result = '';
 		for name, addresses in pairs(interfaces) do
 			result = result .. '<interface><name>' .. xml_escape(name) .. '</name>' .. addresses .. '</interface>';
@@ -128,7 +124,9 @@ local function get_output(command)
 	return nil, "Confused: no cmd, file nor uci for " .. command.element;
 end
 
-register_stat_generator("stats.yin", function ()
+local datastore = datastore('stats.yin')
+
+function datastore:get()
 	output = "<stats xmlns='http://www.nic.cz/ns/router/stats'>";
 	for i, command in ipairs(commands) do
 		local out, err = get_output(command);
@@ -143,4 +141,6 @@ register_stat_generator("stats.yin", function ()
 	end;
 	output = output .. "</stats>";
 	return output;
-end)
+end
+
+register_datastore_provider(datastore)

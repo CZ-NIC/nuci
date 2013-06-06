@@ -22,10 +22,6 @@ struct srv_config {
 	// The configuration data store.
 	struct datastore *config_datastores;
 	size_t config_datastore_count;
-	// The statistics data stores
-	struct datastore *stats_datastores;
-	struct stats_mapping *stats_mappings;
-	size_t stats_datastore_count;
 };
 
 extern struct srv_config global_srv_config;

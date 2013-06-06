@@ -18,6 +18,8 @@
 struct datastore {
 	ncds_id id;
 	struct ncds_ds *datastore;
+	char *ns;
+	lua_datastore lua;
 };
 
 /**
@@ -46,10 +48,36 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
+static char *get_ds_stats(const char *model, const char *running, struct nc_err **e) {
+	(void) running;
+	char *model_uri = extract_model_uri_string(model);
+	lua_datastore datastore;
+	bool found = false;
+	for (size_t i = 0; i < global_srv_config.config_datastore_count; i ++)
+		if (strcmp(model_uri, global_srv_config.config_datastores[i].ns) == 0) {
+			found = true;
+			datastore = global_srv_config.config_datastores[i].lua;
+			break;
+		}
+	free(model_uri);
+	assert(found); // We should not be called with namespace we don't know
+
+	const char *result = interpreter_get(global_srv_config.interpreter, datastore, "get");
+	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
+		return NULL;
+	} else {
+		return strdup(result);
+	}
+
+	return strdup(result);
+}
+
 static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
-	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
+	datastore->ns = extract_model_uri_file(datastore_model_path);
+	datastore->lua = lua_datastore;
+	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, get_ds_stats);
 
 	if (datastore->datastore == NULL) {
 		clb_print_error("Datastore preparing failed.");
@@ -63,49 +91,6 @@ static bool config_ds_init(const char *datastore_model_path, struct datastore *d
 	datastore->id = ncds_init(datastore->datastore);
 	if (datastore->id <= 0) { //Optionally: ncds_init has 4 different error return types
 		clb_print_error("Couldn't activate the config data store.");
-		return false;
-	}
-
-	return true;
-}
-
-struct stats_mapping {
-	char *namespace;
-	lua_callback callback;
-};
-
-static char *get_stats(const char *model, const char *running, struct nc_err **e) {
-	(void) running;
-	char *model_uri = extract_model_uri_string(model);
-	lua_callback callback;
-	bool callback_found = false;
-	for (size_t i = 0; i < global_srv_config.stats_datastore_count; i ++)
-		if (strcmp(model_uri, global_srv_config.stats_mappings[i].namespace) == 0) {
-			callback_found = true;
-			callback = global_srv_config.stats_mappings[i].callback;
-			break;
-		}
-	free(model_uri);
-	assert(callback_found); // We should not be called with namespace we don't know
-
-	const char *result = interpreter_call_str(global_srv_config.interpreter, callback);
-	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
-		return NULL;
-	} else {
-		return strdup(result);
-	}
-
-	return strdup(result);
-}
-
-static bool stats_ds_init(const char *datastore_model_path, struct datastore *datastore) {
-	// New data store, no config but function to generate the statistics.
-	datastore->datastore = ncds_new(NCDS_TYPE_EMPTY, datastore_model_path, get_stats);
-
-	// Activate it
-	datastore->id = ncds_init(datastore->datastore);
-	if (datastore->id <= 0) {
-		fprintf(stderr, "Couldn't activate the statistics data store for %s (%d).", datastore_model_path, (int) datastore->id);
 		return false;
 	}
 
@@ -146,43 +131,17 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 		config->config_datastore_count ++;
 	}
 
-	// FIXME: There are two very similar parts of code. Can we unify them a bit?
-	// Create the statistics data stores.
-	size_t stats_plugin_count;
-	const lua_callback *callbacks;
-	const char *const *stats_specs = get_stat_defs(&callbacks, &stats_plugin_count);
-	config->stats_datastores = calloc(stats_plugin_count, sizeof *config->stats_datastores);
-	config->stats_mappings = calloc(stats_plugin_count, sizeof *config->stats_mappings);
-	for (size_t i = 0; i < stats_plugin_count; i ++) {
-		char *filename = model_path(stats_specs[i]);
-		bool result = stats_ds_init(filename, &config->stats_datastores[i]);
-		if (!result) {
-			free(filename);
-			comm_cleanup(config);
-			return false;
-		}
-		/*
-		 * Trick. Keep the count accurate during the creation (don't set it in one jump at the
-		 * beginning or end, so it is correct even if the creation fail and we abort it.
-		 *
-		 * Used in the free at the end.
-		 */
-		config->stats_datastore_count ++;
-		// Store mapping for the namespace->callback.
-		config->stats_mappings[i].namespace = extract_model_uri_file(filename);
-		free(filename);
-		config->stats_mappings[i].callback = callbacks[i];
-	}
-
 	/*
 	 * Register the basic capabilities into the list. Hardcode the values - unfortunately,
 	 * the libnetconf has constants for these, but does not publish them.
 	 */
-	register_capability("urn:ietf:params:netconf:base:1.0");
-	register_capability("urn:ietf:params:netconf:base:1.1");
-	register_capability("urn:ietf:params:netconf:capability:writable-running:1.0");
-	// Generate the capabilities for the library
-	struct nc_cpblts *capabilities = nc_cpblts_new(get_capabilities());
+	const char *const caps[] = {
+		"urn:ietf:params:netconf:base:1.0",
+		"urn:ietf:params:netconf:base:1.1",
+		"urn:ietf:params:netconf:capability:writable-running:1.0",
+		NULL
+	};
+	struct nc_cpblts *capabilities = nc_cpblts_new(caps);
 
 	// Accept NETCONF session from a client.
 	config->session = nc_session_accept(capabilities);
@@ -313,22 +272,11 @@ void comm_cleanup(struct srv_config *config) {
 		if (config->config_datastores[i].datastore)
 			ncds_free(config->config_datastores[i].datastore);
 		config->config_datastores[i].datastore = NULL;
+		free(config->config_datastores[i].ns);
 	}
 
 	if (config->lock_info)
 		lock_info_free(config->lock_info);
-
-	for (size_t i = 0; i < config->stats_datastore_count; i ++) {
-		if (config->stats_datastores[i].datastore)
-			ncds_free(config->stats_datastores[i].datastore);
-		config->stats_datastores[i].datastore = NULL;
-		if (config->stats_mappings[i].namespace)
-			free(config->stats_mappings[i].namespace);
-		config->stats_mappings[i].namespace = NULL;
-	}
-
-	free(config->stats_datastores);
-	free(config->stats_mappings);
 
 	//Close internal libnetconf structures and subsystems
 	nc_close(0);
