@@ -130,8 +130,13 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			* remove
 			]]
 			print("Performing operation " .. operation)
+		else
+			return {
+				msg="Element in foreing namespace found",
+				tag="unknown namespace",
+				info_badns="command_ns"
+			};
 		end
-		-- TODO Should we ignore items of different namespace (as per XML recommendations) or report it as unknown namespace?
 	end
 end
 --[[
