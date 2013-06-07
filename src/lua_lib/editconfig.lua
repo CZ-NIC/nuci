@@ -15,12 +15,33 @@ local function cmp_name_content(command_node, config_node)
 	return cmp_elemname(command_node, config_node, ns, model) and command_node:text() == config_node:text();
 end
 
-function extract_keys(node, model_node)
-	local key_list = find_node(model_node, function(node)
-		local name, ns = node:name();
-		return ns == yang_ns and name == 'key';
-	end):attribute('value');
-	print(key_list);
+-- Find a subnode with given name and ns
+local function find_node_name_ns(node, name, ns)
+	return find_node(node, function(node)
+		local nname, nns = node:name();
+		return ns == nns and name == nname;
+	end);
+end
+
+--[[
+Extract the list of expected keys in the model node.
+The model node should yang description of a list (specially, it should contain
+the key element).
+]]
+local function list_keys(model_node)
+	return split(find_node_name_ns(model_node, 'key', yang_ns):attribute('value'));
+end
+
+-- Find a leaf of the given name and extract its content.
+-- Convert to the canonical notation according to its type (described in model).
+-- Both the node and the model are for the supernode of what we want.
+local function extract_leaf_subvalue(node, model, name)
+	local _, ns = node:name();
+	local subnode = find_node_name_ns(node, name, ns);
+	if subnode then
+		-- TODO: Do the canonization
+		return subnode:text();
+	end
 end
 
 -- Names of valid node names in model, with empty data for future extentions
@@ -41,8 +62,19 @@ local model_names = {
 			if not cmp_elemname(command_node, config_node, ns, model) then
 				return false;
 			end
-			local command_keys = extract_keys(command_node, model);
-			local config_keys = extract_keys(config_node, model);
+			local keys = list_keys(model);
+			local found = true;
+			for key_name in keys do
+				print(key_name);
+				local command_key = extract_leaf_subvalue(command_node, model, key_name);
+				print(command_key);
+				local config_key = extract_leaf_subvalue(config_node, model, key_name);
+				if not command_key or not config_key or config_key ~= command_key then
+					-- FIXME: Properly handle missing keys
+					return false;
+				end
+			end
+			return true; -- No key differs
 		end,
 		children=true
 	}

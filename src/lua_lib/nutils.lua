@@ -6,3 +6,8 @@ function find_node(node, predicate)
 		end
 	end
 end
+
+-- split the string into words
+function split(str)
+	return str:gmatch('%S+');
+end
