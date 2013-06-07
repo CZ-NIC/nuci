@@ -1,14 +1,28 @@
+require("nutils");
+
+local netconf_ns = 'urn:ietf:params:netconf:base:1.0'
+local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
+
 -- Compare names and namespaces of two nodes
-local function cmp_elemname(command_node, config_node, ns)
+local function cmp_elemname(command_node, config_node)
 	local name1, ns1 = command_node:name();
 	local name2, ns2 = config_node:name();
 	ns1 = ns1 or ns; -- The namespace may be missing from the command XML, as it is only snippet
 	return name1 == name2 and ns1 == ns2;
 end
 -- Compare names, namespaces and their text
-local function cmp_name_content(command_node, config_node, ns)
-	return cmp_elemname(command_node, config_node, ns) and command_node:text() == config_node:text();
+local function cmp_name_content(command_node, config_node)
+	return cmp_elemname(command_node, config_node, ns, model) and command_node:text() == config_node:text();
 end
+
+function extract_keys(node, model_node)
+	local key_list = find_node(model_node, function(node)
+		local name, ns = node:name();
+		return ns == yang_ns and name == 'key';
+	end):attribute('value');
+	print(key_list);
+end
+
 -- Names of valid node names in model, with empty data for future extentions
 local model_names = {
 	leaf={
@@ -22,17 +36,18 @@ local model_names = {
 		children=true
 	},
 	list={
-		cmp=function(node1, node2)
-			error("Comparing list not implemented yet");
-			-- TODO: Get the keys and compare them.
+		cmp=function(command_node, config_node, ns, model)
+			-- First, it must be the same kind of thing (name and ns)
+			if not cmp_elemname(command_node, config_node, ns, model) then
+				return false;
+			end
+			local command_keys = extract_keys(command_node, model);
+			local config_keys = extract_keys(config_node, model);
 		end,
 		children=true
 	}
 	-- TODO: AnyXML. What to do with that?
 }
-
-local netconf_ns = 'urn:ietf:params:netconf:base:1.0'
-local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
 
 -- Find a model node corresponding to the node_name here.
 -- TODO: Preprocess the model, so we can do just table lookup instead?
@@ -60,12 +75,10 @@ end
 -- Look through the config and try to find a node corresponding to the command_node one. Consider the model.
 local function config_identify(model_node, model_opts, command_node, config, ns)
 	local cmp_func = model_opts.cmp;
-	for node in config:iterate() do
-		if cmp_func(command_node, node, ns) then
-			return node;
-		end
-	end
 	-- It is OK not to find, returning nothing then.
+	return find_node(config, function(node)
+		return cmp_func(command_node, node, ns, model_node);
+	end);
 end
 
 -- Perform operation on all the children here.
