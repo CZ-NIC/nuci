@@ -133,7 +133,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			local operation = command_node:attribute('operation', netconf_ns) or defop;
 			-- What we are asked to do (may be different from what we actually do)
 			local asked_operation = operation;
-			if operation == merge and not model_opts.children then
+			if operation == 'merge' and not model_opts.children then
 				-- Merge on leaf(like) element just replaces it.
 				operation = 'replace'
 			end
@@ -172,6 +172,11 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					operation = 'create';
 				end
 			end
+			if operation == 'replace' and not model_opts.children and config_node:text() == command_node:text() then
+				-- We should replace a node without any children with the same one.
+				-- Skip it.
+				operation = 'none';
+			end
 			--[[
 			Now, after normalization, we have just 5 possible operations:
 			* none (recurse)
@@ -180,29 +185,40 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			* remove
 			]]
 			print("Performing operation " .. operation)
-			local function add_op(name)
-				print("Adding operation " .. name .. ' on ' .. command_node:name());
+			local function add_op(name, note)
+				print("Adding operation " .. name .. '(' .. (note or '') .. ')' .. ' on ' .. command_node:name());
 				table.insert(ops, {
 					op=name,
 					command_node=command_node,
 					model_node=model_node,
-					config_node=config_node
+					config_node=config_node,
+					note=note
 				});
 			end
+			local replace_note;
+			if operation == 'replace' then
+				replace_note = 'replace';
+			end
 			if (operation == 'remove' or operation == 'replace') and config_node then
-				add_op('remove-tree');
+				add_op('remove-tree', replace_note);
 			end
 			if operation == 'create' or operation == 'replace' then
-				add_op('add-tree');
+				add_op('add-tree', replace_note);
 			end
 			if operation == 'none' then
 				-- We recurse to the rest
 				add_op('enter');
+				local op_last = #ops;
 				local err = children_perform(config_node, command_node, model_node, ns, asked_operation, errop, ops);
 				if err then
 					return err;
 				end
-				add_op('leave');
+				if #ops == op_last then
+					print("Dropping the last enter, as the command is empty");
+					ops[op_last] = nil;
+				else
+					add_op('leave');
+				end
 			end
 		elseif command_ns then
 			-- Skip empty namespaced stuff, that's just the whitespace between the nodes
