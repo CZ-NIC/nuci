@@ -1,6 +1,6 @@
 require("nutils");
 
-local netconf_ns = 'urn:ietf:params:netconf:base:1.0'
+local netconf_ns = 'urn:ietf:params:xml:ns:netconf:base:1.0'
 local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
 
 -- Compare names and namespaces of two nodes

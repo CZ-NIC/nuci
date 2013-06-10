@@ -53,6 +53,88 @@ local tests = {
 				model_node_name='container'
 			}
 		}
+	},
+	["Replace leaf"]={
+		--[[
+		Replace the leaf with value.
+		]]
+		command=[[<edit><data xmlns='http://example.org/'><value>42</value></data></edit>]],
+		config=[[<config><data xmlns='http://example.org/'><value>13</value></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops={
+			{
+				name='enter',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			},
+			{
+				name='remove-tree',
+				command_node_name='value',
+				command_node_text='42',
+				config_node_name='value',
+				config_node_text='13',
+				model_node_name='leaf',
+				note='replace'
+			},
+			{
+				name='add-tree',
+				command_node_name='value',
+				command_node_text='42',
+				config_node_name='value',
+				config_node_text='13',
+				model_node_name='leaf',
+				note='replace'
+			},
+			{
+				name='leave',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			}
+		}
+	},
+	["Delete leaf"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><value xc:operation='delete'/></data></edit>]],
+		config=[[<config><data xmlns='http://example.org/'><value>42</value></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops={
+			{
+				name='enter',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			},
+			{
+				name='remove-tree',
+				command_node_name='value',
+				config_node_name='value',
+				config_node_text='42',
+				model_node_name='leaf'
+			},
+			{
+				name='leave',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			}
+		}
+	},
+	["Delete container"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0' xc:operation='delete'><value>13</value></data></edit>]];
+		config=[[<config><data xmlns='http://example.org/'><value>42</value></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops={
+			{
+				name='remove-tree',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			}
+		}
 	}
 };
 
@@ -81,7 +163,16 @@ local function op_matches(op, expected, ns)
 			return nil;
 		end
 		if node_ns ~= ex_ns then
-			reason = "Name of " .. node_type .. " differs: " .. node_ns .. " vs. " .. ex_ns;
+			reason = "NS of " .. node_type .. " differs: " .. node_ns .. " vs. " .. ex_ns;
+			return nil;
+		end
+		local ex_text = expected[node_type .. "_node_text"];
+		local node_text = node:text();
+		if node_text and not node_text:find('%S') then
+			node_text = nil;
+		end
+		if node_text ~= ex_text then
+			reason = "Text of " .. node_type .. " differs: " .. (node_text or '(nil)') .. " vs. " .. (ex_text or '(nil)');
 			return nil;
 		end
 		return true;
