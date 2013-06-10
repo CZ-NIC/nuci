@@ -117,6 +117,11 @@ static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) 
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
+	//I'm not the locking-one
+	if (d->lock_info == NULL) {
+		return EXIT_SUCCESS;
+	}
+
 	//only running target for now
 	if (target != NC_DATASTORE_RUNNING) {
 		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
@@ -148,6 +153,11 @@ static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) 
 static int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	struct nuci_ds_data *d = data;
 	*error = NULL;
+
+	//I'm not the locking-one
+	if (d->lock_info == NULL) {
+		return EXIT_SUCCESS;
+	}
 
 	//only running target for now
 	if (target != NC_DATASTORE_RUNNING) {

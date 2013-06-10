@@ -109,6 +109,7 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	}
 
 	config->lock_info = lock_info_create();
+	struct nuci_lock_info *tmp_lock_info = config->lock_info;
 
 	size_t config_datastore_count;
 	const lua_datastore *lua_datastores;
@@ -116,7 +117,8 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	config->config_datastores = calloc(config_datastore_count, sizeof *config->config_datastores);
 	for (size_t i = 0; i < config_datastore_count; i ++) {
 		char *filename = model_path(datastore_paths[i]);
-		bool result = config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_);
+		bool result = config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], tmp_lock_info, interpreter_);
+		tmp_lock_info = NULL; //first DS has lockinfo, the others will get NULL-flag
 		free(filename);
 		if (!result) {
 			comm_cleanup(config);
