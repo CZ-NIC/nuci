@@ -85,30 +85,26 @@ static int nuci_ds_rollback(void *data) {
 	return 1;
 }
 
-static bool test_and_set_lock(void *data) {
-	struct nuci_ds_data *d = data;
-
+static bool test_and_set_lock(struct nuci_lock_info *lock_info) {
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	int lockinfo = flock(d->lock_info->lockfile, LOCK_EX | LOCK_NB);
-	if (lockinfo == -1) {
+	int lock = flock(lock_info->lockfile, LOCK_EX | LOCK_NB);
+	if (lock == -1) {
 		return false;
 	}
 
-	d->lock_info->holding_lock = true;
+	lock_info->holding_lock = true;
 
 	return true;
 }
 
-static bool release_lock(void *data) {
-	struct nuci_ds_data *d = data;
-
+static bool release_lock(struct nuci_lock_info *lock_info) {
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	int lockinfo = flock(d->lock_info->lockfile, LOCK_UN);
-	if (lockinfo == -1) {
+	int lock = flock(lock_info->lockfile, LOCK_UN);
+	if (lock == -1) {
 		return false;
 	}
 
-	d->lock_info->holding_lock = false;
+	lock_info->holding_lock = false;
 
 	return true;
 }
@@ -137,7 +133,7 @@ static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) 
 	//I haven't lock
 
 	//data->lockfile consistency is garanted by nuci_ds_init()
-	if (!test_and_set_lock(data)) {
+	if (!test_and_set_lock(d->lock_info)) {
 		*error = nc_err_new(NC_ERR_LOCK_DENIED);
 		return EXIT_FAILURE;
 	}
@@ -167,7 +163,7 @@ static int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error
 
 	//I have lock -> release it.
 	if (d->lock_info->holding_lock) { //if a have lock
-		if (!release_lock(data)) { //release it
+		if (!release_lock(d->lock_info)) { //release it
 			*error = nc_err_new(NC_ERR_OP_FAILED);
 			return EXIT_FAILURE;
 		}
