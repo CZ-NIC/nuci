@@ -19,6 +19,7 @@ docs/
 
 #Link to binary output in src
 src/nuci
+tests/test_runner
 
 #Link to documentation output in build
 build/buildsystem.html
