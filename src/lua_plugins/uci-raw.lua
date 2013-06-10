@@ -80,4 +80,9 @@ function uci_datastore:set_config(config, defop, deferr)
 	end
 end
 
+function uci_datastore:user_rpc(procedure, data)
+	print("A shoud call procedure: ", procedure, " with this data: ", data);
+	return "User rpc is done!";
+end
+
 register_datastore_provider(uci_datastore)
