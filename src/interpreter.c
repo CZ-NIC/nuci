@@ -426,10 +426,11 @@ char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastor
 
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, ds);
 	lua_getfield(lua, -1, "user_rpc");
+	lua_pushvalue(lua, -2);
 	lua_pushstring(lua, procedure);
 	lua_pushstring(lua, data);
 
-	lua_pcall(lua, 2, 1, 0);
+	lua_pcall(lua, 3, 1, 0);
 
 	if (lua_isnil(lua, -1))
 		return NULL;
