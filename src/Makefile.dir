@@ -4,10 +4,10 @@ nuci_MODULES := main \
 	communication \
 	nuci_datastore \
 	interpreter \
-	register
-
-LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $$lua ; break ; fi ; done)
+	register \
+	model
 
 nuci_PKG_CONFIGS := $(LUA_NAME) libnetconf
 nuci_EXE_CONFIGS := xml2
 nuci_LOCAL_LIBS := lxml2
+nuci_SYSTEM_LIBS := uci

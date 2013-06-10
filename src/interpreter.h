@@ -25,34 +25,20 @@ void interpreter_destroy(struct interpreter *interpreter);
 bool interpreter_load_plugins(struct interpreter *interpreter, const char *path);
 
 /*
- * Every function in lua can be encoded into single int. Neat, isn't it?
- */
-typedef int lua_callback;
-
-/*
  * And, with the right tricks, we can even compress the whole datastore
  * lua object into a single int!
  */
 typedef int lua_datastore;
 
 /*
- * Call a callback and return the result as a string. The string is
- * allocated by lua and will disappear some time later (it can any time
- * any more lua call is called).
- *
- * In case something goes wrong, the error is flagged (see flag_error and
- * nc_err_create_from_lua) and NULL is returned.
- * NULL).
- */
-const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback);
-
-/*
  * Call the get_config method of the data store. The result is owned by lua and may
  * disappear any time more lua is called.
  *
- * In case of error, NULL is returned and the error is flagged. 
+ * This is meant for the methods get and get_config, which have the same interface.
+ *
+ * In case of error, NULL is returned and the error is flagged.
  */
-const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore);
+const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method);
 
 /*
  * Call the set_config method of the data store, possibly storing the data there.
@@ -60,6 +46,8 @@ const char *interpreter_get_config(struct interpreter *interpreter, lua_datastor
  * In case of error, it is flagged by flag_error.
  */
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt);
+
+char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastore ds, char *procedure, char *data);
 
 
 // Error handling

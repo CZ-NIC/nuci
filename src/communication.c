@@ -2,21 +2,24 @@
 #include "nuci_datastore.h"
 #include "register.h"
 #include "interpreter.h"
+#include "model.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include <libnetconf.h>
 #include <libnetconf/datastore_custom.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
+
+#define LUA_PLUGIN_PATH PLUGIN_PATH "/lua_plugins"
 
 // One data store
 struct datastore {
 	ncds_id id;
 	struct ncds_ds *datastore;
+	char *ns;
+	lua_datastore lua;
 };
 
 /**
@@ -45,10 +48,36 @@ void comm_set_print_error_callback(void(*clb)(const char *message)) {
 	clb_print_error = clb;
 }
 
+static char *get_ds_stats(const char *model, const char *running, struct nc_err **e) {
+	(void) running;
+	char *model_uri = extract_model_uri_string(model);
+	lua_datastore datastore;
+	bool found = false;
+	for (size_t i = 0; i < global_srv_config.config_datastore_count; i ++)
+		if (strcmp(model_uri, global_srv_config.config_datastores[i].ns) == 0) {
+			found = true;
+			datastore = global_srv_config.config_datastores[i].lua;
+			break;
+		}
+	free(model_uri);
+	assert(found); // We should not be called with namespace we don't know
+
+	const char *result = interpreter_get(global_srv_config.interpreter, datastore, "get");
+	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
+		return NULL;
+	} else {
+		return strdup(result);
+	}
+
+	return strdup(result);
+}
+
 static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
-	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, NULL);
+	datastore->ns = extract_model_uri_file(datastore_model_path);
+	datastore->lua = lua_datastore;
+	datastore->datastore = ncds_new(NCDS_TYPE_CUSTOM, datastore_model_path, get_ds_stats);
 
 	if (datastore->datastore == NULL) {
 		clb_print_error("Datastore preparing failed.");
@@ -62,78 +91,6 @@ static bool config_ds_init(const char *datastore_model_path, struct datastore *d
 	datastore->id = ncds_init(datastore->datastore);
 	if (datastore->id <= 0) { //Optionally: ncds_init has 4 different error return types
 		clb_print_error("Couldn't activate the config data store.");
-		return false;
-	}
-
-	return true;
-}
-
-/*
- * Take the model spec (yin) specs and extract the namespace uri of the model.
- * Pass the result onto the caller for free.
- */
-static char *extract_model_uri(xmlDoc *doc) {
-	assert(doc); // By now, someone should have validated the model before us.
-	xmlNode *node = xmlDocGetRootElement(doc);
-	assert(node);
-	char *model_uri = NULL;
-	for (xmlNode *current = node->children; current; current = current->next) {
-		if (xmlStrcmp(current->name, (const xmlChar *) "namespace") == 0 && xmlStrcmp(current->ns->href, (const xmlChar *) "urn:ietf:params:xml:ns:yang:yin:1") == 0) {
-			xmlChar *uri = xmlGetProp(current, (const xmlChar *) "uri");
-			// Get a proper string, not some xml* beast.
-			model_uri = strdup((const char *) uri);
-			xmlFree(uri);
-		}
-	}
-	xmlFreeDoc(doc);
-	return model_uri;
-}
-
-static char *extract_model_uri_string(const char *model) {
-	return extract_model_uri(xmlReadMemory(model, strlen(model), "model.xml", NULL, 0));
-}
-
-static char *extract_model_uri_file(const char *file) {
-	return extract_model_uri(xmlParseFile(file));
-}
-
-struct stats_mapping {
-	char *namespace;
-	lua_callback callback;
-};
-
-static char *get_stats(const char *model, const char *running, struct nc_err **e) {
-	(void) running;
-	char *model_uri = extract_model_uri_string(model);
-	lua_callback callback;
-	bool callback_found = false;
-	for (size_t i = 0; i < global_srv_config.stats_datastore_count; i ++)
-		if (strcmp(model_uri, global_srv_config.stats_mappings[i].namespace) == 0) {
-			callback_found = true;
-			callback = global_srv_config.stats_mappings[i].callback;
-			break;
-		}
-	free(model_uri);
-	assert(callback_found); // We should not be called with namespace we don't know
-
-	const char *result = interpreter_call_str(global_srv_config.interpreter, callback);
-	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
-		return NULL;
-	} else {
-		return strdup(result);
-	}
-
-	return strdup(result);
-}
-
-static bool stats_ds_init(const char *datastore_model_path, struct datastore *datastore) {
-	// New data store, no config but function to generate the statistics.
-	datastore->datastore = ncds_new(NCDS_TYPE_EMPTY, datastore_model_path, get_stats);
-
-	// Activate it
-	datastore->id = ncds_init(datastore->datastore);
-	if (datastore->id <= 0) {
-		fprintf(stderr, "Couldn't activate the statistics data store for %s (%d).", datastore_model_path, (int) datastore->id);
 		return false;
 	}
 
@@ -158,11 +115,10 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	const char *const *datastore_paths = get_datastore_providers(&lua_datastores, &config_datastore_count);
 	config->config_datastores = calloc(config_datastore_count, sizeof *config->config_datastores);
 	for (size_t i = 0; i < config_datastore_count; i ++) {
-		size_t len = strlen(PLUGIN_PATH) + strlen(datastore_paths[i]) + 2; // For the '/' and for '\0'
-		char filename[len];
-		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, datastore_paths[i]);
-		assert(print_len == len - 1);
-		if (!config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_)) {
+		char *filename = model_path(datastore_paths[i]);
+		bool result = config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_);
+		free(filename);
+		if (!result) {
 			comm_cleanup(config);
 			return false;
 		}
@@ -175,43 +131,17 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 		config->config_datastore_count ++;
 	}
 
-	// FIXME: There are two very similar parts of code. Can we unify them a bit?
-	// Create the statistics data stores.
-	size_t stats_plugin_count;
-	const lua_callback *callbacks;
-	const char *const *stats_specs = get_stat_defs(&callbacks, &stats_plugin_count);
-	config->stats_datastores = calloc(stats_plugin_count, sizeof *config->stats_datastores);
-	config->stats_mappings = calloc(stats_plugin_count, sizeof *config->stats_mappings);
-	for (size_t i = 0; i < stats_plugin_count; i ++) {
-		size_t len = strlen(PLUGIN_PATH) + strlen(stats_specs[i]) + 2; // For the '/' and for '\0'
-		char filename[len];
-		size_t print_len = snprintf(filename, len, "%s/%s", PLUGIN_PATH, stats_specs[i]);
-		assert(print_len == len - 1);
-		if (!stats_ds_init(filename, &config->stats_datastores[i])) {
-			comm_cleanup(config);
-			return false;
-		}
-		/*
-		 * Trick. Keep the count accurate during the creation (don't set it in one jump at the
-		 * beginning or end, so it is correct even if the creation fail and we abort it.
-		 *
-		 * Used in the free at the end.
-		 */
-		config->stats_datastore_count ++;
-		// Store mapping for the namespace->callback.
-		config->stats_mappings[i].namespace = extract_model_uri_file(filename);
-		config->stats_mappings[i].callback = callbacks[i];
-	}
-
 	/*
 	 * Register the basic capabilities into the list. Hardcode the values - unfortunately,
 	 * the libnetconf has constants for these, but does not publish them.
 	 */
-	register_capability("urn:ietf:params:netconf:base:1.0");
-	register_capability("urn:ietf:params:netconf:base:1.1");
-	register_capability("urn:ietf:params:netconf:capability:writable-running:1.0");
-	// Generate the capabilities for the library
-	struct nc_cpblts *capabilities = nc_cpblts_new(get_capabilities());
+	const char *const caps[] = {
+		"urn:ietf:params:netconf:base:1.0",
+		"urn:ietf:params:netconf:base:1.1",
+		"urn:ietf:params:netconf:capability:writable-running:1.0",
+		NULL
+	};
+	struct nc_cpblts *capabilities = nc_cpblts_new(caps);
 
 	// Accept NETCONF session from a client.
 	config->session = nc_session_accept(capabilities);
@@ -308,6 +238,49 @@ void comm_start_loop(const struct srv_config *config) {
 				communication.reply = nc_reply_error(nc_err_new(NC_ERR_OP_NOT_SUPPORTED));
 				break;
 			}
+		} else if (req_type == NC_RPC_UNKNOWN) {
+			//User rpc is expected now
+
+			//libnetconf for all getters says: Caller is responsible for freeing the returned string with free().
+			char *ns = nc_rpc_get_ns(communication.msg);
+			char *rpc_procedure = nc_rpc_get_op_name(communication.msg);
+			char *rpc_data = nc_rpc_get_op_content(communication.msg);
+
+			char *ds_reply = NULL;
+			bool ds_found = false;
+
+			//find namespace
+			for (size_t i = 0; i < config->config_datastore_count; i ++) {
+				if (strcmp(ns, config->config_datastores[i].ns) == 0) {
+					ds_found = true;
+					ds_reply = interpreter_process_user_rpc(config->interpreter, config->config_datastores[i].lua, rpc_procedure, rpc_data);
+					break;
+				}
+			}
+
+			//Unknown datastore
+			if (!ds_found) {
+				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_NS));
+
+			//Some interpreter error
+			} else if (ds_reply == NULL) { //ds_reply shoud be NULL even if datastore was found
+				//This is for all cases: If lua detect some error enterpreter is better send any status message.
+				communication.reply = nc_reply_error(nc_err_new(NC_ERR_OP_FAILED));
+
+			//Interpreter send answer
+			} else {
+				communication.reply = nc_reply_data(ds_reply);
+			}
+
+			//cleanup
+			free(ns);
+			free(rpc_procedure);
+			free(rpc_data);
+			free(ds_reply);
+
+			//TODO
+			//Check if libnetconf is testing rpc content
+
 		} else {
 			//Reply to the client's request
 			communication.reply = ncds_apply_rpc2all(config->session, communication.msg, NULL);
@@ -342,22 +315,11 @@ void comm_cleanup(struct srv_config *config) {
 		if (config->config_datastores[i].datastore)
 			ncds_free(config->config_datastores[i].datastore);
 		config->config_datastores[i].datastore = NULL;
+		free(config->config_datastores[i].ns);
 	}
 
 	if (config->lock_info)
 		lock_info_free(config->lock_info);
-
-	for (size_t i = 0; i < config->stats_datastore_count; i ++) {
-		if (config->stats_datastores[i].datastore)
-			ncds_free(config->stats_datastores[i].datastore);
-		config->stats_datastores[i].datastore = NULL;
-		if (config->stats_mappings[i].namespace)
-			free(config->stats_mappings[i].namespace);
-		config->stats_mappings[i].namespace = NULL;
-	}
-
-	free(config->stats_datastores);
-	free(config->stats_mappings);
 
 	//Close internal libnetconf structures and subsystems
 	nc_close(0);

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="uci-raw" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/uci-raw"/>
+  <prefix value="uci-raw"/>
+  <container name="uci">
+    <description>
+      <text>Top-level container for all UCI configurations.</text>
+    </description>
+    <list name="config">
+      <key value="name"/>
+      <leaf name="name">
+        <type name="string"/>
+      </leaf>
+      <list name="section">
+        <key value="name type"/>
+        <leaf name="name">
+          <type name="string"/>
+        </leaf>
+        <leaf name="type">
+          <type name="string"/>
+        </leaf>
+        <leaf name="anonymous">
+          <type name="empty"/>
+        </leaf>
+        <list name="option">
+          <key value="name"/>
+          <leaf name="name">
+            <type name="string"/>
+          </leaf>
+          <leaf name="value">
+            <type name="string"/>
+	    <mandatory value='true'/>
+          </leaf>
+        </list>
+        <list name="list">
+          <key value="name"/>
+          <leaf name="name">
+            <type name="string"/>
+          </leaf>
+          <leaf-list name="value">
+            <type name="string"/>
+          </leaf-list>
+        </list>
+      </list>
+    </list>
+  </container>
+</module>

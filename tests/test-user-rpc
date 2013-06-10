@@ -9,18 +9,11 @@ cat <<ENDXML | socat STDIO EXEC:./bin/nuci,pty
 </hello>
 ]]>]]><?xml version="1.0" encoding="UTF-8"?>
 <rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
-  <edit-config>
-    <target>
-      <running/>
-    </target>
-    <config>
-      <uci xmlns="http://www.nic.cz/ns/router/uci-raw">
-        <config>
-          <name>test</name>
-	</config>
-      </uci>
-    </config>
-  </edit-config>
+  <delej xmlns="http://www.nic.cz/ns/router/uci-raw">
+   <neco>
+     <nekde/>
+   </neco>
+ </delej>
 </rpc>
 ]]>]]>
 ENDXML

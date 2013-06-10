@@ -1,8 +1,10 @@
 #include "interpreter.h"
 #include "register.h"
+#include "model.h"
 #include "../3rd_party/lxml2/lxml2.h"
 
 #include <libnetconf.h>
+#include <uci.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -20,40 +22,31 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static int register_string(lua_State *lua, void (*function)(const char*), const char *name) {
-	int param_count = lua_gettop(lua);
-	if (param_count != 1)
-		luaL_error(lua, "%s expects 1 parameter, %d given", name, param_count);
-	const char *capability = lua_tostring(lua, 1);
-	if (!capability)
-		luaL_error(lua, "A non-string parameter passed to %s", name);
-	function(capability);
-	return 0; // No results from this function
-}
-
-static int register_capability_lua(lua_State *lua) {
-	return register_string(lua, register_capability, "register_capability");
-}
-
-static int register_submodel_lua(lua_State *lua) {
-	return register_string(lua, register_submodel, "register_submodel");
-}
-
-static int register_stat_generator_lua(lua_State *lua) {
-	int param_count = lua_gettop(lua);
-	if (param_count != 2)
-		luaL_error(lua, "register_stat_generator expects 2 parameter, %d given", param_count);
-	lua_callback callback = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the function to the registry
-	register_stat_generator(lua_tostring(lua, 1), callback);
-	return 0; // No results
-}
-
 static int register_datastore_provider_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
-	if (param_count != 2)
-		luaL_error(lua, "register_datastore_provider expects 2 parameter, %d given", param_count);
+	if (param_count != 1)
+		luaL_error(lua, "register_datastore_provider expects 1 parameter - the data store, %d given", param_count);
+	lua_getfield(lua, 1, "model_file");
+	const char *model_file = lua_tostring(lua, -1);
+	// Fill in some values into the provider
+	char *path = model_path(model_file);
+	lua_pushstring(lua, path);
+	lua_setfield(lua, 1, "model_path");
+	char *ns = extract_model_uri_file(path);
+	lua_pushstring(lua, ns);
+	lua_setfield(lua, 1, "model_ns");
+	free(path);
+	free(ns);
+	// We fill the model by running the lua XML parser
+	lua_getglobal(lua, "lxml2"); // The package
+	lua_getfield(lua, -1, "read_file"); // The function to call
+	lua_getfield(lua, 1, "model_path"); // The file name
+	lua_call(lua, 1, 1);
+	lua_setfield(lua, 1, "model"); // Copy the result into the datastore
+	// Get the datastore to the top (there's more rumble on top of it by now)
+	lua_pushvalue(lua, 1);
 	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry
-	register_datastore_provider(lua_tostring(lua, 1), datastore);
+	register_datastore_provider(model_file, datastore);
 	return 0; // No results
 }
 
@@ -273,6 +266,29 @@ static int xml_escape_lua(lua_State *lua) {
 	return 1;
 }
 
+static int uci_list_configs_lua(lua_State *lua) {
+	struct uci_context *ctx = uci_alloc_context();
+	if (!ctx)
+		luaL_error(lua, "Can't create UCI context");
+	char **configs = NULL;
+	if ((uci_list_configs(ctx, &configs) != UCI_OK) || !configs) {
+		uci_free_context(ctx);
+		luaL_error(lua, "Can't load configs");
+	}
+	int idx = 1;
+	lua_newtable(lua);
+	int tindex = lua_gettop(lua);
+	for (char **config = configs; *config; config ++) {
+		lua_pushnumber(lua, idx ++);
+		lua_pushstring(lua, *config);
+		lua_settable(lua, tindex);
+		// Don't free here. Uci allocates the whole thing in one block of memory.
+	}
+	free(configs);
+	uci_free_context(ctx);
+	return 1;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -289,15 +305,29 @@ struct interpreter *interpreter_create(void) {
 		.state = luaL_newstate()
 	};
 	luaL_openlibs(result->state);
-	add_func(result, "register_capability", register_capability_lua);
-	add_func(result, "register_submodel", register_submodel_lua);
-	add_func(result, "register_stat_generator", register_stat_generator_lua);
 	add_func(result, "register_datastore_provider", register_datastore_provider_lua);
 	add_func(result, "run_command", run_command_lua);
 	add_func(result, "xml_escape", xml_escape_lua);
+	add_func(result, "uci_list_configs", uci_list_configs_lua);
 
 	lxml2_init(result->state);
 
+	// Set the package.path so our own libraries are found. Prepend to the list.
+	lua_getglobal(result->state, "package");
+	lua_getfield(result->state, -1, "path");
+	const char *old_path = lua_tostring(result->state, -1);
+	const char *path = PLUGIN_PATH "/lua_lib/?.lua;" PLUGIN_PATH "/lua_lib/?.luac";
+	size_t p_len = strlen(path) + 2 + strlen(old_path ? old_path : ""); // One for ;, one for \n
+	char path_data[p_len];
+	if (old_path) {
+		size_t len = sprintf(path_data, "%s;%s", path, old_path);
+		assert(len + 1 == p_len);
+		path = path_data;
+	}
+	lua_pop(result->state, 1); // Remove the old value
+	lua_pushstring(result->state, path); // Put the new one in
+	lua_setfield(result->state, -2, "path"); // Replace the old value
+	lua_pop(result->state, 1); // Remove the package table
 	return result;
 }
 
@@ -337,35 +367,12 @@ void interpreter_destroy(struct interpreter *interpreter) {
 	free(interpreter);
 }
 
-const char *interpreter_call_str(struct interpreter *interpreter, lua_callback callback) {
-	lua_State *lua = interpreter->state;
-	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
-	// Copy the function to the stack
-	lua_rawgeti(lua, LUA_REGISTRYINDEX, callback);
-	/*
-	 * No parameters for the callback functions, none pushed. We want up to 2 results.
-	 *
-	 * In case an error is returned, there's just single value on stack, which is the
-	 * error message. However, the follow-up error handler looks at the last value on
-	 * stack for error, which works both for the case function returns error itself
-	 * and for lua interpreter errors. So no need to check return value of lua_pcall.
-	 */
-	lua_pcall(lua, 0, 2, 0);
-	if (!lua_isnil(lua, -1)) { // There's an error
-		flag_error(interpreter, true, -1);
-		return NULL;
-	} else {
-		flag_error(interpreter, false, 0);
-		return lua_tostring(lua, -2); // The result.
-	}
-}
-
-const char *interpreter_get_config(struct interpreter *interpreter, lua_datastore datastore) {
+const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
 	// Pick up the data store
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore);
-	lua_getfield(lua, -1, "get_config"); // The function
+	lua_getfield(lua, -1, method); // The function
 	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.
@@ -411,6 +418,24 @@ void flag_error(struct interpreter *interpreter, bool error, int err_index) {
 	if (error) {
 		lua_pushvalue(interpreter->state, err_index);
 	}
+}
+
+char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastore ds, char *procedure, char *data) {
+	lua_State *lua = interpreter->state;
+	lua_checkstack(lua, LUA_MINSTACK);
+
+	lua_rawgeti(lua, LUA_REGISTRYINDEX, ds);
+	lua_getfield(lua, -1, "user_rpc");
+	lua_pushvalue(lua, -2);
+	lua_pushstring(lua, procedure);
+	lua_pushstring(lua, data);
+
+	lua_pcall(lua, 3, 1, 0);
+
+	if (lua_isnil(lua, -1))
+		return NULL;
+	else
+		return strdup(lua_tostring(lua, -1));
 }
 
 static const char *get_err_value(lua_State *lua, int eindex, const char *name, const char *def) {

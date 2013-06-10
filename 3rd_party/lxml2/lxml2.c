@@ -1,5 +1,7 @@
 /*
 * Copyright (C) 2012 Alvin Difuntorum <alvinpd09@gmail.com>
+* Copyright (C) 2013 Robin Obůrka <robin.oburka@nic.cz>
+* Copyright (C) 2013 Michal Vaner <michal.vaner@nic.cz>
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the
@@ -21,13 +23,52 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "lxml2.h"
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #define LXML2_XMLDOC		"xmlDocPtr"
 #define LXML2_XMLNODE		"xmlNodePtr"
+
+struct lxml2Object {
+	xmlDocPtr doc;
+};
+
+#define luaL_newlibtable(L,l)	\
+  lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+
+#define luaL_newlib(L,l)	(luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
+
+// ================= BEGIN of 5.2 Features INJECTION ====================
+/*
+** set functions from list 'l' into table at top - 'nup'; each
+** function gets the 'nup' elements at the top as upvalues.
+** Returns with only the table at the stack.
+*/
+static void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+//It doesn't work with "static"
+  luaL_checkstack(L, nup, "too many upvalues");
+  for (; l->name != NULL; l++) {  /* fill the table with given functions */
+	int i;
+	for (i = 0; i < nup; i++)  /* copy upvalues to the top */
+	  lua_pushvalue(L, -nup);
+	lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
+	lua_setfield(L, -(nup + 2), l->name);
+  }
+  lua_pop(L, nup);  /* remove upvalues */
+}
+
+static void luaL_setmetatable (lua_State *L, const char *tname) {
+  luaL_getmetatable(L, tname);
+  lua_setmetatable(L, -2);
+}
+
+// ================= END of 5.2 Features INJECTION ====================
+
+
 
 /*
  * We doesn't need it now, but it should be useful.
@@ -87,17 +128,25 @@ static int lxml2mod_ReadFile(lua_State *L)
 
 	xml2->doc = doc;
 
-	//don't do this in nuci
-	//lua_stack_dump(L, __func__);
 	return 1;
 }
 
-/* stop using module
-static const luaL_Reg lxml2mod[] = {
-	{ "ReadFile", lxml2mod_ReadFile },
-	{ NULL, NULL }
-};
-*/
+static int lxml2mod_ReadMemory(lua_State *L)
+{
+	size_t len;
+	const char *memory = luaL_checklstring(L, 1, &len);
+
+	xmlDocPtr doc = xmlReadMemory(memory, len, "<memory>", NULL, 0);
+	if (!doc)
+		return luaL_error(L, "Failed to read xml string");
+
+	struct lxml2Object *xml2 = lua_newuserdata(L, sizeof(*xml2));
+	luaL_setmetatable(L, LXML2_XMLDOC);
+
+	xml2->doc = doc;
+
+	return 1;
+}
 
 /*
  * lxml2xmlNode object handlers
@@ -121,12 +170,16 @@ static int lxml2xmlNode_name(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
-	if (cur)
+	if (cur) {
 		lua_pushstring(L, (const char *) cur->name);
-	else
-		lua_pushnil(L);
-
-	return 1;
+		if (cur->ns) {
+			lua_pushstring(L, (const char *) cur->ns->href);
+			return 2;
+		}
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 static int lxml2xmlNode_next(lua_State *L)
@@ -143,13 +196,6 @@ static int lxml2xmlNode_next(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlNode_gc(lua_State *L)
-{
-	(lua_State *) L;
-
-	return 0;
-}
-
 static int lxml2xmlNode_tostring(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
@@ -159,11 +205,67 @@ static int lxml2xmlNode_tostring(lua_State *L)
 	return 1;
 }
 
+static int lxml2xmlNode_iterate_next(lua_State *L)
+{
+	if (lua_isnil(L, 2)) { // The first iteration
+		// Copy the state
+		lua_pushvalue(L, 1);
+	} else {
+		lua_remove(L, 1); // Drop the state and call next on the value
+		lxml2xmlNode_next(L);
+	}
+	return 1;
+}
+
+static int lxml2xmlNode_iterate(lua_State *L)
+{
+	lua_pushcfunction(L, lxml2xmlNode_iterate_next); // The 'next' function
+	lxml2xmlNode_ChildrenNode(L); // The 'state'
+	// One implicit nil.
+	return 2;
+}
+
+static int lxml2xmlNode_getProp(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	const char *name = luaL_checkstring(L, 2);
+	const char *ns = lua_tostring(L, 3);
+	xmlChar *prop;
+	if (ns) {
+		prop = xmlGetNsProp(cur, (const xmlChar *) name, (const xmlChar *) ns);
+	} else {
+		prop = xmlGetNoNsProp(cur, (const xmlChar *) name);
+	}
+	lua_pushstring(L, (char *) prop);
+	xmlFree(prop);
+	return 1;
+}
+
+static int lxml2xmlNode_getText(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	if (cur->type == XML_TEXT_NODE) {// This is directly the text node, get the content
+		lua_pushstring(L, (const char *) cur->content);
+		return 1;
+	} else {// Scan the direct children if one of them is text. Pick the first one to be so.
+		for (xmlNodePtr child = cur->children; child; child = child->next)
+			if (child->type == XML_TEXT_NODE) {
+				lua_pushstring(L, (const char *) child->content);
+				return 1;
+			}
+		// No text found and run out of children.
+		return 0;
+	}
+}
+
 static const luaL_Reg lxml2xmlNode[] = {
-	{ "ChildrenNode", lxml2xmlNode_ChildrenNode },
-	{ "Name", lxml2xmlNode_name },
-	{ "Next", lxml2xmlNode_next },
-	{ "__gc", lxml2xmlNode_gc },
+	{ "first_child", lxml2xmlNode_ChildrenNode },
+	{ "name", lxml2xmlNode_name },
+	{ "next", lxml2xmlNode_next },
+	{ "iterate", lxml2xmlNode_iterate },
+	{ "attribute", lxml2xmlNode_getProp },
+	{ "text", lxml2xmlNode_getText },
+	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
 };
@@ -228,7 +330,7 @@ static int lxml2xmlDoc_tostring(lua_State *L)
 }
 
 static const luaL_Reg lxml2xmlDoc[] = {
-	{ "GetRootElement", lxml2xmlDoc_GetRootElement },
+	{ "root", lxml2xmlDoc_GetRootElement },
 	{ "NodeListGetString", lxml2xmlDoc_NodeListGetString },
 	{ "__gc", lxml2xmlDoc_gc },
 	{ "__tostring", lxml2xmlDoc_tostring },
@@ -236,11 +338,11 @@ static const luaL_Reg lxml2xmlDoc[] = {
 };
 
 /*
- * Register function as global for Lua
+ * Register function in the package on top of stack.
  */
 static void add_func(lua_State *L, const char *name, lua_CFunction function) {
 	lua_pushcfunction(L, function);
-	lua_setglobal(L, name);
+	lua_setfield(L, -2, name);
 }
 
 /*
@@ -249,7 +351,12 @@ static void add_func(lua_State *L, const char *name, lua_CFunction function) {
 
 int lxml2_init(lua_State *L)
 {
-	add_func(L, "ReadFile", lxml2mod_ReadFile);
+	// New table for the package
+	lua_newtable(L);
+	add_func(L, "read_file", lxml2mod_ReadFile);
+	add_func(L, "read_memory", lxml2mod_ReadMemory);
+	// Push the package as lxml2 (which pops it)
+	lua_setglobal(L, "lxml2");
 
 	/*
 	 * Register metatables
@@ -273,32 +380,3 @@ int lxml2_init(lua_State *L)
 
 	return 1;
 }
-
-// ================= BEGIN of 5.2 Features INJECTION ====================
-/*
-** set functions from list 'l' into table at top - 'nup'; each
-** function gets the 'nup' elements at the top as upvalues.
-** Returns with only the table at the stack.
-*/
-void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
-//It doesn't work with "static"
-  luaL_checkstack(L, nup, "too many upvalues");
-  for (; l->name != NULL; l++) {  /* fill the table with given functions */
-	int i;
-	for (i = 0; i < nup; i++)  /* copy upvalues to the top */
-	  lua_pushvalue(L, -nup);
-	lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
-	lua_setfield(L, -(nup + 2), l->name);
-  }
-  lua_pop(L, nup);  /* remove upvalues */
-}
-
-void luaL_setmetatable (lua_State *L, const char *tname) {
-//It doesn't work with "static"
-  luaL_getmetatable(L, tname);
-  lua_setmetatable(L, -2);
-}
-
-// ================= END of 5.2 Features INJECTION ====================
-
-/* End of file */
