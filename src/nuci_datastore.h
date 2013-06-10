@@ -17,6 +17,6 @@ struct nuci_lock_info *lock_info_create(void);
 void lock_info_free(struct nuci_lock_info *info);
 
 //Get pointer to datastore's custom data
-struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *lock_info, struct interpreter *interpreter, lua_datastore datastore);
+struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *lock_info, struct interpreter *interpreter, lua_datastore datastore, bool locking_enabled);
 
 #endif // NUCI_DATASTORE_H

@@ -22,6 +22,7 @@ struct nuci_lock_info {
 
 struct nuci_ds_data {
 	struct nuci_lock_info *lock_info;
+	bool lock_master;
 	struct interpreter *interpreter;
 	lua_datastore datastore;
 };
@@ -48,10 +49,11 @@ void lock_info_free(struct nuci_lock_info *info) {
 	free(info);
 }
 
-struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info, struct interpreter *interpreter, lua_datastore datastore) {
+struct nuci_ds_data *nuci_ds_get_custom_data(struct nuci_lock_info *info, struct interpreter *interpreter, lua_datastore datastore, bool locking_enabled) {
 	struct nuci_ds_data *data = calloc(1, sizeof *data);
 
 	data->lock_info = info;
+	data->lock_master = locking_enabled;
 	data->interpreter = interpreter;
 	data->datastore = datastore;
 
@@ -85,6 +87,12 @@ static int nuci_ds_rollback(void *data) {
 	return 1;
 }
 
+/**
+ * Try to set lock
+ *
+ * Return TRUE - Lock managed to lock
+ * Return FALSE - Lock is held by another instance
+ */
 static bool test_and_set_lock(struct nuci_lock_info *lock_info) {
 	//data->lockfile consistency is garanted by nuci_ds_init()
 	int lock = flock(lock_info->lockfile, LOCK_EX | LOCK_NB);
@@ -97,6 +105,12 @@ static bool test_and_set_lock(struct nuci_lock_info *lock_info) {
 	return true;
 }
 
+/**
+ * Release lock
+ *
+ * Return TRUE - lock was released
+ * Return FALSE - lock was not released
+ */
 static bool release_lock(struct nuci_lock_info *lock_info) {
 	//data->lockfile consistency is garanted by nuci_ds_init()
 	int lock = flock(lock_info->lockfile, LOCK_UN);
@@ -109,12 +123,35 @@ static bool release_lock(struct nuci_lock_info *lock_info) {
 	return true;
 }
 
+/**
+ * Use this function for test datastore accessibility.
+ *
+ * If some procedure need change datastore it has to know datastore lock status.
+ *
+ * 1) I have lock -> proceed (return TRUE)
+ * 2) I haven't lock, but datastore is not locked -> proceed (return TRUE)
+ * 3) I haven't lock and datastore is locked -> stop any activity (return FALSE)
+*/
+
+static bool test_access_status(struct nuci_lock_info *lock_info) {
+	if (lock_info->holding_lock) {
+		return true;
+	}
+
+	if (test_and_set_lock(lock_info)) {
+		release_lock(lock_info);
+		return true;
+	}
+
+	return false;
+}
+
 static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
-	//I'm not the locking-one
-	if (d->lock_info == NULL) {
+	//I'm not the lock master
+	if (d->lock_master == false) {
 		return EXIT_SUCCESS;
 	}
 
@@ -150,8 +187,8 @@ static int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
-	//I'm not the locking-one
-	if (d->lock_info == NULL) {
+	//I'm not the lock master
+	if (d->lock_master == false) {
 		return EXIT_SUCCESS;
 	}
 
@@ -218,9 +255,16 @@ static int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err**
 
 //Documentation for parameters defop and errop: http://libnetconf.googlecode.com/git/doc/doxygen/html/d3/d7a/netconf_8h.html#a5852fd110198481afb37cc8dcf0bf454
 static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
+	struct nuci_ds_data *d = data;
+
 	//only running source for now
 	if (target != NC_DATASTORE_RUNNING) {
 		*error = nc_err_new(NC_ERR_OP_NOT_SUPPORTED);
+		return EXIT_FAILURE;
+	}
+
+	if (!test_access_status(d->lock_info)) {
+		*error = nc_err_new(NC_ERR_LOCK_DENIED);
 		return EXIT_FAILURE;
 	}
 
@@ -259,7 +303,6 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *confi
 			assert(0);
 	}
 
-	struct nuci_ds_data *d = data;
 	interpreter_set_config(d->interpreter, d->datastore, config, op, err);
 
 	return (*error = nc_err_create_from_lua(d->interpreter)) ? EXIT_FAILURE : EXIT_SUCCESS;

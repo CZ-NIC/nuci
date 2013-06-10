@@ -72,7 +72,7 @@ static char *get_ds_stats(const char *model, const char *running, struct nc_err 
 	return strdup(result);
 }
 
-static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter) {
+static bool config_ds_init(const char *datastore_model_path, struct datastore *datastore, lua_datastore lua_datastore, struct nuci_lock_info *lock_info, struct interpreter *interpreter, bool locking_enabled) {
 	// Create a data store. The thind parameter is NULL, so <get> returns the same as
 	// <get-config> in this data store.
 	datastore->ns = extract_model_uri_file(datastore_model_path);
@@ -85,7 +85,7 @@ static bool config_ds_init(const char *datastore_model_path, struct datastore *d
 	}
 
 	// Set the callbacks
-	ncds_custom_set_data(datastore->datastore, nuci_ds_get_custom_data(lock_info, interpreter, lua_datastore), ds_funcs);
+	ncds_custom_set_data(datastore->datastore, nuci_ds_get_custom_data(lock_info, interpreter, lua_datastore, locking_enabled), ds_funcs);
 
 	// Activate datastore structure for use.
 	datastore->id = ncds_init(datastore->datastore);
@@ -109,7 +109,7 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	}
 
 	config->lock_info = lock_info_create();
-	struct nuci_lock_info *tmp_lock_info = config->lock_info;
+	bool locking_enabled = true;
 
 	size_t config_datastore_count;
 	const lua_datastore *lua_datastores;
@@ -117,8 +117,8 @@ bool comm_init(struct srv_config *config, struct interpreter *interpreter_) {
 	config->config_datastores = calloc(config_datastore_count, sizeof *config->config_datastores);
 	for (size_t i = 0; i < config_datastore_count; i ++) {
 		char *filename = model_path(datastore_paths[i]);
-		bool result = config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], tmp_lock_info, interpreter_);
-		tmp_lock_info = NULL; //first DS has lockinfo, the others will get NULL-flag
+		bool result = config_ds_init(filename, &config->config_datastores[i], lua_datastores[i], config->lock_info, interpreter_, locking_enabled);
+		locking_enabled = false;
 		free(filename);
 		if (!result) {
 			comm_cleanup(config);
