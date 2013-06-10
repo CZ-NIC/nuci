@@ -136,6 +136,12 @@ local tests = {
 			}
 		}
 	}
+	--[[
+	TODO: We want more tests. Tests for manipulation with keys, leaf-lists, etc.
+	Also, we want to test further operations, like create, none, etc.
+
+	And some error checking too.
+	]]
 };
 
 local function op_matches(op, expected, ns)
