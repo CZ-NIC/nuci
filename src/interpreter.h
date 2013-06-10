@@ -47,6 +47,8 @@ const char *interpreter_get(struct interpreter *interpreter, lua_datastore datas
  */
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt);
 
+char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastore ds, char *procedure, char *data);
+
 
 // Error handling
 

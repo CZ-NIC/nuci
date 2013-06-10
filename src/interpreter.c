@@ -420,6 +420,23 @@ void flag_error(struct interpreter *interpreter, bool error, int err_index) {
 	}
 }
 
+char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastore ds, char *procedure, char *data) {
+	lua_State *lua = interpreter->state;
+	lua_checkstack(lua, LUA_MINSTACK);
+
+	lua_rawgeti(lua, LUA_REGISTRYINDEX, ds);
+	lua_getfield(lua, -1, "user_rpc");
+	lua_pushstring(lua, procedure);
+	lua_pushstring(lua, data);
+
+	lua_pcall(lua, 2, 1, 0);
+
+	if (lua_isnil(lua, -1))
+		return NULL;
+	else
+		return strdup(lua_tostring(lua, -1));
+}
+
 static const char *get_err_value(lua_State *lua, int eindex, const char *name, const char *def) {
 	lua_getfield(lua, eindex, name);
 	const char *result = lua_tostring(lua, -1);

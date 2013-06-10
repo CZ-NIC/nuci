@@ -238,6 +238,49 @@ void comm_start_loop(const struct srv_config *config) {
 				communication.reply = nc_reply_error(nc_err_new(NC_ERR_OP_NOT_SUPPORTED));
 				break;
 			}
+		} else if (req_type == NC_RPC_UNKNOWN) {
+			//User rpc is expected now
+
+			//libnetconf for all getters says: Caller is responsible for freeing the returned string with free().
+			char *ns = nc_rpc_get_ns(communication.msg);
+			char *rpc_procedure = nc_rpc_get_op_name(communication.msg);
+			char *rpc_data = nc_rpc_get_op_content(communication.msg);
+
+			char *ds_reply = NULL;
+			bool ds_found = false;
+
+			//find namespace
+			for (size_t i = 0; i < config->config_datastore_count; i ++) {
+				if (strcmp(ns, config->config_datastores[i].ns) == 0) {
+					ds_found = true;
+					ds_reply = interpreter_process_user_rpc(config->interpreter, config->config_datastores[i].lua, rpc_procedure, rpc_data);
+					break;
+				}
+			}
+
+			//Unknown datastore
+			if (!ds_found) {
+				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_NS));
+
+			//Some interpreter error
+			} else if (ds_reply == NULL) { //ds_reply shoud be NULL even if datastore was found
+				//This is for all cases: If lua detect some error enterpreter is better send any status message.
+				communication.reply = nc_reply_error(nc_err_new(NC_ERR_OP_FAILED));
+
+			//Interpreter send answer
+			} else {
+				communication.reply = nc_reply_data(ds_reply);
+			}
+
+			//cleanup
+			free(ns);
+			free(rpc_procedure);
+			free(rpc_data);
+			free(ds_reply);
+
+			//TODO
+			//Check if libnetconf is testing rpc content
+
 		} else {
 			//Reply to the client's request
 			communication.reply = ncds_apply_rpc2all(config->session, communication.msg, NULL);
