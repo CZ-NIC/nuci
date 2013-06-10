@@ -6,6 +6,7 @@ LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $
 # made, it goes here.
 include $(S)/3rd_party/Makefile.dir
 include $(S)/src/Makefile.dir
+include $(S)/tests/Makefile.dir
 # This one for documentation for the build system
 include $(S)/build/Makefile.dir
 

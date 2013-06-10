@@ -1,12 +1,85 @@
+require("nutils");
+
+local netconf_ns = 'urn:ietf:params:xml:ns:netconf:base:1.0'
+local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
+
+-- Compare names and namespaces of two nodes
+local function cmp_elemname(command_node, config_node)
+	local name1, ns1 = command_node:name();
+	local name2, ns2 = config_node:name();
+	ns1 = ns1 or ns; -- The namespace may be missing from the command XML, as it is only snippet
+	return name1 == name2 and ns1 == ns2;
+end
+-- Compare names, namespaces and their text
+local function cmp_name_content(command_node, config_node)
+	return cmp_elemname(command_node, config_node, ns, model) and command_node:text() == config_node:text();
+end
+
+-- Find a subnode with given name and ns
+local function find_node_name_ns(node, name, ns)
+	return find_node(node, function(node)
+		local nname, nns = node:name();
+		return ns == nns and name == nname;
+	end);
+end
+
+--[[
+Extract the list of expected keys in the model node.
+The model node should yang description of a list (specially, it should contain
+the key element).
+]]
+local function list_keys(model_node)
+	return split(find_node_name_ns(model_node, 'key', yang_ns):attribute('value'));
+end
+
+-- Find a leaf of the given name and extract its content.
+-- Convert to the canonical notation according to its type (described in model).
+-- Both the node and the model are for the supernode of what we want.
+local function extract_leaf_subvalue(node, model, name)
+	local _, ns = node:name();
+	local subnode = find_node_name_ns(node, name, ns);
+	if subnode then
+		-- TODO: Do the canonization
+		return subnode:text();
+	end
+end
+
 -- Names of valid node names in model, with empty data for future extentions
 local model_names = {
-	leaf={},
-	['leaf-list']={},
-	container={},
-	list={}
+	leaf={
+		cmp=cmp_elemname
+	},
+	['leaf-list']={
+		cmp=cmp_name_content
+	},
+	container={
+		cmp=cmp_elemname,
+		children=true
+	},
+	list={
+		cmp=function(command_node, config_node, ns, model)
+			-- First, it must be the same kind of thing (name and ns)
+			if not cmp_elemname(command_node, config_node, ns, model) then
+				return false;
+			end
+			local keys = list_keys(model);
+			local found = true;
+			for key_name in keys do
+				print(key_name);
+				local command_key = extract_leaf_subvalue(command_node, model, key_name);
+				print(command_key);
+				local config_key = extract_leaf_subvalue(config_node, model, key_name);
+				if not command_key or not config_key or config_key ~= command_key then
+					-- FIXME: Properly handle missing keys
+					return false;
+				end
+			end
+			return true; -- No key differs
+		end,
+		children=true
+	}
+	-- TODO: AnyXML. What to do with that?
 }
-local netconf_ns = 'urn:ietf:params:netconf:base:1.0'
-local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
 
 -- Find a model node corresponding to the node_name here.
 -- TODO: Preprocess the model, so we can do just table lookup instead?
@@ -20,10 +93,10 @@ local function model_identify(model_dir, node_name)
 		local name, ns = model:name();
 		-- The corrent namespace and attribute
 		if ns == yang_ns and model:attribute('name') == node_name then
-			for model_name in pairs(model_names) do
+			for model_name, model_opts in pairs(model_names) do
 				-- Found allowed name, all done
 				if name == model_name then
-					return model;
+					return model, model_opts;
 				end
 			end
 			-- Not a valid name. Try next node.
@@ -31,12 +104,21 @@ local function model_identify(model_dir, node_name)
 	end
 end
 
+-- Look through the config and try to find a node corresponding to the command_node one. Consider the model.
+local function config_identify(model_node, model_opts, command_node, config, ns)
+	local cmp_func = model_opts.cmp;
+	-- It is OK not to find, returning nothing then.
+	return find_node(config, function(node)
+		return cmp_func(command_node, node, ns, model_node);
+	end);
+end
+
 -- Perform operation on all the children here.
 local function children_perform(config, command, model, ns, defop, errop, ops)
 	for command_node in command:iterate() do
 		local command_name, command_ns = command_node:name();
 		if command_ns == ns then
-			model_node = model_identify(model, command_name);
+			local model_node, model_opts = model_identify(model, command_name);
 			if not model_node then
 				-- TODO What about errop = continue?
 				return {
@@ -46,6 +128,105 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				};
 			end
 			print("Found model node " .. model_node:name() .. " for " .. command_name);
+			local config_node = config_identify(model_node, model_opts, command_node, config, ns);
+			-- Is there an override for the operation here?
+			local operation = command_node:attribute('operation', netconf_ns) or defop;
+			-- What we are asked to do (may be different from what we actually do)
+			local asked_operation = operation;
+			if operation == 'merge' and not model_opts.children then
+				-- Merge on leaf(like) element just replaces it.
+				operation = 'replace'
+			end
+			if config_node then
+				print("Found config node " .. config_node:name() .. " for " .. command_name);
+				-- The value exists
+				if operation == 'create' then
+					return {
+						msg="Can't create an element, such element already exists: " .. command_name,
+						tag="data exists",
+						info_badelem=command_name,
+						info_badns=command_ns
+					};
+				end
+				if operation == 'delete' then
+					-- Normalize
+					operation = 'remove';
+				end
+				if operation == 'merge' then
+					-- We are in containerish node, that has no value, so just recurse
+					operation = 'none';
+				end
+			else
+				print("Not found corresponding node")
+				-- The value does not exist in config now
+				if operation == 'none' or operation == 'delete' then
+					return {
+						msg="Missing element in configuration: " .. command_name,
+						tag="data missing",
+						info_badelem=command_name,
+						info_badns=command_ns
+					};
+				end
+				if operation == 'replace' or operation == 'merge' then
+					-- Normalize to something common
+					operation = 'create';
+				end
+			end
+			if operation == 'replace' and not model_opts.children and config_node:text() == command_node:text() then
+				-- We should replace a node without any children with the same one.
+				-- Skip it.
+				operation = 'none';
+			end
+			--[[
+			Now, after normalization, we have just 5 possible operations:
+			* none (recurse)
+			* replace (translated to remove and create)
+			* create
+			* remove
+			]]
+			print("Performing operation " .. operation)
+			local function add_op(name, note)
+				print("Adding operation " .. name .. '(' .. (note or '') .. ')' .. ' on ' .. command_node:name());
+				table.insert(ops, {
+					op=name,
+					command_node=command_node,
+					model_node=model_node,
+					config_node=config_node,
+					note=note
+				});
+			end
+			local replace_note;
+			if operation == 'replace' then
+				replace_note = 'replace';
+			end
+			if (operation == 'remove' or operation == 'replace') and config_node then
+				add_op('remove-tree', replace_note);
+			end
+			if operation == 'create' or operation == 'replace' then
+				add_op('add-tree', replace_note);
+			end
+			if operation == 'none' then
+				-- We recurse to the rest
+				add_op('enter');
+				local op_last = #ops;
+				local err = children_perform(config_node, command_node, model_node, ns, asked_operation, errop, ops);
+				if err then
+					return err;
+				end
+				if #ops == op_last then
+					print("Dropping the last enter, as the command is empty");
+					ops[op_last] = nil;
+				else
+					add_op('leave');
+				end
+			end
+		elseif command_ns then
+			-- Skip empty namespaced stuff, that's just the whitespace between the nodes
+			return {
+				msg="Element in foreing namespace found",
+				tag="unknown namespace",
+				info_badns=command_ns
+			};
 		end
 	end
 end
@@ -66,7 +247,7 @@ function editconfig(config, command, model, ns, defop, errop)
 	local config_node = config:root();
 	local command_node = command:root();
 	local model_node = model:root();
-	local ops = {}
-	err = children_perform(config_node, command_node, model_node, ns, defop, errop, ops)
-	return ops, err
+	local ops = {};
+	err = children_perform(config_node, command_node, model_node, ns, defop, errop, ops);
+	return ops, err;
 end

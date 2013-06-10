@@ -16,7 +16,7 @@ cat <<ENDXML | socat STDIO EXEC:./bin/nuci,pty
     <config>
       <uci xmlns="http://www.nic.cz/ns/router/uci-raw">
         <config>
-          <name>test</name>
+          <name>ucollect</name>
 	</config>
       </uci>
     </config>
