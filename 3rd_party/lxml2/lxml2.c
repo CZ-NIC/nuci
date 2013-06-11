@@ -258,6 +258,19 @@ static int lxml2xmlNode_getText(lua_State *L)
 	}
 }
 
+static int lxml2xmlNode_parent(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+
+	if (cur && cur->parent) {
+		lua_pushlightuserdata(L, cur->parent);
+		luaL_setmetatable(L, LXML2_XMLNODE);
+		return 1;
+	}
+
+	return 0;
+}
+
 static const luaL_Reg lxml2xmlNode[] = {
 	{ "first_child", lxml2xmlNode_ChildrenNode },
 	{ "name", lxml2xmlNode_name },
@@ -265,6 +278,7 @@ static const luaL_Reg lxml2xmlNode[] = {
 	{ "iterate", lxml2xmlNode_iterate },
 	{ "attribute", lxml2xmlNode_getProp },
 	{ "text", lxml2xmlNode_getText },
+	{ "parent", lxml2xmlNode_parent },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
