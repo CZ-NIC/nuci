@@ -15,14 +15,6 @@ local function cmp_name_content(command_node, config_node)
 	return cmp_elemname(command_node, config_node, ns, model) and command_node:text() == config_node:text();
 end
 
--- Find a subnode with given name and ns
-local function find_node_name_ns(node, name, ns)
-	return find_node(node, function(node)
-		local nname, nns = node:name();
-		return ns == nns and name == nname;
-	end);
-end
-
 --[[
 Extract the list of expected keys in the model node.
 The model node should yang description of a list (specially, it should contain
