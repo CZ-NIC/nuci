@@ -117,6 +117,8 @@ function uci_datastore:perform_create(cursor, op)
 			info_badns=self.ns
 		};
 	end
+	-- This config was changed, needs to be commited afterwards
+	self.changed[path.config_name] = true;
 end
 
 function uci_datastore:perform_remove(cursor, op)
@@ -143,6 +145,8 @@ function uci_datastore:perform_remove(cursor, op)
 		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
 		error("Unknown element to delete: " .. name);
 	end
+	-- This config was changed, needs to be commited afterwards
+	self.changed[path.config_name] = true;
 end
 
 function uci_datastore:set_config(config, defop, deferr)
@@ -164,6 +168,7 @@ function uci_datastore:set_config(config, defop, deferr)
 				return err;
 			end;
 		end
+		-- FIXME: Support some kind of callback that happens after everything is successfully prepared, to commit
 		for config in pairs(self.changed) do
 			cursor:commit(config)
 		end
