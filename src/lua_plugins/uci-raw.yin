@@ -24,11 +24,12 @@
         <type name="uci-name"/>
       </leaf>
       <list name="section">
-        <key value="name type"/>
+        <key value="name"/>
         <leaf name="name">
           <type name="uci-name"/>
         </leaf>
         <leaf name="type">
+	  <mandatory value='true'/>
           <type name="string"/>
         </leaf>
         <leaf name="anonymous">
