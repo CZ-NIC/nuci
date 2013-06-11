@@ -132,11 +132,15 @@ function uci_datastore:perform_remove(cursor, op)
 	elseif name == 'section' then
 		cursor:delete(path.config_name, path.section_name);
 	elseif name == 'option' then
+		if op.note == 'replace' then
+			-- If we replace it, the create part will just overwrite it.
+			return;
+		end
 		cursor:delete(path.config_name, path.section_name, path.option_name);
 	elseif name == 'list' then
 		-- TODO: Delete part of the list (delayed delete, or something)
 	else
-		-- Can Not Happen: we're deleting stuff from our config, we must know anything there.
+		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
 		error("Unknown element to delete: " .. name);
 	end
 end
