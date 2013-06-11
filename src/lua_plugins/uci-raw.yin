@@ -29,7 +29,7 @@
           <type name="uci-name"/>
         </leaf>
         <leaf name="type">
-	  <mandatory value='true'/>
+          <mandatory value='true'/>
           <type name="string"/>
         </leaf>
         <leaf name="anonymous">
@@ -42,7 +42,7 @@
           </leaf>
           <leaf name="value">
             <type name="string"/>
-	    <mandatory value='true'/>
+            <mandatory value='true'/>
           </leaf>
         </list>
         <list name="list">
@@ -50,16 +50,16 @@
           <leaf name="name">
             <type name="uci-name"/>
           </leaf>
-	  <list>
-	    <key value='index'/>
-	    <leaf name='index'>
-	      <type name='uint32'/>
-	    </leaf>
-	    <leaf name='content'>
-	      <type name='string'/>
-	      <mandatory value='true'/>
-	    </leaf>
-	  </list>
+          <list>
+            <key value='index'/>
+            <leaf name='index'>
+              <type name='decimal64'/> <!-- So we support insertion in the middle. The numbers from server are always integers. -->
+            </leaf>
+            <leaf name='content'>
+              <type name='string'/>
+              <mandatory value='true'/>
+            </leaf>
+          </list>
         </list>
       </list>
     </list>

@@ -91,6 +91,19 @@ function uci_datastore:node_path(node)
 	return name, result;
 end
 
+function uci_datastore:get_delayed_list(cursor, config, section, name)
+	-- Create the hierarchy
+	if not self.delayed_lists[config] then
+		self.delayed_lists[config] = {};
+	end
+	if not self.delayed_lists[config][section] then
+		self.delayed_lists[config][section] = {};
+	end
+	local list = self.delayed_lists[config][section][name] or cursor:get(config, section, name);
+	self.delayed_lists[config][section][name] = list;
+	return list;
+end
+
 function uci_datastore:perform_create(cursor, op)
 	local node = op.command_node;
 	local name, path = self:node_path(node);
@@ -107,7 +120,13 @@ function uci_datastore:perform_create(cursor, op)
 		local value = self:subnode_value(node, 'value');
 		cursor:set(path.config_name, path.section_name, path.option_name, value);
 	elseif name == 'list' then
-		-- TODO: Create part of the list (delayed create)
+		-- Get the delayed list. It'll be put into UCI at the end of the processing.
+		local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
+		-- Get the index and value
+		local index = self:subnode_value(node, 'index');
+		local value = self:subnode_value(node, 'value');
+		-- And store it there.
+		list[index] = value;
 	else
 		-- This can get here in case there's a create on a section and strange stuff inside.
 		return {
@@ -140,7 +159,11 @@ function uci_datastore:perform_remove(cursor, op)
 		end
 		cursor:delete(path.config_name, path.section_name, path.option_name);
 	elseif name == 'list' then
-		-- TODO: Delete part of the list (delayed delete, or something)
+		-- Get the delayed list. It'll be put into UCI at the end of the processing.
+		local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
+		-- Get the index and delete the value from the list.
+		local index = self:subnode_value(node, 'index');
+		list[index] = nil;
 	else
 		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
 		error("Unknown element to delete: " .. name);
@@ -155,7 +178,10 @@ function uci_datastore:set_config(config, defop, deferr)
 		return err;
 	else
 		local cursor = uci.cursor();
+		-- Prepare data structures.
 		self.changed = {};
+		self.delayed_lists = {}
+		-- Perform all the operations.
 		for _, op in ipairs(ops) do
 			local err;
 			if op.op == 'add-tree' then
@@ -168,11 +194,37 @@ function uci_datastore:set_config(config, defop, deferr)
 				return err;
 			end;
 		end
+		-- Push in all the delayed lists we have.
+		for config_name, config in pairs(self.delayed_lists) do
+			for section_name, section in pairs(config) do
+				for name, list in pairs(config) do
+					--[[
+					Sort the table according to the numeric value of index, but using
+					integral keys without gaps only.
+
+					Create an auxiliary table with tuples first. Sort that one and
+					extract the values only afterwards.
+					]]
+					local tuples = {};
+					for index, val in pairs(list) do
+						table.insert(tuples, {index=index, val=val});
+					end
+					list = {}
+					table.sort(tuples, function (a, b) return a.index < b.index end);
+					for _, val in pairs(list) do
+						table.insert(list, val.val);
+					end
+					-- Push the sorted one in.
+					cursor:set(config_name, section_name, name, list);
+				end
+			end
+		end
 		-- FIXME: Support some kind of callback that happens after everything is successfully prepared, to commit
 		for config in pairs(self.changed) do
 			cursor:commit(config)
 		end
 		self.changed = nil;
+		self.delayed_lists = nil;
 	end
 end
 
