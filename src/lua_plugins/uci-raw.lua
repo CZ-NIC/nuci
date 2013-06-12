@@ -137,9 +137,25 @@ function uci_datastore:perform_create(cursor, op)
 				if result then
 					return result;
 				end
+			elseif ns then
+				if ns == self.ns then
+					return {
+						msg="Unknown or misplaced element " .. name .. " in list",
+						tag="unknown element",
+						info_badelem=name,
+						info_badns=ns
+					};
+				else
+					return {
+						msg="Foreign namespace " .. ns .. " with element " .. name .. " in list",
+						tag="unknown namespace",
+						info_badelem=name,
+						info_badns=ns
+					};
+				end
+				-- Else these are stuff like empty text nodes and comments
 			end
 		end
-		-- TODO: Handle errors like stray unknown elements
 	elseif name == 'value' then
 		if path.option then
 			-- Handle the whole option at once.
@@ -153,16 +169,15 @@ function uci_datastore:perform_create(cursor, op)
 			-- And store it there.
 			list[index] = value;
 		end
-	elseif name == 'content' then
-		-- TODO: Reject. Should be created with parent already.
-	elseif name == 'type' then
-		-- TODO: Reject. Can't add or replace type.
+	elseif name == 'content' or name == 'type' or name == 'index' or name == 'name' then
+		error("Trying to create " .. name .. ", but it should have already existed and such thing should not pass the conversion");
 	elseif name == 'anonymous' then
-		-- TODO: Anonymisation could be possible. But is it worth it? Reject for now.
-	elseif name == 'index' then
-		-- TODO: Reject. Should be created with parent already.
-	elseif name == 'name' then
-		-- TODO: Reject. Should be created with parent already.
+		return {
+			msg="Can't anonymise a section, remove and readd",
+			tag="operation not supported",
+			info_badelem=name,
+			info.badns=self.ns
+		};
 	else
 		-- This can get here in case there's a create on a section and strange stuff inside.
 		return {
@@ -215,16 +230,34 @@ function uci_datastore:perform_remove(cursor, op)
 			local index = self:subnode_value(node, 'index');
 			list[index] = nil;
 		end
-	elseif name == 'content' then
-		-- TODO: Reject. Mandatory here.
-	elseif name == 'type' then
-		-- TODO: Reject. Can't remove type, or replace to start with.
+	elseif name == 'content' or name == 'type' or name == 'index' or name == 'name' then
+		if op.note == 'replace' then
+			if name == 'content' then
+				return; -- That's OK, we'll replace it in the next op.
+			end
+			-- TODO: implement?
+			return {
+				msg="Can't replace " .. name .. ", replace the whole owner",
+				tag="operation not supported",
+				bad_elemname=name,
+				bad_elemns=self.ns
+			};
+		else
+			return {
+				msg="Can't delete mandatory node " .. name,
+				tag="data missing",
+				bad_elemname=name,
+				bad_elemns=self.ns
+			};
+		end
 	elseif name == 'anonymous' then
-		-- TODO: Un-anonymisation could be possible. But is it worth it? Reject for now.
-	elseif name == 'index' then
-		-- TODO: Reject. Mandatory here.
-	elseif name == 'name' then
-		-- TODO: Reject. Mandatory here.
+		-- TODO: Implement?
+		return {
+			msg="Can't un-anonymise a section. That is possible, but makes little sense and it is hard to do.",
+			tag="operation not supported",
+			bad_elemname="anonymous",
+			bad_elemns=self.ns
+		};
 	else
 		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
 		error("Unknown element to delete: " .. name);
