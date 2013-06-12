@@ -123,7 +123,46 @@ function uci_datastore:perform_create(cursor, op)
 			info_badns=self.ns
 		};
 	elseif name == 'section' then
-		-- TODO: Create the section and iterate through the rest of XML to fill it up.
+		-- Create the section (either anonymous or not)
+		local sectype = self:subnode_value(node, 'type');
+		local anonymous = find_node_name_ns(node, 'anonymous', self.ns);
+		local name;
+		if anonymous then
+			name = cursor:add(path.config_name, sectype);
+			local name_node = find_node_name_ns(node, 'name', self.ns);
+			name_node:set_text(name);
+		else
+			cursor:add(path.config_name, path.section_name, sectype);
+		end
+		-- Now let's go over all stuff inside and recurse on it.
+		for child in node:iterate() do
+			local name, ns = child:name();
+			if ns == self.ns then
+				if name == 'option' or name == 'list' then
+					-- Fill in some stuff inside, recursively
+					local result = self:perform_create(cursor, {command_node=child});
+					if result then
+						return result;
+					end
+				elseif name == 'name' or name == 'type' or name == 'anonymous' then
+					-- We handled these here. It's OK for them to be here.
+				else
+					return {
+						msg="Unknown or misplaced element " .. name .. " in section",
+						tag="unknown element",
+						info_badns=ns,
+						info_badelem=name
+					};
+				end
+			elseif ns then
+				return {
+					msg="Foreign namespace " .. ns .. " on " .. name,
+					tag="unknown namespace",
+					info_badns=ns,
+					info_badelem=name
+				};
+			end -- Otherwise - text or comments or stuff
+		end
 	elseif name == 'option' then
 		local value = self:subnode_value(node, 'value');
 		cursor:set(path.config_name, path.section_name, path.option_name, value);
@@ -179,13 +218,8 @@ function uci_datastore:perform_create(cursor, op)
 			info_badns=self.ns
 		};
 	else
-		-- This can get here in case there's a create on a section and strange stuff inside.
-		return {
-			msg="Unknow element to create: " .. name,
-			tag="unknown element",
-			info_badelem=name,
-			info_badns=self.ns
-		};
+		-- This Can Not Happen - we filter it either in the editconfig conversion function or before recursive call
+		error("Unknown element to create: " .. name);
 	end
 	-- This config was changed, needs to be commited afterwards
 	self.changed[path.config_name] = true;
@@ -319,6 +353,7 @@ function uci_datastore:set_config(config, defop, deferr)
 			end
 		end
 		-- FIXME: Support some kind of callback that happens after everything is successfully prepared, to commit
+		-- TODO: Restart the daemons there
 		for config in pairs(self.changed) do
 			cursor:commit(config)
 		end
