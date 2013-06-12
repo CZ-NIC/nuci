@@ -176,7 +176,7 @@ function uci_datastore:perform_create(cursor, op)
 			msg="Can't anonymise a section, remove and readd",
 			tag="operation not supported",
 			info_badelem=name,
-			info.badns=self.ns
+			info_badns=self.ns
 		};
 	else
 		-- This can get here in case there's a create on a section and strange stuff inside.
