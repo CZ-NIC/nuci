@@ -29,6 +29,8 @@
 #include <libxml/tree.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include <stdbool.h>
+#include <assert.h>
 
 #define LXML2_XMLDOC		"xmlDocPtr"
 #define LXML2_XMLNODE		"xmlNodePtr"
@@ -258,6 +260,28 @@ static int lxml2xmlNode_getText(lua_State *L)
 	}
 }
 
+static int lxml2xmlNode_setText(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	const char *text = lua_tostring(L, 2);
+	if (cur->type != XML_TEXT_NODE) { // It either is a TEXT_NODE already, or we try to find one inside.
+		bool found = false;
+		for (xmlNodePtr child = cur->children; child; child = child->next)
+			if (child->type == XML_TEXT_NODE) {
+				found = true;
+				cur = child;
+				break;
+			}
+		if (!found) {
+			return luaL_error(L, "Don't know how to add text to node without one");
+		}
+	}
+	assert(cur->type == XML_TEXT_NODE);
+	xmlFree(cur->content);
+	cur->content = (xmlChar *) xmlMemoryStrdup(text);
+	return 0;
+}
+
 static int lxml2xmlNode_parent(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
@@ -278,6 +302,7 @@ static const luaL_Reg lxml2xmlNode[] = {
 	{ "iterate", lxml2xmlNode_iterate },
 	{ "attribute", lxml2xmlNode_getProp },
 	{ "text", lxml2xmlNode_getText },
+	{ "set_text", lxml2xmlNode_setText },
 	{ "parent", lxml2xmlNode_parent },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
