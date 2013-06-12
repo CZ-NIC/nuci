@@ -91,17 +91,25 @@ function uci_datastore:node_path(node)
 	return name, result;
 end
 
-function uci_datastore:get_delayed_list(cursor, config, section, name)
+function uci_datastore:get_delayed_list(cursor, path)
 	-- Create the hierarchy
+	local config, section, name = path.config_name, path.section_name, path.list_name;
 	if not self.delayed_lists[config] then
 		self.delayed_lists[config] = {};
 	end
 	if not self.delayed_lists[config][section] then
 		self.delayed_lists[config][section] = {};
 	end
-	local list = self.delayed_lists[config][section][name] or cursor:get(config, section, name);
+	local list = self.delayed_lists[config][section][name] or cursor:get(config, section, name) or {};
 	self.delayed_lists[config][section][name] = list;
 	return list;
+end
+
+function uci_datastore:set_empty_delayed_list(cursor, path)
+	-- Just to make the whole hierarchy
+	self:get_delayed_list(cursor, path)
+	local config, section, name = path.config_name, path.section_name, path.list_name;
+	self.delayed_lists[config][section][name] = {};
 end
 
 function uci_datastore:perform_create(cursor, op)
@@ -120,13 +128,41 @@ function uci_datastore:perform_create(cursor, op)
 		local value = self:subnode_value(node, 'value');
 		cursor:set(path.config_name, path.section_name, path.option_name, value);
 	elseif name == 'list' then
-		-- Get the delayed list. It'll be put into UCI at the end of the processing.
-		local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
-		-- Get the index and value
-		local index = self:subnode_value(node, 'index');
-		local value = self:subnode_value(node, 'value');
-		-- And store it there.
-		list[index] = value;
+		-- Create an empty list here (or overwrite one)
+		self:set_empty_delayed_list(cursor, path);
+		for child in node:iterate() do
+			local name, ns = child:name();
+			if name == 'value' and ns == self.ns then
+				local result = uci_datastore:perform_create(cursor, {command_node=child});
+				if result then
+					return result;
+				end
+			end
+		end
+		-- TODO: Handle errors like stray unknown elements
+	elseif name == 'value' then
+		if path.option then
+			-- Handle the whole option at once.
+			return uci_datastore:perform_create(cursor, {command_node=node});
+		else -- One value inside the list
+			-- Get the delayed list. It'll be put into UCI at the end of the processing.
+			local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
+			-- Get the index and value
+			local index = self:subnode_value(node, 'index');
+			local value = self:subnode_value(node, 'value');
+			-- And store it there.
+			list[index] = value;
+		end
+	elseif name == 'content' then
+		-- TODO: Reject. Should be created with parent already.
+	elseif name == 'type' then
+		-- TODO: Reject. Can't add or replace type.
+	elseif name == 'anonymous' then
+		-- TODO: Anonymisation could be possible. But is it worth it? Reject for now.
+	elseif name == 'index' then
+		-- TODO: Reject. Should be created with parent already.
+	elseif name == 'name' then
+		-- TODO: Reject. Should be created with parent already.
 	else
 		-- This can get here in case there's a create on a section and strange stuff inside.
 		return {
@@ -159,11 +195,36 @@ function uci_datastore:perform_remove(cursor, op)
 		end
 		cursor:delete(path.config_name, path.section_name, path.option_name);
 	elseif name == 'list' then
-		-- Get the delayed list. It'll be put into UCI at the end of the processing.
-		local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
-		-- Get the index and delete the value from the list.
-		local index = self:subnode_value(node, 'index');
-		list[index] = nil;
+		-- Delete the list by making an empty one there. The thing at the bottom will remove it.
+		self.set_empty_delayed_list(cursor, path);
+	elseif name == 'value' then
+		if path.option then
+			if op.note ~= 'replace' then
+				return {
+					msg="The value element is mandatory",
+					tag="missing element",
+					info_badelem='value',
+					info_badns=self.ns
+				};
+			end
+			-- If it is replace, that's OK, it'll just be rewritten in next op.
+		else
+			-- Get the delayed list. It'll be put into UCI at the end of the processing.
+			local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
+			-- Get the index and delete the value from the list.
+			local index = self:subnode_value(node, 'index');
+			list[index] = nil;
+		end
+	elseif name == 'content' then
+		-- TODO: Reject. Mandatory here.
+	elseif name == 'type' then
+		-- TODO: Reject. Can't remove type, or replace to start with.
+	elseif name == 'anonymous' then
+		-- TODO: Un-anonymisation could be possible. But is it worth it? Reject for now.
+	elseif name == 'index' then
+		-- TODO: Reject. Mandatory here.
+	elseif name == 'name' then
+		-- TODO: Reject. Mandatory here.
 	else
 		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
 		error("Unknown element to delete: " .. name);
@@ -198,24 +259,29 @@ function uci_datastore:set_config(config, defop, deferr)
 		for config_name, config in pairs(self.delayed_lists) do
 			for section_name, section in pairs(config) do
 				for name, list in pairs(config) do
-					--[[
-					Sort the table according to the numeric value of index, but using
-					integral keys without gaps only.
+					if next(list) then
+						--[[
+						Sort the table according to the numeric value of index, but using
+						integral keys without gaps only.
 
-					Create an auxiliary table with tuples first. Sort that one and
-					extract the values only afterwards.
-					]]
-					local tuples = {};
-					for index, val in pairs(list) do
-						table.insert(tuples, {index=index, val=val});
+						Create an auxiliary table with tuples first. Sort that one and
+						extract the values only afterwards.
+						]]
+						local tuples = {};
+						for index, val in pairs(list) do
+							table.insert(tuples, {index=index, val=val});
+						end
+						list = {}
+						table.sort(tuples, function (a, b) return a.index < b.index end);
+						for _, val in pairs(list) do
+							table.insert(list, val.val);
+						end
+						-- Push the sorted one in.
+						cursor:set(config_name, section_name, name, list);
+					else
+						-- Empty list just doesn't exist.
+						cursor:delete(config_name, section_name, name);
 					end
-					list = {}
-					table.sort(tuples, function (a, b) return a.index < b.index end);
-					for _, val in pairs(list) do
-						table.insert(list, val.val);
-					end
-					-- Push the sorted one in.
-					cursor:set(config_name, section_name, name, list);
 				end
 			end
 		end
