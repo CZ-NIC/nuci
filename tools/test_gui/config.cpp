@@ -1,11 +1,13 @@
 #include "config.h"
 
 #include <QProcess>
+#include <QtXml>
 
 #include <cassert>
 #include <cstdio>
 
 #define MARK "]]>]]>"
+const QString netconfUri("urn:ietf:params:xml:ns:netconf:base:1.0");
 
 Config::Config() :
 	process(NULL)
@@ -50,7 +52,7 @@ void Config::data() {
 		incoming.remove(0, index + strlen(MARK));
 		printf("Received XML:\n%s\n\n", message.data());
 
-
+		handleMessage(message);
 	}
 }
 
@@ -70,4 +72,34 @@ void Config::writeData(QByteArray &array) {
 	qint64 written = process->write(array);
 	assert(written > 0);
 	array.remove(0, written);
+}
+
+void Config::handleMessage(const QByteArray &message) {
+	QDomDocument xml;
+	bool ok = xml.setContent(message);
+	assert(ok);
+	/*
+	 * We don't check the namespace here. Qt seems to return empty string
+	 * (I must be doing something wrong, obviously), and this is dirty
+	 * test tool only anyway.
+	 */
+	const QString &name(xml.documentElement().tagName());
+	if (name == "hello") {
+		handleHello(xml);
+		return;
+	} else if (name == "rpc") {
+		handleRpc(xml);
+		return;
+	}
+	assert(false);
+}
+
+void Config::handleRpc(const QDomDocument &rpc) {
+
+}
+
+void Config::handleHello(const QDomDocument &) {
+	connectButton->setEnabled(true);
+	downloadButton->setEnabled(true);
+	downloadButton->click();
 }

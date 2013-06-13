@@ -6,6 +6,7 @@ TEMPLATE = app
 TARGET = 
 DEPENDPATH += .
 INCLUDEPATH += .
+QT += xml
 
 # Input
 SOURCES += main.cpp config.cpp

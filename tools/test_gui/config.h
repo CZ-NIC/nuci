@@ -6,6 +6,7 @@
 #include "ui_config.h"
 
 class QProcess;
+class QDomDocument;
 
 class Config : public QMainWindow, private Ui::Config {
 	Q_OBJECT;
@@ -20,6 +21,9 @@ private:
 	void disconnectNuci();
 	void sendData(const QString &data);
 	void writeData(QByteArray &data);
+	void handleMessage(const QByteArray &data);
+	void handleHello(const QDomDocument &hello);
+	void handleRpc(const QDomDocument &rpc);
 	QProcess *process;
 	QByteArray incoming;
 };
