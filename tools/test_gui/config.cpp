@@ -25,6 +25,7 @@ void Config::on_connectButton_clicked() {
 
 void Config::connectNuci() {
 	incoming.clear();
+	rpcCallbacks.clear();
 	// Create and connect the process
 	process = new QProcess(this);
 	connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(data()));
@@ -93,7 +94,7 @@ void Config::handleMessage(const QByteArray &message) {
 	if (name == "hello") {
 		handleHello(xml);
 		return;
-	} else if (name == "rpc") {
+	} else if (name == "rpc-reply") {
 		handleRpc(xml);
 		return;
 	}
@@ -101,7 +102,14 @@ void Config::handleMessage(const QByteArray &message) {
 }
 
 void Config::handleRpc(const QDomDocument &rpc) {
-
+	QString sid(rpc.documentElement().attribute("message-id"));
+	bool ok = true;
+	size_t id = sid.toULongLong(&ok);
+	assert(ok);
+	if (rpcCallbacks.contains(id)) {
+		(this->*rpcCallbacks[id])(rpc, id);
+		rpcCallbacks.remove(id);
+	}
 }
 
 void Config::handleHello(const QDomDocument &) {
@@ -110,7 +118,19 @@ void Config::handleHello(const QDomDocument &) {
 	downloadButton->click();
 }
 
-void Config::sendRpc(const QString &xml) {
+size_t Config::sendRpc(const QString &xml, RpcCallback callback) {
 	static size_t id = 0;
-	sendData(QString("<?xml version='1.0' encoding='UTF-8'?><rpc xmlns='urn:ietf:params:xml:ns:netconf:base:1.0' message-id='%1'>%2</rpc>").arg(id ++).arg(xml));
+	sendData(QString("<?xml version='1.0' encoding='UTF-8'?><rpc xmlns='urn:ietf:params:xml:ns:netconf:base:1.0' message-id='%1'>%2</rpc>").arg(++id).arg(xml));
+	if (callback) {
+		rpcCallbacks[id] = callback;
+	}
+	return id;
+}
+
+void Config::on_downloadButton_clicked() {
+	sendRpc("<get-config><source><running/></source></get-config>", &Config::configDownloaded);
+}
+
+void Config::configDownloaded(const QDomDocument &rpc, size_t) {
+	printf("Configuration downloaded\n");
 }
