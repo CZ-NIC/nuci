@@ -62,6 +62,8 @@ void Config::data() {
 void Config::terminated() {
 	connectButton->setEnabled(true);
 	connectButton->setText("Connect");
+	process->deleteLater();
+	process = NULL;
 }
 
 void Config::sendData(const QString &data) {
