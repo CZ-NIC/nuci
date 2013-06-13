@@ -24,6 +24,7 @@ private:
 	void handleMessage(const QByteArray &data);
 	void handleHello(const QDomDocument &hello);
 	void handleRpc(const QDomDocument &rpc);
+	void sendRpc(const QString &xml);
 	QProcess *process;
 	QByteArray incoming;
 };

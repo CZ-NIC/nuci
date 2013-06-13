@@ -39,7 +39,10 @@ void Config::connectNuci() {
 }
 
 void Config::disconnectNuci() {
-
+	sendRpc("<close-session/>");
+	process->closeWriteChannel();
+	connectButton->setEnabled(false);
+	downloadButton->setEnabled(false);
 }
 
 void Config::data() {
@@ -57,7 +60,8 @@ void Config::data() {
 }
 
 void Config::terminated() {
-	// The remote terminated
+	connectButton->setEnabled(true);
+	connectButton->setText("Connect");
 }
 
 void Config::sendData(const QString &data) {
@@ -102,4 +106,9 @@ void Config::handleHello(const QDomDocument &) {
 	connectButton->setEnabled(true);
 	downloadButton->setEnabled(true);
 	downloadButton->click();
+}
+
+void Config::sendRpc(const QString &xml) {
+	static size_t id = 0;
+	sendData(QString("<?xml version='1.0' encoding='UTF-8'?><rpc xmlns='urn:ietf:params:xml:ns:netconf:base:1.0' message-id='%1'>%2</rpc>").arg(id ++).arg(xml));
 }
