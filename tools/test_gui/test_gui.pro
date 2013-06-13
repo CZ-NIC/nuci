@@ -9,6 +9,6 @@ INCLUDEPATH += .
 QT += xml
 
 # Input
-SOURCES += main.cpp config.cpp
-HEADERS += config.h
+SOURCES += main.cpp config.cpp cmodel.cpp
+HEADERS += config.h cmodel.h
 FORMS += config.ui

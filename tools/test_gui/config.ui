@@ -44,13 +44,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QTreeWidget" name="configView">
-      <column>
-       <property name="text">
-        <string notr="true">1</string>
-       </property>
-      </column>
-     </widget>
+     <widget class="QTreeView" name="configView"/>
     </item>
     <item>
      <widget class="QTextEdit" name="xmlEdit"/>

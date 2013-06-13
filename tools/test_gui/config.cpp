@@ -1,4 +1,5 @@
 #include "config.h"
+#include "cmodel.h"
 
 #include <QProcess>
 #include <QtXml>
@@ -83,7 +84,7 @@ void Config::writeData(QByteArray &array) {
 
 void Config::handleMessage(const QByteArray &message) {
 	QDomDocument xml;
-	bool ok = xml.setContent(message);
+	bool ok = xml.setContent(message, true);
 	assert(ok);
 	/*
 	 * We don't check the namespace here. Qt seems to return empty string
@@ -133,4 +134,6 @@ void Config::on_downloadButton_clicked() {
 
 void Config::configDownloaded(const QDomDocument &rpc, size_t) {
 	printf("Configuration downloaded\n");
+	// FIXME: This leaks
+	configView->setModel(new ConfigModel(rpc));
 }
