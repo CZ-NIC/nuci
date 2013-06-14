@@ -12,14 +12,15 @@ public:
 
 class ConfigModel::Option : public Elem {
 protected:
-	Option(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
+	Option(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s, const QString &val) :
 		name(optionElement.namedItem("name").toElement().text()),
+		value(val),
 		nameIdx(model->createIndex(order, 0, this)),
 		valIdx(model->createIndex(order, 1, this)),
 		parent(s)
 	{}
 public:
-	const QString name;
+	const QString name, value;
 	const QModelIndex nameIdx, valIdx;
 	const Section *parent;
 };
@@ -27,14 +28,14 @@ public:
 class ConfigModel::SimpleOption : public Option {
 public:
 	SimpleOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
-		Option(optionElement, model, order, s)
+		Option(optionElement, model, order, s, optionElement.namedItem("value").toElement().text())
 	{}
 };
 
 class ConfigModel::ListOption : public Option {
 public:
 	ListOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
-		Option(optionElement, model, order, s)
+		Option(optionElement, model, order, s, "")
 	{}
 };
 
@@ -167,7 +168,7 @@ QVariant ConfigModel::data(const QModelIndex &index, int role) const {
 			if (s)
 				return index.column() ? s->type : s->name;
 			if (o)
-				return index.column() ? "" : o->name;
+				return index.column() ? o->value : o->name;
 		default:
 			printf("Other\n");
 			return QVariant();
