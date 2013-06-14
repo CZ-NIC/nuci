@@ -47,6 +47,43 @@
      <widget class="QTreeView" name="configView"/>
     </item>
     <item>
+     <widget class="QWidget" name="editWidget" native="true">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QPushButton" name="createButton">
+         <property name="text">
+          <string>Create</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="mergeButton">
+         <property name="text">
+          <string>Merge</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="replaceButton">
+         <property name="text">
+          <string>Replace</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="removeButton">
+         <property name="text">
+          <string>Remove</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <widget class="QTextEdit" name="xmlEdit"/>
     </item>
     <item>

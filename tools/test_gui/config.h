@@ -16,6 +16,7 @@ public:
 private slots:
 	void on_connectButton_clicked();
 	void on_downloadButton_clicked();
+	void on_configView_clicked();
 	void data();
 	void terminated();
 private:

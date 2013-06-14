@@ -136,4 +136,9 @@ void Config::configDownloaded(const QDomDocument &rpc, size_t) {
 	printf("Configuration downloaded\n");
 	// FIXME: This leaks
 	configView->setModel(new ConfigModel(rpc));
+	on_configView_clicked();
+}
+
+void Config::on_configView_clicked() {
+	editWidget->setEnabled(process && configView->currentIndex().isValid());
 }
