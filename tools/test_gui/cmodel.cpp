@@ -98,9 +98,7 @@ public:
 	const QModelIndex nameIdx, typeIdx;
 	const ConfigFile *parent;
 	QList<const Option *> options;
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
-
-	}
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const;
 };
 
 class ConfigModel::ConfigFile : public Elem {
@@ -126,9 +124,38 @@ public:
 		name.appendChild(nameText);
 		config.appendChild(name);
 		uci.appendChild(config);
+		if (include_subs)
+			foreach(const Section *s, sections)
+				s->getNode(document, true, &config);
 		return config;
 	}
 };
+
+QDomElement ConfigModel::Section::getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+	QDomElement pelem;
+	if (parentNode)
+		pelem = *parentNode;
+	else
+		pelem = parent->getNode(document, false, NULL);
+	QDomElement section(document.createElement("section"));
+	QDomElement name(document.createElement("name"));
+	QDomText nameText(document.createTextNode(this->name));
+	name.appendChild(nameText);
+	section.appendChild(name);
+	QDomElement type(document.createElement("type"));
+	QDomText typeText(document.createTextNode(this->type));
+	type.appendChild(typeText);
+	section.appendChild(type);
+	if (anonymous) {
+		QDomElement an(document.createElement("anonymous"));
+		section.appendChild(an);
+	}
+	if (include_subs)
+		foreach(const Option *opt, options)
+			opt->getNode(document, true, &section);
+	pelem.appendChild(section);
+	return section;
+}
 
 ConfigModel::ConfigModel(const QDomDocument &configData_) :
 	configData(configData_)
