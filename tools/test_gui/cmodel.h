@@ -15,7 +15,7 @@ public:
 	virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	// Get the node from the given element. Fill it in to the document that
 	// should already have root and the <uci xmlns="http://…"/> element.
-	QDomElement getNode(const QModelIndex &index, QDomDocument &document, bool include_subs) const;
+	QDomElement getNode(const QModelIndex &index, QDomDocument &document, bool include_subs, bool get_content) const;
 private:
 	class Elem;
 	class ConfigFile;

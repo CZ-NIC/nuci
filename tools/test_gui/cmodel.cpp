@@ -7,7 +7,7 @@
 
 class ConfigModel::Elem {
 public:
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const = 0;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, bool get_content, QDomElement *parentNode) const = 0;
 	virtual ~Elem() {}
 };
 
@@ -31,7 +31,7 @@ public:
 	SimpleOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
 		Option(optionElement, model, order, s, optionElement.namedItem("value").toElement().text())
 	{}
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, bool get_content, QDomElement *parentNode) const;
 };
 
 class ConfigModel::Value : public Elem {
@@ -46,7 +46,7 @@ public:
 	const QString name, value;
 	const QModelIndex nameIdx, valueIdx;
 	const ListOption *parent;
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, bool get_content, QDomElement *parentNode) const;
 };
 
 class ConfigModel::ListOption : public Option {
@@ -59,7 +59,7 @@ public:
 			values << new Value(valueElems.at(i).toElement(), model, i, this);
 	}
 	QList<const Value *> values;
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, bool get_content, QDomElement *parentNode) const;
 };
 
 class ConfigModel::Section : public Elem {
@@ -92,7 +92,7 @@ public:
 	const QModelIndex nameIdx, typeIdx;
 	const ConfigFile *parent;
 	QList<const Option *> options;
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, bool get_content, QDomElement *parentNode) const;
 };
 
 class ConfigModel::ConfigFile : public Elem {
@@ -109,7 +109,7 @@ public:
 	const QString name;
 	QList<const Section *> sections;
 	const QModelIndex index, tidx;
-	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, bool, QDomElement *parentNode) const {
 		assert(!parentNode);
 		QDomNode uci(document.elementsByTagName("uci").at(0));
 		QDomElement config(document.createElement("config"));
@@ -120,53 +120,57 @@ public:
 		uci.appendChild(config);
 		if (include_subs)
 			foreach(const Section *s, sections)
-				s->getNode(document, true, &config);
+				s->getNode(document, true, true, &config);
 		return config;
 	}
 };
 
-QDomElement ConfigModel::Section::getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+QDomElement ConfigModel::Section::getNode(QDomDocument &document, bool include_subs, bool get_content, QDomElement *parentNode) const {
 	QDomElement section(document.createElement("section"));
 	QDomElement name(document.createElement("name"));
 	QDomText nameText(document.createTextNode(this->name));
 	name.appendChild(nameText);
 	section.appendChild(name);
-	QDomElement type(document.createElement("type"));
-	QDomText typeText(document.createTextNode(this->type));
-	type.appendChild(typeText);
-	section.appendChild(type);
-	if (anonymous) {
-		QDomElement an(document.createElement("anonymous"));
-		section.appendChild(an);
+	if (get_content) {
+		QDomElement type(document.createElement("type"));
+		QDomText typeText(document.createTextNode(this->type));
+		type.appendChild(typeText);
+		section.appendChild(type);
+		if (anonymous) {
+			QDomElement an(document.createElement("anonymous"));
+			section.appendChild(an);
+		}
 	}
 	if (include_subs)
 		foreach(const Option *opt, options)
-			opt->getNode(document, true, &section);
+			opt->getNode(document, true, true, &section);
 	if (parentNode)
 		parentNode->appendChild(section);
 	else
-		parent->getNode(document, false, NULL).appendChild(section);
+		parent->getNode(document, false, false, NULL).appendChild(section);
 	return section;
 }
 
-QDomElement ConfigModel::SimpleOption::getNode(QDomDocument &document, bool, QDomElement *parentNode) const {
+QDomElement ConfigModel::SimpleOption::getNode(QDomDocument &document, bool, bool get_content, QDomElement *parentNode) const {
 	QDomElement option(document.createElement("option"));
 	QDomElement name(document.createElement("name"));
 	QDomText nameText(document.createTextNode(this->name));
 	name.appendChild(nameText);
 	option.appendChild(name);
-	QDomElement value(document.createElement("value"));
-	QDomText valueText(document.createTextNode(this->value));
-	value.appendChild(valueText);
-	option.appendChild(value);
+	if (get_content) {
+		QDomElement value(document.createElement("value"));
+		QDomText valueText(document.createTextNode(this->value));
+		value.appendChild(valueText);
+		option.appendChild(value);
+	}
 	if (parentNode)
 		parentNode->appendChild(option);
 	else
-		parent->getNode(document, false, NULL).appendChild(option);
+		parent->getNode(document, false, false, NULL).appendChild(option);
 	return option;
 }
 
-QDomElement ConfigModel::ListOption::getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+QDomElement ConfigModel::ListOption::getNode(QDomDocument &document, bool include_subs, bool, QDomElement *parentNode) const {
 	QDomElement list(document.createElement("list"));
 	QDomElement name(document.createElement("name"));
 	QDomText nameText(document.createTextNode(this->name));
@@ -174,28 +178,30 @@ QDomElement ConfigModel::ListOption::getNode(QDomDocument &document, bool includ
 	list.appendChild(name);
 	if (include_subs)
 		foreach(const Value *v, values)
-			v->getNode(document, true, &list);
+			v->getNode(document, true, true, &list);
 	if (parentNode)
 		parentNode->appendChild(list);
 	else
-		parent->getNode(document, false, NULL).appendChild(list);
+		parent->getNode(document, false, false, NULL).appendChild(list);
 	return list;
 }
 
-QDomElement ConfigModel::Value::getNode(QDomDocument &document, bool, QDomElement *parentNode) const {
+QDomElement ConfigModel::Value::getNode(QDomDocument &document, bool, bool get_content, QDomElement *parentNode) const {
 	QDomElement value(document.createElement("value"));
 	QDomElement index(document.createElement("index"));
 	QDomText indexText(document.createTextNode(this->name));
 	index.appendChild(indexText);
         value.appendChild(index);
-	QDomElement content(document.createElement("content"));
-	QDomText contentText(document.createTextNode(this->value));
-	content.appendChild(contentText);
-        value.appendChild(content);
+	if (get_content) {
+		QDomElement content(document.createElement("content"));
+		QDomText contentText(document.createTextNode(this->value));
+		content.appendChild(contentText);
+		value.appendChild(content);
+	}
 	if (parentNode)
 		parentNode->appendChild(value);
 	else
-		parent->getNode(document, false, NULL).appendChild(value);
+		parent->getNode(document, false, false, NULL).appendChild(value);
 	return value;
 }
 
@@ -317,7 +323,7 @@ QVariant ConfigModel::headerData(int section, Qt::Orientation orientation, int r
 	return section ? "type/value" : "name";
 }
 
-QDomElement ConfigModel::getNode(const QModelIndex &index, QDomDocument &document, bool include_subs) const {
+QDomElement ConfigModel::getNode(const QModelIndex &index, QDomDocument &document, bool include_subs, bool get_content) const {
 	const Elem *data = static_cast<const Elem *>(index.internalPointer());
-	return data->getNode(document, include_subs, NULL);
+	return data->getNode(document, include_subs, get_content, NULL);
 }

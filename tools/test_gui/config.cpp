@@ -147,7 +147,7 @@ void Config::on_configView_clicked() {
 void Config::on_removeButton_clicked() {
 	QDomDocument doc;
 	doc.setContent(QString("<edit-config><target><running/></target><config><uci xmlns='http://www.nic.cz/ns/router/uci-raw'/></config></edit-config>"));
-	QDomElement node(model->getNode(configView->currentIndex(), doc, false));
+	QDomElement node(model->getNode(configView->currentIndex(), doc, false, false));
 	node.setAttribute("xmlns:nc", netconfUri);
 	node.setAttribute("nc:operation", "remove");
 	xmlEdit->setText(doc.toString(4));
