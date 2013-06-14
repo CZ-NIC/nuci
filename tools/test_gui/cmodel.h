@@ -17,9 +17,12 @@ private:
 	class Elem;
 	class ConfigFile;
 	class Section;
-	QDomDocument configData;
+	class Option;
+	class SimpleOption;
+	class ListOption;
+	const QDomDocument configData;
 	// FIXME: These things just leak. Nobody cares for now.
-	QList<ConfigFile *> configs;
+	QList<const ConfigFile *> configs;
 };
 
 #endif

@@ -10,6 +10,34 @@ public:
 	virtual ~Elem() {}
 };
 
+class ConfigModel::Option : public Elem {
+protected:
+	Option(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
+		name(optionElement.namedItem("name").toElement().text()),
+		nameIdx(model->createIndex(order, 0, this)),
+		valIdx(model->createIndex(order, 1, this)),
+		parent(s)
+	{}
+public:
+	const QString name;
+	const QModelIndex nameIdx, valIdx;
+	const Section *parent;
+};
+
+class ConfigModel::SimpleOption : public Option {
+public:
+	SimpleOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
+		Option(optionElement, model, order, s)
+	{}
+};
+
+class ConfigModel::ListOption : public Option {
+public:
+	ListOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
+		Option(optionElement, model, order, s)
+	{}
+};
+
 class ConfigModel::Section : public Elem {
 public:
 	Section(const QDomElement &sectionElement, const ConfigModel *model, int order, const ConfigFile *cf) :
@@ -19,11 +47,27 @@ public:
 		nameIdx(model->createIndex(order, 0, this)),
 		typeIdx(model->createIndex(order, 1, this)),
 		parent(cf)
-	{}
+	{
+		const QDomNodeList &children(sectionElement.childNodes());
+		for (int i = 0; i < children.count(); i ++) {
+			if (!children.at(i).isElement())
+				continue;
+			const QDomElement &child(children.at(i).toElement());
+			const QString &ns(child.namespaceURI());
+			if (ns != CONFIG_URI)
+				continue;
+			const QString &name(child.tagName());
+			if (name == "option")
+				options << new SimpleOption(child, model, options.count(), this);
+			else if (name == "list")
+				options << new ListOption(child, model, options.count(), this);
+		}
+	}
 	const QString name, type;
 	const bool anonymous;
 	const QModelIndex nameIdx, typeIdx;
 	const ConfigFile *parent;
+	QList<const Option *> options;
 };
 
 class ConfigModel::ConfigFile : public Elem {
@@ -39,7 +83,7 @@ public:
 			sections << new Section(sectionElements.at(i).toElement(), model, i, this);
 	}
 	const QString name;
-	QList<Section *> sections;
+	QList<const Section *> sections;
 	const QModelIndex index, tidx;
 };
 
@@ -56,9 +100,13 @@ QModelIndex ConfigModel::index(int row, int column, const QModelIndex &parent) c
 	if (parent.isValid()) {
 		const Elem *data = static_cast<const Elem *>(parent.internalPointer());
 		const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
+		const Section *s = dynamic_cast<const Section *>(data);
 		if (cf) {
-			Section *s = cf->sections[row];
+			const Section *s = cf->sections[row];
 			return column ? s->typeIdx : s->nameIdx;
+		} else if (s) {
+			const Option *o = s->options[row];
+			return column ? o->valIdx : o->nameIdx;
 		} else
 			assert(0);
 	} else
@@ -73,6 +121,9 @@ QModelIndex ConfigModel::parent(const QModelIndex &index) const {
 	const Section *s = dynamic_cast<const Section *>(data);
 	if (s)
 		return s->parent->index;
+	const Option *o = dynamic_cast<const Option *>(data);
+	if (o)
+		return o->parent->nameIdx;
 	assert(0);
 }
 
@@ -80,8 +131,11 @@ int ConfigModel::rowCount(const QModelIndex &parent) const {
 	if (parent.isValid()) {
 		const Elem *data = static_cast<const Elem *>(parent.internalPointer());
 		const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
+		const Section *s = dynamic_cast<const Section *>(data);
 		if (cf)
 			return cf->sections.size();
+		else if (s)
+			return s->options.size();
 		else
 			return 0;
 	} else
@@ -92,7 +146,8 @@ int ConfigModel::columnCount(const QModelIndex &parent) const {
 	if (parent.isValid()) {
 		const Elem *data = static_cast<const Elem *>(parent.internalPointer());
 		const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
-		if (cf)
+		const Section *s = dynamic_cast<const Section *>(data);
+		if (cf || s)
 			return 2;
 		else
 			return 0;
@@ -104,12 +159,15 @@ QVariant ConfigModel::data(const QModelIndex &index, int role) const {
 	const Elem *data = static_cast<const Elem *>(index.internalPointer());
 	const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
 	const Section *s = dynamic_cast<const Section *>(data);
+	const Option *o = dynamic_cast<const Option *>(data);
 	switch (role) {
 		case Qt::DisplayRole:
 			if (cf)
 				return index.column() ? "config" : cf->name;
 			if (s)
 				return index.column() ? s->type : s->name;
+			if (o)
+				return index.column() ? "" : o->name;
 		default:
 			printf("Other\n");
 			return QVariant();
