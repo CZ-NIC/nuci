@@ -135,10 +135,18 @@ void Config::on_downloadButton_clicked() {
 void Config::configDownloaded(const QDomDocument &rpc, size_t) {
 	printf("Configuration downloaded\n");
 	// FIXME: This leaks
-	configView->setModel(new ConfigModel(rpc));
+	model = new ConfigModel(rpc);
+	configView->setModel(model);
 	on_configView_clicked();
 }
 
 void Config::on_configView_clicked() {
 	editWidget->setEnabled(process && configView->currentIndex().isValid());
+}
+
+void Config::on_removeButton_clicked() {
+	QDomDocument doc;
+	doc.setContent(QString("<edit-config><target><running/></target><config><uci xmlns='http://www.nic.cz/ns/router/uci-raw'/></config></edit-config>"));
+	model->getNode(configView->currentIndex(), doc, false);
+	xmlEdit->setText(doc.toString(4));
 }

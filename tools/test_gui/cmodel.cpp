@@ -7,6 +7,7 @@
 
 class ConfigModel::Elem {
 public:
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const = 0;
 	virtual ~Elem() {}
 };
 
@@ -30,6 +31,9 @@ public:
 	SimpleOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
 		Option(optionElement, model, order, s, optionElement.namedItem("value").toElement().text())
 	{}
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+
+	}
 };
 
 class ConfigModel::Value : public Elem {
@@ -44,6 +48,9 @@ public:
 	const QString name, value;
 	const QModelIndex nameIdx, valueIdx;
 	const ListOption *parent;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+
+	}
 };
 
 class ConfigModel::ListOption : public Option {
@@ -56,6 +63,9 @@ public:
 			values << new Value(valueElems.at(i).toElement(), model, i, this);
 	}
 	QList<const Value *> values;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+
+	}
 };
 
 class ConfigModel::Section : public Elem {
@@ -88,6 +98,9 @@ public:
 	const QModelIndex nameIdx, typeIdx;
 	const ConfigFile *parent;
 	QList<const Option *> options;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+
+	}
 };
 
 class ConfigModel::ConfigFile : public Elem {
@@ -104,6 +117,17 @@ public:
 	const QString name;
 	QList<const Section *> sections;
 	const QModelIndex index, tidx;
+	virtual QDomElement getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+		assert(!parentNode);
+		QDomNode uci(document.elementsByTagName("uci").at(0));
+		QDomElement config(document.createElement("config"));
+		QDomElement name(document.createElement("name"));
+		QDomText nameText(document.createTextNode(this->name));
+		name.appendChild(nameText);
+		config.appendChild(name);
+		uci.appendChild(config);
+		return config;
+	}
 };
 
 ConfigModel::ConfigModel(const QDomDocument &configData_) :
@@ -221,4 +245,9 @@ QVariant ConfigModel::headerData(int section, Qt::Orientation orientation, int r
 	if (orientation != Qt::Horizontal || role != Qt::DisplayRole)
 		return QVariant();
 	return section ? "type/value" : "name";
+}
+
+QDomElement ConfigModel::getNode(const QModelIndex &index, QDomDocument &document, bool include_subs) const {
+	const Elem *data = static_cast<const Elem *>(index.internalPointer());
+	return data->getNode(document, include_subs, NULL);
 }

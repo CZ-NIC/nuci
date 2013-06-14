@@ -7,6 +7,7 @@
 
 class QProcess;
 class QDomDocument;
+class ConfigModel;
 
 class Config : public QMainWindow, private Ui::Config {
 	Q_OBJECT;
@@ -16,6 +17,7 @@ public:
 private slots:
 	void on_connectButton_clicked();
 	void on_downloadButton_clicked();
+	void on_removeButton_clicked();
 	void on_configView_clicked();
 	void data();
 	void terminated();
@@ -32,6 +34,7 @@ private:
 	QProcess *process;
 	QByteArray incoming;
 	QHash<size_t, RpcCallback> rpcCallbacks;
+	ConfigModel *model;
 };
 
 #endif
