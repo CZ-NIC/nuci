@@ -166,10 +166,37 @@ QDomElement ConfigModel::SimpleOption::getNode(QDomDocument &document, bool, QDo
 	return option;
 }
 
-QDomElement ConfigModel::ListOption::getNode(QDomDocument &document, bool, QDomElement *parentNode) const {
+QDomElement ConfigModel::ListOption::getNode(QDomDocument &document, bool include_subs, QDomElement *parentNode) const {
+	QDomElement list(document.createElement("list"));
+	QDomElement name(document.createElement("name"));
+	QDomText nameText(document.createTextNode(this->name));
+	name.appendChild(nameText);
+	list.appendChild(name);
+	if (include_subs)
+		foreach(const Value *v, values)
+			v->getNode(document, true, &list);
+	if (parentNode)
+		parentNode->appendChild(list);
+	else
+		parent->getNode(document, false, NULL).appendChild(list);
+	return list;
 }
 
 QDomElement ConfigModel::Value::getNode(QDomDocument &document, bool, QDomElement *parentNode) const {
+	QDomElement value(document.createElement("value"));
+	QDomElement index(document.createElement("index"));
+	QDomText indexText(document.createTextNode(this->name));
+	index.appendChild(indexText);
+        value.appendChild(index);
+	QDomElement content(document.createElement("content"));
+	QDomText contentText(document.createTextNode(this->value));
+	content.appendChild(contentText);
+        value.appendChild(content);
+	if (parentNode)
+		parentNode->appendChild(value);
+	else
+		parent->getNode(document, false, NULL).appendChild(value);
+	return value;
 }
 
 
