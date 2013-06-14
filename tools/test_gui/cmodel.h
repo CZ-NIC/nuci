@@ -20,6 +20,7 @@ private:
 	class Option;
 	class SimpleOption;
 	class ListOption;
+	class Value;
 	const QDomDocument configData;
 	// FIXME: These things just leak. Nobody cares for now.
 	QList<const ConfigFile *> configs;

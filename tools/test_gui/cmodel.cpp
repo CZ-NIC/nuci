@@ -32,11 +32,30 @@ public:
 	{}
 };
 
+class ConfigModel::Value : public Elem {
+public:
+	Value(const QDomElement &valueElement, const ConfigModel *model, int order, const ListOption *o) :
+		name(valueElement.namedItem("index").toElement().text()),
+		value(valueElement.namedItem("content").toElement().text()),
+		nameIdx(model->createIndex(order, 0, this)),
+		valueIdx(model->createIndex(order, 1, this)),
+		parent(o)
+	{}
+	const QString name, value;
+	const QModelIndex nameIdx, valueIdx;
+	const ListOption *parent;
+};
+
 class ConfigModel::ListOption : public Option {
 public:
 	ListOption(const QDomElement &optionElement, const ConfigModel *model, int order, const Section *s) :
 		Option(optionElement, model, order, s, "")
-	{}
+	{
+		const QDomNodeList &valueElems(optionElement.elementsByTagNameNS(CONFIG_URI, "value"));
+		for (int i = 0; i < valueElems.count(); i ++)
+			values << new Value(valueElems.at(i).toElement(), model, i, this);
+	}
+	QList<const Value *> values;
 };
 
 class ConfigModel::Section : public Elem {
@@ -78,7 +97,6 @@ public:
 		index(model->createIndex(order, 0, this)),
 		tidx(model->createIndex(order, 1, this))
 	{
-		printf("Created config file %s\n", name.toLocal8Bit().data());
 		const QDomNodeList &sectionElements(configElement.elementsByTagNameNS(CONFIG_URI, "section"));
 		for (int i = 0; i < sectionElements.count(); i ++)
 			sections << new Section(sectionElements.at(i).toElement(), model, i, this);
@@ -102,12 +120,16 @@ QModelIndex ConfigModel::index(int row, int column, const QModelIndex &parent) c
 		const Elem *data = static_cast<const Elem *>(parent.internalPointer());
 		const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
 		const Section *s = dynamic_cast<const Section *>(data);
+		const ListOption *l = dynamic_cast<const ListOption *>(data);
 		if (cf) {
 			const Section *s = cf->sections[row];
 			return column ? s->typeIdx : s->nameIdx;
 		} else if (s) {
 			const Option *o = s->options[row];
 			return column ? o->valIdx : o->nameIdx;
+		} else if (l) {
+			const Value *v = l->values[row];
+			return column ? v->valueIdx : v->nameIdx;
 		} else
 			assert(0);
 	} else
@@ -125,6 +147,9 @@ QModelIndex ConfigModel::parent(const QModelIndex &index) const {
 	const Option *o = dynamic_cast<const Option *>(data);
 	if (o)
 		return o->parent->nameIdx;
+	const Value *v = dynamic_cast<const Value *>(data);
+	if (v)
+		return v->parent->nameIdx;
 	assert(0);
 }
 
@@ -133,10 +158,13 @@ int ConfigModel::rowCount(const QModelIndex &parent) const {
 		const Elem *data = static_cast<const Elem *>(parent.internalPointer());
 		const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
 		const Section *s = dynamic_cast<const Section *>(data);
+		const ListOption *l = dynamic_cast<const ListOption *>(data);
 		if (cf)
 			return cf->sections.size();
 		else if (s)
 			return s->options.size();
+		else if (l)
+			return l->values.size();
 		else
 			return 0;
 	} else
@@ -148,7 +176,8 @@ int ConfigModel::columnCount(const QModelIndex &parent) const {
 		const Elem *data = static_cast<const Elem *>(parent.internalPointer());
 		const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
 		const Section *s = dynamic_cast<const Section *>(data);
-		if (cf || s)
+		const ListOption *l = dynamic_cast<const ListOption *>(data);
+		if (cf || s || l)
 			return 2;
 		else
 			return 0;
@@ -161,6 +190,7 @@ QVariant ConfigModel::data(const QModelIndex &index, int role) const {
 	const ConfigFile *cf = dynamic_cast<const ConfigFile *>(data);
 	const Section *s = dynamic_cast<const Section *>(data);
 	const Option *o = dynamic_cast<const Option *>(data);
+	const Value *v = dynamic_cast<const Value *>(data);
 	switch (role) {
 		case Qt::DisplayRole:
 			if (cf)
@@ -169,8 +199,20 @@ QVariant ConfigModel::data(const QModelIndex &index, int role) const {
 				return index.column() ? s->type : s->name;
 			if (o)
 				return index.column() ? o->value : o->name;
+			if (v)
+				return index.column() ? v->value : v->name;
+		case Qt::DecorationRole:
+			if (index.column())
+				return QVariant();
+			if (cf)
+				return Qt::yellow;
+			if (s)
+				return Qt::red;
+			if (v || dynamic_cast<const SimpleOption *>(data))
+				return Qt::blue;
+			if (o)
+				return Qt::green;
 		default:
-			printf("Other\n");
 			return QVariant();
 	}
 }
