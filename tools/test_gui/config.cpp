@@ -39,10 +39,12 @@ void Config::connectNuci() {
 	sendData("<?xml version='1.0' encoding='UTF-8'?><hello xmlns='urn:ietf:params:xml:ns:netconf:base:1.0'><capabilities><capability>urn:ietf:params:netconf:base:1.0</capability></capabilities></hello>");
 	connectButton->setEnabled(false);
 	connectButton->setText("Disconnect");
+	expectedExit = true;
 }
 
 void Config::disconnectNuci() {
 	sendRpc("<close-session/>");
+	expectedExit = true;
 	process->closeWriteChannel();
 	connectButton->setEnabled(false);
 	downloadButton->setEnabled(false);
@@ -66,6 +68,13 @@ void Config::data() {
 void Config::terminated() {
 	connectButton->setEnabled(true);
 	connectButton->setText("Connect");
+	if (process->exitStatus() == QProcess::CrashExit) {
+		QMessageBox::warning(this, "NUCI Crash", "NUCI terminated with crash exit code");
+		expectedExit = true;
+	}
+	if (!expectedExit) {
+		QMessageBox::warning(this, "NUCI Crash", "NUCI terminated, but I didn't expect it to");
+	}
 	process->deleteLater();
 	process = NULL;
 }

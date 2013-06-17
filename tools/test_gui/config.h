@@ -41,6 +41,7 @@ private:
 	QByteArray incoming;
 	QHash<size_t, RpcCallback> rpcCallbacks;
 	ConfigModel *model;
+	bool expectedExit;
 };
 
 #endif
