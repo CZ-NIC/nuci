@@ -174,7 +174,11 @@ static int lxml2xmlNode_name(lua_State *L)
 
 	if (cur) {
 		lua_pushstring(L, (const char *) cur->name);
-		if (cur->ns) {
+		/*
+		 * The XML_DOCUMENT_NODE has garbage in the ns. We are probably
+		 * not supposed to look in there.
+		 */
+		if (cur->ns && cur->type != XML_DOCUMENT_NODE) {
 			lua_pushstring(L, (const char *) cur->ns->href);
 			return 2;
 		}
