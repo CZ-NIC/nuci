@@ -84,9 +84,12 @@ function uci_datastore:node_path(node)
 	local name = node:name();
 	while node do
 		local name = node:name();
+		-- In case of the root node, the name is empty
+		if not name then break end;
 		result[name] = node;
 		result[name .. '_name'] = uci_datastore:subnode_value(node, 'name');
 		node = node:parent();
+		name = node:name();
 	end
 	return name, result;
 end
@@ -294,7 +297,7 @@ function uci_datastore:perform_remove(cursor, op)
 		};
 	else
 		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
-		error("Unknown element to delete: " .. name);
+		error("Unknown element to delete: " .. (name or '<nil>'));
 	end
 	-- This config was changed, needs to be commited afterwards
 	self.changed[path.config_name] = true;
