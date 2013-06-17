@@ -153,7 +153,7 @@ void Config::on_replaceButton_clicked() {
 }
 
 void Config::on_mergeButton_clicked() {
-	prepareXml("merge", false, true);
+	prepareXml("", false, true);
 }
 
 void Config::on_createButton_clicked() {
@@ -165,6 +165,8 @@ void Config::prepareXml(const QString &operation, bool subnodes, bool content) {
 	doc.setContent(QString("<edit-config><target><running/></target><config><uci xmlns='http://www.nic.cz/ns/router/uci-raw'/></config></edit-config>"));
 	QDomElement node(model->getNode(configView->currentIndex(), doc, subnodes, content));
 	node.setAttribute("xmlns:nc", netconfUri);
-	node.setAttribute("nc:operation", operation);
+	if (!operation.isEmpty()) {
+		node.setAttribute("nc:operation", operation);
+	}
 	xmlEdit->setText(doc.toString(4));
 }
