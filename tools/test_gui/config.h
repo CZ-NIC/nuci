@@ -12,7 +12,7 @@ class ConfigModel;
 class Config : public QMainWindow, private Ui::Config {
 	Q_OBJECT;
 public:
-	typedef void (Config::*RpcCallback)(const QDomDocument &rpc, size_t id);
+	typedef void (Config::*RpcCallback)(QDomDocument &rpc, size_t id);
 	Config();
 private slots:
 	void on_connectButton_clicked();
@@ -31,10 +31,11 @@ private:
 	void sendData(const QString &data);
 	void writeData(QByteArray &data);
 	void handleMessage(const QByteArray &data);
-	void handleHello(const QDomDocument &hello);
-	void handleRpc(const QDomDocument &rpc);
+	void handleHello(QDomDocument &hello);
+	void handleRpc(QDomDocument &rpc);
 	size_t sendRpc(const QString &xml, RpcCallback callback = NULL);
-	void configDownloaded(const QDomDocument &rpc, size_t id);
+	void configDownloaded(QDomDocument &rpc, size_t id);
+	void editResponse(QDomDocument &rpc, size_t id);
 	void prepareXml(const QString &operation, bool subnodes, bool content);
 	QProcess *process;
 	QByteArray incoming;

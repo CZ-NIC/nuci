@@ -3,6 +3,7 @@
 
 #include <QProcess>
 #include <QtXml>
+#include <QMessageBox>
 
 #include <cassert>
 #include <cstdio>
@@ -103,7 +104,7 @@ void Config::handleMessage(const QByteArray &message) {
 	assert(false);
 }
 
-void Config::handleRpc(const QDomDocument &rpc) {
+void Config::handleRpc(QDomDocument &rpc) {
 	QString sid(rpc.documentElement().attribute("message-id"));
 	bool ok = true;
 	size_t id = sid.toULongLong(&ok);
@@ -114,7 +115,7 @@ void Config::handleRpc(const QDomDocument &rpc) {
 	}
 }
 
-void Config::handleHello(const QDomDocument &) {
+void Config::handleHello(QDomDocument &) {
 	connectButton->setEnabled(true);
 	downloadButton->setEnabled(true);
 	sendButton->setEnabled(!xmlEdit->toPlainText().isEmpty());
@@ -134,7 +135,7 @@ void Config::on_downloadButton_clicked() {
 	sendRpc("<get-config><source><running/></source></get-config>", &Config::configDownloaded);
 }
 
-void Config::configDownloaded(const QDomDocument &rpc, size_t) {
+void Config::configDownloaded(QDomDocument &rpc, size_t) {
 	printf("Configuration downloaded\n");
 	// FIXME: This leaks
 	model = new ConfigModel(rpc);
@@ -163,7 +164,7 @@ void Config::on_createButton_clicked() {
 }
 
 void Config::on_sendButton_clicked() {
-	sendRpc(xmlEdit->toPlainText());
+	sendRpc(xmlEdit->toPlainText(), &Config::editResponse);
 }
 
 void Config::prepareXml(const QString &operation, bool subnodes, bool content) {
@@ -176,4 +177,14 @@ void Config::prepareXml(const QString &operation, bool subnodes, bool content) {
 	}
 	xmlEdit->setText(doc.toString(4));
 	sendButton->setEnabled(process);
+}
+
+void Config::editResponse(QDomDocument &rpc, size_t) {
+	const QDomNodeList &errors(rpc.elementsByTagNameNS(netconfUri, "rpc-error"));
+	if (errors.size()) {
+		const QString &text(errors.at(0).namedItem("error-message").toElement().text());
+		QMessageBox::warning(this, "RPC error", text);
+	}
+	// Get the new version of config. It may have changed.
+	downloadButton->click();
 }
