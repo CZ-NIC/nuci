@@ -4,6 +4,11 @@ require("nutils")
 
 local uci_datastore = datastore("uci-raw.yin")
 
+local function get_cursor()
+	local cursor = uci.cursor(os.getenv("NUCI_TEST_CONFIG_DIR"));
+	return cursor;
+end
+
 local function sort_by_index(input)
 	-- Sort by the value in ".index"
 	local result = {}
@@ -50,7 +55,7 @@ end
 
 local function list_config(cursor, config)
 	local result = '<config><name>' .. xml_escape(config) .. '</name>';
-	cdata = cursor.get_all(config);
+	cdata = cursor:get_all(config);
 	-- Sort the data according to their index
 	-- (this might not preserve the order between types, but at least
 	-- preserves the relative order inside one type).
@@ -63,7 +68,7 @@ local function list_config(cursor, config)
 end
 
 function uci_datastore:get_config()
-	local cursor = uci.cursor();
+	local cursor = get_cursor();
 	local result = [[<uci xmlns='http://www.nic.cz/ns/router/uci-raw'>]];
 	for _, config in ipairs(uci_list_configs()) do
 		result = result .. list_config(cursor, config);
@@ -308,7 +313,7 @@ function uci_datastore:set_config(config, defop, deferr)
 	if err then
 		return err;
 	else
-		local cursor = uci.cursor();
+		local cursor = get_cursor();
 		-- Prepare data structures.
 		self.changed = {};
 		self.delayed_lists = {}
