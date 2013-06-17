@@ -157,7 +157,7 @@ void Config::on_mergeButton_clicked() {
 }
 
 void Config::on_createButton_clicked() {
-
+	prepareXml("create", true, true);
 }
 
 void Config::prepareXml(const QString &operation, bool subnodes, bool content) {
