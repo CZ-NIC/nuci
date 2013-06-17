@@ -22,6 +22,7 @@ private slots:
 	void on_replaceButton_clicked();
 	void on_createButton_clicked();
 	void on_configView_clicked();
+	void on_sendButton_clicked();
 	void data();
 	void terminated();
 private:

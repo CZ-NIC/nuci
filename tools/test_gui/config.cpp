@@ -162,6 +162,10 @@ void Config::on_createButton_clicked() {
 	prepareXml("create", true, true);
 }
 
+void Config::on_sendButton_clicked() {
+	sendRpc(xmlEdit->toPlainText());
+}
+
 void Config::prepareXml(const QString &operation, bool subnodes, bool content) {
 	QDomDocument doc;
 	doc.setContent(QString("<edit-config><target><running/></target><config><uci xmlns='http://www.nic.cz/ns/router/uci-raw'/></config></edit-config>"));
