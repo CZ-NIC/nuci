@@ -85,7 +85,7 @@ function uci_datastore:node_path(node)
 	while node do
 		local name = node:name();
 		result[name] = node;
-		result[name .. '_name'] = subnode_value(node, 'name');
+		result[name .. '_name'] = uci_datastore:subnode_value(node, 'name');
 		node = node:parent();
 	end
 	return name, result;
