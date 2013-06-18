@@ -88,10 +88,10 @@ void Config::sendData(const QString &data) {
 	printf("Sending XML message:\n%s\n\n", cp.data());
 	cp.append("\n" MARK);
 	while (!cp.isEmpty())
-		writeData(cp);
+		writeData(process, cp);
 }
 
-void Config::writeData(QByteArray &array) {
+void Config::writeData(QProcess *process, QByteArray &array) {
 	qint64 written = process->write(array);
 	assert(written > 0);
 	array.remove(0, written);
@@ -202,4 +202,32 @@ void Config::editResponse(QDomDocument &rpc, size_t) {
 	}
 	// Get the new version of config. It may have changed.
 	downloadButton->click();
+}
+
+void Config::on_storeButton_clicked() {
+	QProcess dumper;
+	dumper.start("./tools/test_gui/dump-test");
+	dumper.waitForStarted();
+	QByteArray xml(xmlEdit->toPlainText().toLocal8Bit());
+	while (!xml.isEmpty())
+		writeData(&dumper, xml);
+	dumper.closeWriteChannel();
+	dumper.waitForFinished();
+	const QByteArray &dirA(dumper.readAll());
+	const QString &dir(QString(dirA).trimmed());
+	size_t id(sendRpc(xmlEdit->toPlainText(), &Config::dumpResult));
+	dirs[id] = dir;
+}
+
+void Config::dumpResult(QDomDocument &rpc, size_t id) {
+	const QString dir(dirs[id]);
+	dirs.remove(id);
+	QProcess dumper;
+	dumper.start("./tools/test_gui/dump-test-post", QStringList() << dir);
+	printf("Started with dir %s\n", dir.toLocal8Bit().data());
+	QByteArray xml(rpc.toString().toLocal8Bit());
+	while (!xml.isEmpty())
+		writeData(&dumper, xml);
+	dumper.closeWriteChannel();
+	dumper.waitForFinished();
 }

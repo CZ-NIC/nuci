@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -x
+
+TARGET="$1"
+
+uci -c "$TARGET"/config show | sort >"$TARGET"/uci-after
+cat >"$TARGET"/output
