@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -ex
+
+DIR="$1"
+TMP=`tempfile`
+export NUCI_TEST_CONFIG_DIR="$DIR/config"
+(
+	cat <<ENDXML
+<?xml version="1.0" encoding="UTF-8"?>
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <capabilities>
+    <capability>urn:ietf:params:netconf:base:1.0</capability>
+  </capabilities>
+</hello>
+]]>]]><?xml version="1.0" encoding="UTF-8"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
+ENDXML
+	cat "$DIR/input"
+	echo "</rpc>"
+	echo "]]>]]>"
+) | socat STDIO EXEC:./bin/nuci,pty >"$TMP"
+ed "$TMP" <<ENDED
+$
+d
+?UTF-8
+-1
+1,.d
+w
+q
+ENDED
+test -e ./tests/xmlnorm/xmlnorm || (
+	cd tests/xmlnorm
+	qmake
+	make
+)
+./tests/xmlnorm/xmlnorm < "$TMP" | diff "$DIR"/output -
+uci -c "$DIR/config" show | sort | diff "$DIR"/uci-after -

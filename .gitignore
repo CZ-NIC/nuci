@@ -36,3 +36,6 @@ tags
 tools/test_gui/Makefile
 moc_*.cpp
 ui_*.h
+
+tests/xmlnorm/xmlnorm
+tests/xmlnorm/Makefile
