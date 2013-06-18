@@ -49,6 +49,7 @@ void Config::disconnectNuci() {
 	connectButton->setEnabled(false);
 	downloadButton->setEnabled(false);
 	sendButton->setEnabled(false);
+	storeButton->setEnabled(false);
 }
 
 void Config::data() {
@@ -128,6 +129,7 @@ void Config::handleHello(QDomDocument &) {
 	connectButton->setEnabled(true);
 	downloadButton->setEnabled(true);
 	sendButton->setEnabled(!xmlEdit->toPlainText().isEmpty());
+	storeButton->setEnabled(!xmlEdit->toPlainText().isEmpty());
 	downloadButton->click();
 }
 
@@ -186,6 +188,7 @@ void Config::prepareXml(const QString &operation, bool subnodes, bool content) {
 	}
 	xmlEdit->setText(doc.toString(4));
 	sendButton->setEnabled(process);
+	storeButton->setEnabled(process);
 }
 
 void Config::editResponse(QDomDocument &rpc, size_t) {
