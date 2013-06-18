@@ -96,6 +96,7 @@ function uci_datastore:node_path(node)
 		node = node:parent();
 		name = node:name();
 	end
+	dump_table(result);
 	return name, result;
 end
 
@@ -305,6 +306,7 @@ function uci_datastore:perform_remove(cursor, op)
 		error("Unknown element to delete: " .. (name or '<nil>'));
 	end
 	-- This config was changed, needs to be commited afterwards
+
 	self.changed[path.config_name] = true;
 end
 

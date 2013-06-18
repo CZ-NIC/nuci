@@ -19,3 +19,10 @@ end
 function split(str)
 	return str:gmatch('%S+');
 end
+
+-- Dump the table, for debug purposes.
+function dump_table(tab)
+	for k, v in pairs(tab) do
+		io.stderr:write(k .. ":" .. tostring(v) .. "\n");
+	end
+end

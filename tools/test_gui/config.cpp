@@ -32,6 +32,7 @@ void Config::connectNuci() {
 	process = new QProcess(this);
 	connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(data()));
 	connect(process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(terminated()));
+	connect(process, SIGNAL(readyReadStandardError()), this, SLOT(err()));
 	QProcessEnvironment env(QProcessEnvironment::systemEnvironment());
 	env.insert("NUCI_TEST_CONFIG_DIR", pathEdit->text());
 	process->setProcessEnvironment(env);
@@ -231,4 +232,9 @@ void Config::dumpResult(QDomDocument &rpc, size_t id) {
 		writeData(&dumper, xml);
 	dumper.closeWriteChannel();
 	dumper.waitForFinished();
+}
+
+void Config::err() {
+	const QByteArray e(process->readAllStandardError());
+	fputs(e.data(), stderr);
 }

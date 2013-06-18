@@ -25,6 +25,7 @@ private slots:
 	void on_sendButton_clicked();
 	void on_storeButton_clicked();
 	void data();
+	void err();
 	void terminated();
 private:
 	void connectNuci();
