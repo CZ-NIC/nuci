@@ -2,9 +2,11 @@
 
 set -ex
 
-DIR="$1"
 TMP=`tempfile`
-export NUCI_TEST_CONFIG_DIR="$DIR/config"
+DIR="$1"
+CFG="$TMP.d"
+cp -r "$DIR/config" "$CFG"
+export NUCI_TEST_CONFIG_DIR="$CFG"
 (
 	cat <<ENDXML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,4 +37,5 @@ test -e ./tests/xmlnorm/xmlnorm || (
 	make
 )
 ./tests/xmlnorm/xmlnorm < "$TMP" | diff "$DIR"/output -
-uci -c "$DIR/config" show | sort | diff "$DIR"/uci-after -
+uci -c "$CFG" show | sort | diff "$DIR"/uci-after -
+rm -rf "$TMP" "$CFG"
