@@ -225,6 +225,7 @@ void Config::dumpResult(QDomDocument &rpc, size_t id) {
 	QProcess dumper;
 	dumper.start("./tools/test_gui/dump-test-post", QStringList() << dir);
 	printf("Started with dir %s\n", dir.toLocal8Bit().data());
+	rpc.documentElement().setAttribute("message-id", "ID");
 	QByteArray xml(rpc.toString().toLocal8Bit());
 	while (!xml.isEmpty())
 		writeData(&dumper, xml);
