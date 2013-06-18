@@ -32,6 +32,9 @@ void Config::connectNuci() {
 	process = new QProcess(this);
 	connect(process, SIGNAL(readyReadStandardOutput()), this, SLOT(data()));
 	connect(process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(terminated()));
+	QProcessEnvironment env(QProcessEnvironment::systemEnvironment());
+	env.insert("NUCI_TEST_CONFIG_DIR", pathEdit->text());
+	process->setProcessEnvironment(env);
 	process->start(commandEdit->text());
 	// Let it start
 	process->waitForStarted(-1);

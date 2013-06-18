@@ -25,6 +25,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QLineEdit" name="pathEdit">
+        <property name="text">
+         <string>./example-config</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="connectButton">
         <property name="text">
          <string>Connect</string>
