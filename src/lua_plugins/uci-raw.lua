@@ -336,7 +336,7 @@ function uci_datastore:set_config(config, defop, deferr)
 		-- Push in all the delayed lists we have.
 		for config_name, config in pairs(self.delayed_lists) do
 			for section_name, section in pairs(config) do
-				for name, list in pairs(config) do
+				for name, list in pairs(section) do
 					if next(list) then
 						--[[
 						Sort the table according to the numeric value of index, but using
@@ -351,7 +351,7 @@ function uci_datastore:set_config(config, defop, deferr)
 						end
 						list = {}
 						table.sort(tuples, function (a, b) return a.index < b.index end);
-						for _, val in pairs(list) do
+						for _, val in pairs(tuples) do
 							table.insert(list, val.val);
 						end
 						-- Push the sorted one in.
