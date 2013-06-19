@@ -150,11 +150,21 @@ void Config::on_downloadButton_clicked() {
 	sendRpc("<get-config><source><running/></source></get-config>", &Config::configDownloaded);
 }
 
+void Config::openModel(const QModelIndex &index) {
+	for (int i = 0; i < model->rowCount(index); i ++) {
+		const QModelIndex child(model->index(i, 0, index));
+		configView->setExpanded(child, true);
+		if (model->hasChildren(child))
+			openModel(child);
+	}
+}
+
 void Config::configDownloaded(QDomDocument &rpc, size_t) {
 	printf("Configuration downloaded\n");
 	// FIXME: This leaks
 	model = new ConfigModel(rpc);
 	configView->setModel(model);
+	openModel();
 	on_configView_clicked();
 }
 

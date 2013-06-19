@@ -40,6 +40,7 @@ private:
 	void editResponse(QDomDocument &rpc, size_t id);
 	void dumpResult(QDomDocument &rpc, size_t id);
 	void prepareXml(const QString &operation, bool subnodes, bool content);
+	void openModel(const QModelIndex &index = QModelIndex());
 	QProcess *process;
 	QByteArray incoming;
 	QHash<size_t, RpcCallback> rpcCallbacks;
