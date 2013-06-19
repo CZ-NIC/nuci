@@ -1,0 +1,6 @@
+
+config section 'named'
+	option xyz '123'
+	list abc '345'
+	list abc '678'
+
