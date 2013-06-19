@@ -78,7 +78,7 @@ function uci_datastore:get_config()
 end
 
 function uci_datastore:subnode_value(node, name)
-	local node = find_node_name_ns(node, name, self.ns);
+	local node = find_node_name_ns(node, name, self.model_ns);
 	if node then
 		return node:text();
 	end
@@ -88,15 +88,14 @@ function uci_datastore:node_path(node)
 	local result = {};
 	local name = node:name();
 	while node do
-		local name = node:name();
+		local name, ns = node:name();
 		-- In case of the root node, the name is empty
-		if not name then break end;
+		if not name or name == 'uci' then break end;
 		result[name] = node;
 		result[name .. '_name'] = uci_datastore:subnode_value(node, 'name');
 		node = node:parent();
 		name = node:name();
 	end
-	dump_table(result);
 	return name, result;
 end
 
@@ -129,16 +128,16 @@ function uci_datastore:perform_create(cursor, op)
 			msg="Creating whole configs is not possible, you have to live with what there is already",
 			tag="operation not supported",
 			info_badelem=name,
-			info_badns=self.ns
+			info_badns=self.model_ns
 		};
 	elseif name == 'section' then
 		-- Create the section (either anonymous or not)
 		local sectype = self:subnode_value(node, 'type');
-		local anonymous = find_node_name_ns(node, 'anonymous', self.ns);
+		local anonymous = find_node_name_ns(node, 'anonymous', self.model_ns);
 		local name;
 		if anonymous then
 			name = cursor:add(path.config_name, sectype);
-			local name_node = find_node_name_ns(node, 'name', self.ns);
+			local name_node = find_node_name_ns(node, 'name', self.model_ns);
 			name_node:set_text(name);
 		else
 			cursor:add(path.config_name, path.section_name, sectype);
@@ -146,7 +145,7 @@ function uci_datastore:perform_create(cursor, op)
 		-- Now let's go over all stuff inside and recurse on it.
 		for child in node:iterate() do
 			local name, ns = child:name();
-			if ns == self.ns then
+			if ns == self.model_ns then
 				if name == 'option' or name == 'list' then
 					-- Fill in some stuff inside, recursively
 					local result = self:perform_create(cursor, {command_node=child});
@@ -180,13 +179,13 @@ function uci_datastore:perform_create(cursor, op)
 		self:set_empty_delayed_list(cursor, path);
 		for child in node:iterate() do
 			local name, ns = child:name();
-			if name == 'value' and ns == self.ns then
+			if name == 'value' and ns == self.model_ns then
 				local result = uci_datastore:perform_create(cursor, {command_node=child});
 				if result then
 					return result;
 				end
 			elseif ns then
-				if ns == self.ns then
+				if ns == self.model_ns then
 					return {
 						msg="Unknown or misplaced element " .. name .. " in list",
 						tag="unknown element",
@@ -224,7 +223,7 @@ function uci_datastore:perform_create(cursor, op)
 			msg="Can't anonymise a section, remove and readd",
 			tag="operation not supported",
 			info_badelem=name,
-			info_badns=self.ns
+			info_badns=self.model_ns
 		};
 	else
 		-- This Can Not Happen - we filter it either in the editconfig conversion function or before recursive call
@@ -242,7 +241,7 @@ function uci_datastore:perform_remove(cursor, op)
 			msg="Deleting (or replacing) whole configs is not possible",
 			tag="operation not supported",
 			info_badelem=name,
-			info_badns=self.ns
+			info_badns=self.model_ns
 		};
 	elseif name == 'section' then
 		cursor:delete(path.config_name, path.section_name);
@@ -262,7 +261,7 @@ function uci_datastore:perform_remove(cursor, op)
 					msg="The value element is mandatory",
 					tag="missing element",
 					info_badelem='value',
-					info_badns=self.ns
+					info_badns=self.model_ns
 				};
 			end
 			-- If it is replace, that's OK, it'll just be rewritten in next op.
@@ -283,14 +282,14 @@ function uci_datastore:perform_remove(cursor, op)
 				msg="Can't replace " .. name .. ", replace the whole owner",
 				tag="operation not supported",
 				bad_elemname=name,
-				bad_elemns=self.ns
+				bad_elemns=self.model_ns
 			};
 		else
 			return {
 				msg="Can't delete mandatory node " .. name,
 				tag="data missing",
 				bad_elemname=name,
-				bad_elemns=self.ns
+				bad_elemns=self.model_ns
 			};
 		end
 	elseif name == 'anonymous' then
@@ -299,7 +298,7 @@ function uci_datastore:perform_remove(cursor, op)
 			msg="Can't un-anonymise a section. That is possible, but makes little sense and it is hard to do.",
 			tag="operation not supported",
 			bad_elemname="anonymous",
-			bad_elemns=self.ns
+			bad_elemns=self.model_ns
 		};
 	else
 		-- Can Not Happen: we're deleting stuff from our config, we must know anything there might be.
@@ -324,8 +323,10 @@ function uci_datastore:set_config(config, defop, deferr)
 			local err;
 			if op.op == 'add-tree' then
 				err = self:perform_create(cursor, op);
+				io.stderr:write("Performed add-tree\n");
 			elseif op.op == 'remove-tree' then
 				err = self:perform_remove(cursor, op);
+				io.stderr:write("Performed remove-tree\n");
 			end
 			-- Ignore all enter and leave operations.
 			if err then
