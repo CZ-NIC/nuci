@@ -206,7 +206,7 @@ function uci_datastore:perform_create(cursor, op)
 	elseif name == 'value' then
 		if path.option then
 			-- Handle the whole option at once.
-			return uci_datastore:perform_create(cursor, {command_node=node});
+			return uci_datastore:perform_create(cursor, {command_node=path.option});
 		else -- One value inside the list
 			-- Get the delayed list. It'll be put into UCI at the end of the processing.
 			local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
