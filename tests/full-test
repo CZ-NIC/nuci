@@ -28,6 +28,7 @@ d
 ?UTF-8
 -1
 1,.d
+%s/]]>]]>//g
 w
 q
 ENDED
@@ -36,6 +37,6 @@ test -e ./tests/xmlnorm/xmlnorm || (
 	qmake
 	make
 )
-./tests/xmlnorm/xmlnorm < "$TMP" | diff "$DIR"/output -
-uci -c "$CFG" show | sort | diff "$DIR"/uci-after -
+./tests/xmlnorm/xmlnorm < "$TMP" | diff -u "$DIR"/output -
+uci -c "$CFG" show | sort | diff -u "$DIR"/uci-after -
 rm -rf "$TMP" "$CFG"
