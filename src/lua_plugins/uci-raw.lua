@@ -253,7 +253,7 @@ function uci_datastore:perform_remove(cursor, op)
 		cursor:delete(path.config_name, path.section_name, path.option_name);
 	elseif name == 'list' then
 		-- Delete the list by making an empty one there. The thing at the bottom will remove it.
-		self.set_empty_delayed_list(cursor, path);
+		self:set_empty_delayed_list(cursor, path);
 	elseif name == 'value' then
 		if path.option then
 			if op.note ~= 'replace' then
