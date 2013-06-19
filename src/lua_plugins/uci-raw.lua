@@ -212,9 +212,9 @@ function uci_datastore:perform_create(cursor, op)
 			local list = self:get_delayed_list(cursor, path);
 			-- Get the index and value
 			local index = self:subnode_value(node, 'index');
-			local value = self:subnode_value(node, 'value');
+			local value = self:subnode_value(node, 'content');
 			-- And store it there.
-			list[index] = value;
+			list[tonumber(index)] = value;
 		end
 	elseif name == 'content' or name == 'type' or name == 'index' or name == 'name' then
 		error("Trying to create " .. name .. ", but it should have already existed and such thing should not pass the conversion");
