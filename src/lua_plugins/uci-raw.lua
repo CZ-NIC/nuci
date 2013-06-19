@@ -209,7 +209,7 @@ function uci_datastore:perform_create(cursor, op)
 			return uci_datastore:perform_create(cursor, {command_node=path.option});
 		else -- One value inside the list
 			-- Get the delayed list. It'll be put into UCI at the end of the processing.
-			local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
+			local list = self:get_delayed_list(cursor, path);
 			-- Get the index and value
 			local index = self:subnode_value(node, 'index');
 			local value = self:subnode_value(node, 'value');
@@ -267,7 +267,7 @@ function uci_datastore:perform_remove(cursor, op)
 			-- If it is replace, that's OK, it'll just be rewritten in next op.
 		else
 			-- Get the delayed list. It'll be put into UCI at the end of the processing.
-			local list = self:get_delayed_list(cursor, path.config_name, path.section_name, path.list_name);
+			local list = self:get_delayed_list(cursor, path);
 			-- Get the index and delete the value from the list.
 			local index = self:subnode_value(node, 'index');
 			list[index] = nil;
