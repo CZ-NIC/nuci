@@ -179,7 +179,9 @@ function uci_datastore:perform_create(cursor, op)
 		self:set_empty_delayed_list(cursor, path);
 		for child in node:iterate() do
 			local name, ns = child:name();
-			if name == 'value' and ns == self.model_ns then
+			if name == 'name' and ns == self.model_ns then
+				-- We already handled <name/>
+			elseif name == 'value' and ns == self.model_ns then
 				local result = uci_datastore:perform_create(cursor, {command_node=child});
 				if result then
 					return result;
