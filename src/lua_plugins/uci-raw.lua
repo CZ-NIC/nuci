@@ -270,7 +270,7 @@ function uci_datastore:perform_remove(cursor, op)
 			local list = self:get_delayed_list(cursor, path);
 			-- Get the index and delete the value from the list.
 			local index = self:subnode_value(node, 'index');
-			list[index] = nil;
+			list[tonumber(index)] = nil;
 		end
 	elseif name == 'content' or name == 'type' or name == 'index' or name == 'name' then
 		if op.note == 'replace' then
