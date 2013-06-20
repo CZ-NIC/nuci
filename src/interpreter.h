@@ -41,6 +41,14 @@ typedef int lua_datastore;
 const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method);
 
 /*
+ * Call a method on the datastore that takes no parameter and doesn't return anything.
+ * It calls the method with given name.
+ *
+ * If it returns an error (as a return value), it still can be retrieved by the nc_err_create_from_lua.
+ */
+void interpreter_procedure(struct interpreter *interpreter, lua_datastore datastore, const char *method);
+
+/*
  * Call the set_config method of the data store, possibly storing the data there.
  *
  * In case of error, it is flagged by flag_error.
