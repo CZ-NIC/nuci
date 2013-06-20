@@ -134,13 +134,13 @@ function uci_datastore:perform_create(cursor, op)
 		-- Create the section (either anonymous or not)
 		local sectype = self:subnode_value(node, 'type');
 		local anonymous = find_node_name_ns(node, 'anonymous', self.model_ns);
-		local name;
+		local name = cursor:add(path.config_name, sectype);
 		if anonymous then
-			name = cursor:add(path.config_name, sectype);
 			local name_node = find_node_name_ns(node, 'name', self.model_ns);
 			name_node:set_text(name);
 		else
-			cursor:add(path.config_name, path.section_name, sectype);
+			cursor:rename(path.config_name, name, path.section_name);
+			name = path.section_name;
 		end
 		-- Now let's go over all stuff inside and recurse on it.
 		for child in node:iterate() do
