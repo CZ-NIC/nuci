@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -ex
+
+for case in tests/full/cases/* ; do
+	./tests/full-test "$case"
+done

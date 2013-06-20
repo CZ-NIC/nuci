@@ -29,6 +29,8 @@
 #include <libxml/tree.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include <stdbool.h>
+#include <assert.h>
 
 #define LXML2_XMLDOC		"xmlDocPtr"
 #define LXML2_XMLNODE		"xmlNodePtr"
@@ -127,6 +129,7 @@ static int lxml2mod_ReadFile(lua_State *L)
 	luaL_setmetatable(L, LXML2_XMLDOC);
 
 	xml2->doc = doc;
+	fprintf(stderr, "Created XML DOC from file %p\n", (void *) doc);
 
 	return 1;
 }
@@ -144,6 +147,7 @@ static int lxml2mod_ReadMemory(lua_State *L)
 	luaL_setmetatable(L, LXML2_XMLDOC);
 
 	xml2->doc = doc;
+	fprintf(stderr, "Created XML DOC from mem %p\n", (void *) doc);
 
 	return 1;
 }
@@ -172,7 +176,11 @@ static int lxml2xmlNode_name(lua_State *L)
 
 	if (cur) {
 		lua_pushstring(L, (const char *) cur->name);
-		if (cur->ns) {
+		/*
+		 * The XML_DOCUMENT_NODE has garbage in the ns. We are probably
+		 * not supposed to look in there.
+		 */
+		if (cur->ns && cur->type != XML_DOCUMENT_NODE) {
 			lua_pushstring(L, (const char *) cur->ns->href);
 			return 2;
 		}
@@ -258,6 +266,41 @@ static int lxml2xmlNode_getText(lua_State *L)
 	}
 }
 
+static int lxml2xmlNode_setText(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	const char *text = lua_tostring(L, 2);
+	if (cur->type != XML_TEXT_NODE) { // It either is a TEXT_NODE already, or we try to find one inside.
+		bool found = false;
+		for (xmlNodePtr child = cur->children; child; child = child->next)
+			if (child->type == XML_TEXT_NODE) {
+				found = true;
+				cur = child;
+				break;
+			}
+		if (!found) {
+			return luaL_error(L, "Don't know how to add text to node without one");
+		}
+	}
+	assert(cur->type == XML_TEXT_NODE);
+	xmlFree(cur->content);
+	cur->content = (xmlChar *) xmlMemoryStrdup(text);
+	return 0;
+}
+
+static int lxml2xmlNode_parent(lua_State *L)
+{
+	xmlNodePtr cur = lua_touserdata(L, 1);
+
+	if (cur && cur->parent) {
+		lua_pushlightuserdata(L, cur->parent);
+		luaL_setmetatable(L, LXML2_XMLNODE);
+		return 1;
+	}
+
+	return 0;
+}
+
 static const luaL_Reg lxml2xmlNode[] = {
 	{ "first_child", lxml2xmlNode_ChildrenNode },
 	{ "name", lxml2xmlNode_name },
@@ -265,6 +308,8 @@ static const luaL_Reg lxml2xmlNode[] = {
 	{ "iterate", lxml2xmlNode_iterate },
 	{ "attribute", lxml2xmlNode_getProp },
 	{ "text", lxml2xmlNode_getText },
+	{ "set_text", lxml2xmlNode_setText },
+	{ "parent", lxml2xmlNode_parent },
 	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
 	{ "__tostring", lxml2xmlNode_tostring },
 	{ NULL, NULL }
@@ -313,6 +358,7 @@ static int lxml2xmlDoc_NodeListGetString(lua_State *L)
 static int lxml2xmlDoc_gc(lua_State *L)
 {
 	struct lxml2Object *xml2 = lua_touserdata(L, 1);
+	fprintf(stderr, "GC XML document %p\n", (void *) xml2->doc);
 
 	if (xml2->doc != NULL)
 		xmlFreeDoc(xml2->doc);

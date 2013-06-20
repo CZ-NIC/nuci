@@ -13,6 +13,7 @@ lib/
 
 #All created .so files
 *.so
+*.o
 
 #Documentation output
 docs/
@@ -20,6 +21,7 @@ docs/
 #Link to binary output in src
 src/nuci
 tests/test_runner
+tools/test_gui/test_gui
 
 #Link to documentation output in build
 build/buildsystem.html
@@ -30,3 +32,10 @@ src/datastore.xml
 # Random "service" files
 core
 tags
+
+tools/test_gui/Makefile
+moc_*.cpp
+ui_*.h
+
+tests/xmlnorm/xmlnorm
+tests/xmlnorm/Makefile

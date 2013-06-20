@@ -15,14 +15,6 @@ local function cmp_name_content(command_node, config_node)
 	return cmp_elemname(command_node, config_node, ns, model) and command_node:text() == config_node:text();
 end
 
--- Find a subnode with given name and ns
-local function find_node_name_ns(node, name, ns)
-	return find_node(node, function(node)
-		local nname, nns = node:name();
-		return ns == nns and name == nname;
-	end);
-end
-
 --[[
 Extract the list of expected keys in the model node.
 The model node should yang description of a list (specially, it should contain
@@ -65,9 +57,9 @@ local model_names = {
 			local keys = list_keys(model);
 			local found = true;
 			for key_name in keys do
-				print(key_name);
+				io.stderr:write(key_name .. "\n");
 				local command_key = extract_leaf_subvalue(command_node, model, key_name);
-				print(command_key);
+				io.stderr:write(command_key .. "\n");
 				local config_key = extract_leaf_subvalue(config_node, model, key_name);
 				if not command_key or not config_key or config_key ~= command_key then
 					-- FIXME: Properly handle missing keys
@@ -127,7 +119,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					info_badelem=command_name
 				};
 			end
-			print("Found model node " .. model_node:name() .. " for " .. command_name);
+			io.stderr:write("Found model node " .. model_node:name() .. " for " .. command_name .. "\n");
 			local config_node = config_identify(model_node, model_opts, command_node, config, ns);
 			-- Is there an override for the operation here?
 			local operation = command_node:attribute('operation', netconf_ns) or defop;
@@ -138,7 +130,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				operation = 'replace'
 			end
 			if config_node then
-				print("Found config node " .. config_node:name() .. " for " .. command_name);
+				io.stderr:write("Found config node " .. config_node:name() .. " for " .. command_name .. "\n");
 				-- The value exists
 				if operation == 'create' then
 					return {
@@ -157,7 +149,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					operation = 'none';
 				end
 			else
-				print("Not found corresponding node")
+				io.stderr:write("Not found corresponding node\n")
 				-- The value does not exist in config now
 				if operation == 'none' or operation == 'delete' then
 					return {
@@ -184,9 +176,9 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			* create
 			* remove
 			]]
-			print("Performing operation " .. operation)
+			io.stderr:write("Performing operation " .. operation .. "\n")
 			local function add_op(name, note)
-				print("Adding operation " .. name .. '(' .. (note or '') .. ')' .. ' on ' .. command_node:name());
+				io.stderr:write("Adding operation " .. name .. '(' .. (note or '') .. ')' .. ' on ' .. command_node:name() .. "\n");
 				table.insert(ops, {
 					op=name,
 					command_node=command_node,
@@ -214,7 +206,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					return err;
 				end
 				if #ops == op_last then
-					print("Dropping the last enter, as the command is empty");
+					io.stderr:write("Dropping the last enter, as the command is empty\n");
 					ops[op_last] = nil;
 				else
 					add_op('leave');

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -x
+
+DIR=tests/full/cases
+NAME=1
+
+while ! mkdir "$DIR/$NAME" ; do
+	NAME=$((NAME + 1))
+done
+
+TARGET="$DIR/$NAME"
+
+cp -r example-config "$TARGET"/config
+cat >"$TARGET"/input
+echo "$TARGET"

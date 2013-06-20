@@ -269,11 +269,14 @@ static int xml_escape_lua(lua_State *lua) {
 static int uci_list_configs_lua(lua_State *lua) {
 	struct uci_context *ctx = uci_alloc_context();
 	if (!ctx)
-		luaL_error(lua, "Can't create UCI context");
+		return luaL_error(lua, "Can't create UCI context");
+	if (getenv("NUCI_TEST_CONFIG_DIR"))
+		if (uci_set_confdir(ctx, getenv("NUCI_TEST_CONFIG_DIR")) != UCI_OK)
+			return luaL_error(lua, "Can't set config dir to %s", getenv("NUCI_TEST_CONFIG_DIR"));
 	char **configs = NULL;
 	if ((uci_list_configs(ctx, &configs) != UCI_OK) || !configs) {
 		uci_free_context(ctx);
-		luaL_error(lua, "Can't load configs");
+		return luaL_error(lua, "Can't load configs");
 	}
 	int idx = 1;
 	lua_newtable(lua);

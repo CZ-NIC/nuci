@@ -7,7 +7,22 @@ function find_node(node, predicate)
 	end
 end
 
+-- Find a subnode with given name and ns
+function find_node_name_ns(node, name, ns)
+	return find_node(node, function(node)
+		local nname, nns = node:name();
+		return ns == nns and name == nname;
+	end);
+end
+
 -- split the string into words
 function split(str)
 	return str:gmatch('%S+');
+end
+
+-- Dump the table, for debug purposes.
+function dump_table(tab)
+	for k, v in pairs(tab) do
+		io.stderr:write(k .. ":" .. tostring(v) .. "\n");
+	end
 end
