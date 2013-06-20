@@ -1,0 +1,35 @@
+<edit-config>
+    <target>
+        <running/>
+    </target>
+    <config>
+        <uci xmlns="http://www.nic.cz/ns/router/uci-raw">
+            <config>
+                <name>test</name>
+                <section xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <name>Third</name>
+                    <type>section</type>
+                </section>
+                <section xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <name>second</name>
+                    <type>section</type>
+                    <option>
+                        <name>xyz</name>
+                        <value>123</value>
+                    </option>
+                    <list>
+                        <name>abc</name>
+                        <value>
+                            <index>1</index>
+                            <content>345</content>
+                        </value>
+                        <value>
+                            <index>2</index>
+                            <content>678</content>
+                        </value>
+                    </list>
+                </section>
+            </config>
+        </uci>
+    </config>
+</edit-config>
