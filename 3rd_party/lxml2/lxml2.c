@@ -129,6 +129,7 @@ static int lxml2mod_ReadFile(lua_State *L)
 	luaL_setmetatable(L, LXML2_XMLDOC);
 
 	xml2->doc = doc;
+	fprintf(stderr, "Created XML DOC from file %p\n", (void *) doc);
 
 	return 1;
 }
@@ -146,6 +147,7 @@ static int lxml2mod_ReadMemory(lua_State *L)
 	luaL_setmetatable(L, LXML2_XMLDOC);
 
 	xml2->doc = doc;
+	fprintf(stderr, "Created XML DOC from mem %p\n", (void *) doc);
 
 	return 1;
 }
@@ -356,6 +358,7 @@ static int lxml2xmlDoc_NodeListGetString(lua_State *L)
 static int lxml2xmlDoc_gc(lua_State *L)
 {
 	struct lxml2Object *xml2 = lua_touserdata(L, 1);
+	fprintf(stderr, "GC XML document %p\n", (void *) xml2->doc);
 
 	if (xml2->doc != NULL)
 		xmlFreeDoc(xml2->doc);
