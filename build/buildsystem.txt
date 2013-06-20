@@ -165,8 +165,9 @@ PAGE_SIZE::
   attempted to be auto-detected, but can be redefined to something
   else.
 PLUGIN_PATH::
-  Path where the plugin libraries should be found in the target
-  system. May be absolute or relative. Defaults to ``lib''.
+  Path where the plugins (subfolders `lua_plugins` and `lua_lib`)
+  should be found in the target system.  May be absolute or relative.
+  Defaults to `src/`.
 RELEASE::
   By default, it compiles with debug flags (eg. `-O0 -ggdb3`). With
   this set, it uses optimisation flags (`-O2`).
