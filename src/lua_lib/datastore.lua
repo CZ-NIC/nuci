@@ -3,7 +3,9 @@ require("editconfig")
 Create a skeleton data store.
 ]]
 function datastore(model_file)
-	local result = {};
+	local result = {
+		scheduled_commits = {}
+	};
 	-- Store the file
 	result.model_file = model_file;
 	-- Default implementations of methods.
@@ -33,6 +35,42 @@ function datastore(model_file)
 		local current = lxml2.read_memory('<config>' .. self:get_config() .. '</config>');
 		local operation = lxml2.read_memory('<edit>' .. config .. '</edit>');
 		return editconfig(current, operation, self.model, self.model_ns, defop, deferr);
+	end
+	--[[
+	A commit function. It is called after all the data stores
+	successfuly handled set_config method. This is where the
+	changes should be actually put to effect. It should be exception free.
+
+	You don't need to override this method, usually you want to
+	use self:schedule_commit(function ()). All such functions will be
+	called from here.
+	]]
+	function result:commit()
+		-- Call each function.
+		for _, func in ipairs(self.scheduled_commits) do
+			func();
+		end
+		self.scheduled_commits = {};
+	end
+	--[[
+	Called when no commit will happen. This is to drop the changes
+	that were created by set_config method, because some (possibly
+	other) data store failed to apply.
+
+	Note that it can be called even if set_config was not called on
+	this data store.
+	]]
+	function result:rollback()
+		-- Just remove all the scheduled functions.
+		self.scheduled_commits = {};
+	end
+	--[[
+	Schedule a commit function to be called from within commit().
+	Note that if you override commit() method, this might not get
+	called.
+	]]
+	function result:schedule_commit(commit_func)
+		table.insert(self.scheduled_commits, commit_func);
 	end
 	--[[
 	Upon the registration, the core sets these:
