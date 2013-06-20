@@ -359,13 +359,15 @@ function uci_datastore:set_config(config, defop, deferr)
 				end
 			end
 		end
-		-- FIXME: Support some kind of callback that happens after everything is successfully prepared, to commit
-		-- TODO: Restart the daemons there
-		for config in pairs(self.changed) do
-			cursor:commit(config)
-		end
+		local changed = self.changed;
 		self.changed = nil;
 		self.delayed_lists = nil;
+		self:schedule_commit(function ()
+			-- TODO: Restart the daemons there
+			for config in pairs(changed) do
+				cursor:commit(config)
+			end
+		end);
 	end
 end
 
