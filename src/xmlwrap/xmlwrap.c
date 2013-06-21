@@ -23,7 +23,7 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "lxml2.h"
+#include "xmlwrap.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -395,7 +395,7 @@ static void add_func(lua_State *L, const char *name, lua_CFunction function) {
  * Lua libxml2 binding registration
  */
 
-int lxml2_init(lua_State *L)
+int xmlwrap_init(lua_State *L)
 {
 	// New table for the package
 	lua_newtable(L);

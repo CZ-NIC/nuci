@@ -1,4 +1,4 @@
-RESTRICT := 3rd_party/lxml2
+RESTRICT := src/xmlwrap
 RELATIVE := ../../
 
 include $(RELATIVE)/Makefile

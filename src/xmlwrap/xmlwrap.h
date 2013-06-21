@@ -10,6 +10,6 @@
 
 #include <lua.h>
 
-int lxml2_init(lua_State *L);
+int xmlwrap_init(lua_State *L);
 
 #endif /* LUA_LIBXML2_H */

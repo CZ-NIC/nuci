@@ -4,4 +4,4 @@ test_runner_MODULES := runner
 
 test_runner_PKG_CONFIGS := $(LUA_NAME)
 test_runner_EXE_CONFIGS := xml2
-test_runner_LOCAL_LIBS := lxml2
+test_runner_LOCAL_LIBS := xmlwrap
