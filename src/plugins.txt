@@ -1,0 +1,118 @@
+Writing nuci plugins
+====================
+
+Nuci is just empty server, doing nothing. All the visible
+functionality is implemented in lua plugins. The server just provides
+support for the plugins.
+
+Each plugin is a lua file in the `src/lua_plugins` directory. In the main
+chunk of the file an „object“ should be created and registered it in
+the server. Then the plugin takes care about part of the configuration
+tree.
+
+Any code shared between multiple plugins can be placed as a library in
+`src/lua_lib`.
+
+Anatomy of basic plugin file
+----------------------------
+
+This is how basic plugin (that does nothing) would look like:
+
+  require("datastore");
+
+  local datastore = datastore("test.yin");
+
+  register_datastore_provider(datastore);
+
+This imports the `datastore` library (which lives in `src/lua_lib`)
+and creates a new datastore object. The `test.yin` is file describing
+the model served by this plugin. The yin description is in subset of
+the standard yin (RFC 6020), which is understood by nuci. Then the
+datastore is registered in the server.
+
+Members of the datastore
+------------------------
+
+The datastore, once created and registered, already provides some
+functionality. However, such functionality is only for internal use,
+by the datastore implementation itself.
+
+Here are the member variables and methods of such datastore:
+
+Useful member variables
+~~~~~~~~~~~~~~~~~~~~~~~
+
+model_file::
+  File name of the model yin description, as passed to the
+  constructor.
+model_path::
+  Full path to the model yin file. This is filled in by nuci in
+  `register_datastore_provider`.
+model_ns::
+  The namespace of the model. Filled in by the
+  `register_datastore_provider`.
+model::
+  The parsed XML document representing the model. Filled in by the
+  `register_datastore_provider`.
+
+Utility methods
+~~~~~~~~~~~~~~~
+
+schedule_commit(func)::
+  Schedules the function `func` to be called once all the changes are
+  prepared by all the plugins, to commit them to configuration. The
+  function may be discarded by the datastore without being called, if
+  some of the plugins report an error. In such case the changes are
+  not to be applied. The function must not raise errors or return
+  anything but `nil`. This is specially designed for the `set_config`
+  method and makes no sense to be called elsewhere.
+edit_config_ops(config, defop, deferr)::
+  This function takes the config parameter of the `<edit-config/>`
+  method and converts the description to sequence of operations on the
+  current data to perform the required changes. The `defop` is the
+  default operation of the netconf's method. Similarly, deferr is the
+  default error handling (but this parameter is currently unused).
++
+The returned operations is table of operation tables. Each operation
+table contains following items:
++
+  op;;
+    The operation to perform.
+  command_node;;
+    Corresponding XML node in the `config` passed to the function,
+    coming from the command parameter.
+  model_node;;
+    Corresponding XML node in the model description.
+  config_node;;
+    Corresponding XML node in the current configuration. This may be
+    `nil` in case no corresponding node exists (eg. with operation
+    `create`).
+  note;;
+    Optional note about the operation.
++
+Possible values of the `op` are:
++
+  enter;;
+    Go one level deeper in the tree. The nodes describe where to go in
+    the tree.
+  leave;;
+    Go one level up in the tree.
+  create;;
+    Create the desired node in the configuration. The `config_node`
+    may be empty, the node to create is in `command_node`. Note that
+    the node to create may contain sub-nodes. It is up to the caller
+    to create them as well (there are not separate operations to
+    create them).
+  remove;;
+    Remove a node, marked in the `config_node`.
++
+If a node in the configuration should be replaced, pair of operations
+(`remove` immediately followed by `create`) is produced, both having
+`replace` in their note.
++
+On error, the first result (the list of operations) is `nil`, the
+second contains an error description. The error description should be
+propagated up.
+
+TODO:
+Error descriptions
