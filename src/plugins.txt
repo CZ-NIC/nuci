@@ -114,5 +114,54 @@ On error, the first result (the list of operations) is `nil`, the
 second contains an error description. The error description should be
 propagated up.
 
+Methods to be overriden by the implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are default implementations of several methods that do some
+feasible version of nothing for the functionality of the data store
+(for example, returning empty set of configuration). If the given
+model should provide that part of functionality, it needs to override
+the given method.
+
+All bits of XML are passed encoded as strings here. Note that the
+passed XML parts may be rootless ‒ for example this can be passed,
+even if it's not valid XML document (it, however, can be part of valid
+XML document).
+
+  <data>
+    <something/>
+  </data>
+  <more-data/>
+
+get()::
+  Return the state data (statistics) for the model, as bit of XML. If
+  there's an error during the call, it should return `nil,
+  error_description`. This should return it without the configuration
+  data, if the `<get/>` netconf method is called, both `get()` and
+  `get_config()` is called internally to form the answer.
+get_config()::
+  Similar to `get()`, but instead of state data, it should return the
+  current content of configuration.
+set_config(config, defop, deferr)::
+  This implements the `<edit-config/>` netconf method. The `config` is
+  the fragment of XML inside the `<config/>` parameter of the method,
+  the part relevant to this data store (recognized by the namespace).
+  The `defop` and `deferr` are the default operation and error
+  handling specified by the parameters.
++
+The method should apply the changes to some temporary place and
+schedule a commit by `schedule_commit`, or return an error description
+if it fails.
++
+Usually, it would call `self:edit_config_ops` method to convert the
+XML description to something more digestible, walk through them and
+perform them. The `uci` library implicitly offers the temporary
+storage (it needs to be `commit()` ed for changes to be saved). Be sure
+to use the `get_uci_cursor()` function to get the cursor, as that one
+is shared across the plugins, to avoid overwriting changes of other
+plugins accidentally.
+
+
 TODO:
 Error descriptions
+
