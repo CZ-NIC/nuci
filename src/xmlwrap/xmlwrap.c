@@ -112,7 +112,7 @@ static void lua_stack_dump(lua_State *L, const char *func)
 /*
  * Creates an xmlDocPtr document and returns the handle to lua
  */
-static int lxml2mod_ReadFile(lua_State *L)
+static int mod_ReadFile(lua_State *L)
 {
 	int options = lua_tointeger(L, 3);
 	const char *filename = luaL_checkstring(L, 1);
@@ -134,7 +134,7 @@ static int lxml2mod_ReadFile(lua_State *L)
 	return 1;
 }
 
-static int lxml2mod_ReadMemory(lua_State *L)
+static int mod_ReadMemory(lua_State *L)
 {
 	size_t len;
 	const char *memory = luaL_checklstring(L, 1, &len);
@@ -156,7 +156,7 @@ static int lxml2mod_ReadMemory(lua_State *L)
  * lxml2xmlNode object handlers
  */
 
-static int lxml2xmlNode_ChildrenNode(lua_State *L)
+static int node_ChildrenNode(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -170,7 +170,7 @@ static int lxml2xmlNode_ChildrenNode(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlNode_name(lua_State *L)
+static int node_name(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -190,7 +190,7 @@ static int lxml2xmlNode_name(lua_State *L)
 	}
 }
 
-static int lxml2xmlNode_next(lua_State *L)
+static int node_next(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -204,7 +204,7 @@ static int lxml2xmlNode_next(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlNode_tostring(lua_State *L)
+static int node_tostring(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -213,27 +213,27 @@ static int lxml2xmlNode_tostring(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlNode_iterate_next(lua_State *L)
+static int node_iterate_next(lua_State *L)
 {
 	if (lua_isnil(L, 2)) { // The first iteration
 		// Copy the state
 		lua_pushvalue(L, 1);
 	} else {
 		lua_remove(L, 1); // Drop the state and call next on the value
-		lxml2xmlNode_next(L);
+		node_next(L);
 	}
 	return 1;
 }
 
-static int lxml2xmlNode_iterate(lua_State *L)
+static int node_iterate(lua_State *L)
 {
-	lua_pushcfunction(L, lxml2xmlNode_iterate_next); // The 'next' function
-	lxml2xmlNode_ChildrenNode(L); // The 'state'
+	lua_pushcfunction(L, node_iterate_next); // The 'next' function
+	node_ChildrenNode(L); // The 'state'
 	// One implicit nil.
 	return 2;
 }
 
-static int lxml2xmlNode_getProp(lua_State *L)
+static int node_getProp(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	const char *name = luaL_checkstring(L, 2);
@@ -249,7 +249,7 @@ static int lxml2xmlNode_getProp(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlNode_getText(lua_State *L)
+static int node_getText(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	if (cur->type == XML_TEXT_NODE) {// This is directly the text node, get the content
@@ -266,7 +266,7 @@ static int lxml2xmlNode_getText(lua_State *L)
 	}
 }
 
-static int lxml2xmlNode_setText(lua_State *L)
+static int node_setText(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	const char *text = lua_tostring(L, 2);
@@ -288,7 +288,7 @@ static int lxml2xmlNode_setText(lua_State *L)
 	return 0;
 }
 
-static int lxml2xmlNode_parent(lua_State *L)
+static int node_parent(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -302,16 +302,16 @@ static int lxml2xmlNode_parent(lua_State *L)
 }
 
 static const luaL_Reg lxml2xmlNode[] = {
-	{ "first_child", lxml2xmlNode_ChildrenNode },
-	{ "name", lxml2xmlNode_name },
-	{ "next", lxml2xmlNode_next },
-	{ "iterate", lxml2xmlNode_iterate },
-	{ "attribute", lxml2xmlNode_getProp },
-	{ "text", lxml2xmlNode_getText },
-	{ "set_text", lxml2xmlNode_setText },
-	{ "parent", lxml2xmlNode_parent },
-	// { "__gc", lxml2xmlNode_gc }, # FIXME Anything to free here?
-	{ "__tostring", lxml2xmlNode_tostring },
+	{ "first_child", node_ChildrenNode },
+	{ "name", node_name },
+	{ "next", node_next },
+	{ "iterate", node_iterate },
+	{ "attribute", node_getProp },
+	{ "text", node_getText },
+	{ "set_text", node_setText },
+	{ "parent", node_parent },
+	// { "__gc", node_gc }, # FIXME Anything to free here?
+	{ "__tostring", node_tostring },
 	{ NULL, NULL }
 };
 
@@ -319,7 +319,7 @@ static const luaL_Reg lxml2xmlNode[] = {
  * lxml2xmlDoc object handlers
  */
 
-static int lxml2xmlDoc_GetRootElement(lua_State *L)
+static int doc_GetRootElement(lua_State *L)
 {
 	xmlNodePtr cur = NULL;
 	struct lxml2Object *xml2 = lua_touserdata(L, 1);
@@ -338,7 +338,7 @@ static int lxml2xmlDoc_GetRootElement(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlDoc_NodeListGetString(lua_State *L)
+static int doc_NodeListGetString(lua_State *L)
 {
 	xmlChar *v;
 	xmlDocPtr doc = lua_touserdata(L, 1);
@@ -355,7 +355,7 @@ static int lxml2xmlDoc_NodeListGetString(lua_State *L)
 	return 1;
 }
 
-static int lxml2xmlDoc_gc(lua_State *L)
+static int doc_gc(lua_State *L)
 {
 	struct lxml2Object *xml2 = lua_touserdata(L, 1);
 	fprintf(stderr, "GC XML document %p\n", (void *) xml2->doc);
@@ -366,7 +366,7 @@ static int lxml2xmlDoc_gc(lua_State *L)
 	return 0;
 }
 
-static int lxml2xmlDoc_tostring(lua_State *L)
+static int doc_tostring(lua_State *L)
 {
 	struct lxml2Object *xml2 = lua_touserdata(L, 1);
 
@@ -376,10 +376,10 @@ static int lxml2xmlDoc_tostring(lua_State *L)
 }
 
 static const luaL_Reg lxml2xmlDoc[] = {
-	{ "root", lxml2xmlDoc_GetRootElement },
-	{ "NodeListGetString", lxml2xmlDoc_NodeListGetString },
-	{ "__gc", lxml2xmlDoc_gc },
-	{ "__tostring", lxml2xmlDoc_tostring },
+	{ "root", doc_GetRootElement },
+	{ "NodeListGetString", doc_NodeListGetString },
+	{ "__gc", doc_gc },
+	{ "__tostring", doc_tostring },
 	{ NULL, NULL }
 };
 
@@ -399,8 +399,8 @@ int xmlwrap_init(lua_State *L)
 {
 	// New table for the package
 	lua_newtable(L);
-	add_func(L, "read_file", lxml2mod_ReadFile);
-	add_func(L, "read_memory", lxml2mod_ReadMemory);
+	add_func(L, "read_file", mod_ReadFile);
+	add_func(L, "read_memory", mod_ReadMemory);
 	// Push the package as lxml2 (which pops it)
 	lua_setglobal(L, "lxml2");
 
