@@ -301,7 +301,7 @@ static int node_parent(lua_State *L)
 	return 0;
 }
 
-static const luaL_Reg lxml2xmlNode[] = {
+static const luaL_Reg xmlwrap_node[] = {
 	{ "first_child", node_ChildrenNode },
 	{ "name", node_name },
 	{ "next", node_next },
@@ -375,7 +375,7 @@ static int doc_tostring(lua_State *L)
 	return 1;
 }
 
-static const luaL_Reg lxml2xmlDoc[] = {
+static const luaL_Reg xmlwrap_doc[] = {
 	{ "root", doc_GetRootElement },
 	{ "NodeListGetString", doc_NodeListGetString },
 	{ "__gc", doc_gc },
@@ -413,7 +413,7 @@ int xmlwrap_init(lua_State *L)
 	luaL_newmetatable(L, LXML2_XMLDOC); /* create metatable to handle xmlDoc objects */
 	lua_pushvalue(L, -1);               /* push metatable */
 	lua_setfield(L, -2, "__index");     /* metatable.__index = metatable */
-	luaL_setfuncs(L, lxml2xmlDoc, 0);   /* add xmlDoc methods to the new metatable */
+	luaL_setfuncs(L, xmlwrap_doc, 0);   /* add xmlDoc methods to the new metatable */
 	lua_pop(L, 1);                      /* pop new metatable */
 
 	/* Register metatable for the xmlNode objects */
@@ -421,7 +421,7 @@ int xmlwrap_init(lua_State *L)
 	luaL_newmetatable(L, LXML2_XMLNODE); /* create metatable to handle xmlNode objects */
 	lua_pushvalue(L, -1);               /* push metatable */
 	lua_setfield(L, -2, "__index");     /* metatable.__index = metatable */
-	luaL_setfuncs(L, lxml2xmlNode, 0);  /* add xmlNode methods to the new metatable */
+	luaL_setfuncs(L, xmlwrap_node, 0);  /* add xmlNode methods to the new metatable */
 	lua_pop(L, 1);
 
 	return 1;
