@@ -277,3 +277,44 @@ info_badns::
   Value of the `error-info/bad-namespace` element.
 info_sid::
   Value of the `error-info/sid` element.
+
+Handling XML data
+-----------------
+
+Nuci contains a parser to a DOM tree. There are two functions to parse
+XML, living in the `xmlwrap` package. They are
+`xmlwrap.read_file(filename)` and `xmlwrap.read_memory(xml_data)`.
+They differ in the source of data ‒ one takes a filename, the other a
+string with XML data. They both return a XML document object.
+
+The only method on the document currently is `document:root()`, which
+returns a node object. The nodes are more rich:
+
+node:first_child()::
+  Returns the first child of the current node (may be `nil` if there
+  are no children).
+node:next()::
+  Returns the next sibling. It is `nil` if this one is last.
+node:iterate()::
+  Returns the iterator function. It can be used to go through all the
+  children of the node, like this:
++
+  for child in node:iterate() do
+    -- Do something
+  end
+
+node:parent()::
+  Return the parent of the node (may be `nil`).
+node:attribute(name, ns)::
+  Get value of an attribute with given name and namespace. The `ns`
+  parameter may be `nil`, in which case the attributes without
+  namespace are taken.
+node:name()::
+  Return the name and namespace of the node.
+node:text()::
+  Return the text of the node. This has some limitations (like it
+  doesn't really work with `<body>xyz<p/>abc</body>`). What happens
+  with CDATA is yet to be tested.
+node:set_text(text)::
+  Replace the text with some other. The node must already have some
+  text to be replaced.
