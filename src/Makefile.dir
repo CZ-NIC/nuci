@@ -12,6 +12,7 @@ nuci_EXE_CONFIGS := xml2
 nuci_LOCAL_LIBS := xmlwrap
 nuci_SYSTEM_LIBS := uci
 
-DOCS += src/plugins
+DOCS += src/plugins \
+	src/design
 
 include $(S)/src/xmlwrap/Makefile.dir

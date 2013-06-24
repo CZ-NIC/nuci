@@ -1,0 +1,32 @@
+The internal design
+===================
+
+There are several parts inside Nuci, each taking care of different
+things.
+
+The netconf interface
+---------------------
+
+This is handled by thinly wrapped libnetconf. It parses the XML
+messages and calls callbacks and data stores.
+
+The nuci data store
+-------------------
+
+This is just an adaptor between libnetconf interface and the
+interpreter. It doesn't do much.
+
+There's one data store for each plugin.
+
+The interpreter
+---------------
+
+This wraps the Lua interpreter, adds some functions to it and loads
+the plugins.
+
+The plugins
+-----------
+
+Each plugin is a Lua object registered by the correct function and
+with the correct interface. It provides the answers to the queries
+from users.
