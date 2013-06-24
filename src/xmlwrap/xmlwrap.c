@@ -32,8 +32,8 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#define LXML2_XMLDOC		"xmlDocPtr"
-#define LXML2_XMLNODE		"xmlNodePtr"
+#define WRAP_XMLDOC		"xmlDocPtr"
+#define WRAP_XMLNODE		"xmlNodePtr"
 
 struct lxml2Object {
 	xmlDocPtr doc;
@@ -126,7 +126,7 @@ static int mod_ReadFile(lua_State *L)
 		return luaL_error(L, "Failed to open xml file: %s", filename);
 
 	xml2 = lua_newuserdata(L, sizeof(*xml2));
-	luaL_setmetatable(L, LXML2_XMLDOC);
+	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
 	fprintf(stderr, "Created XML DOC from file %p\n", (void *) doc);
@@ -144,7 +144,7 @@ static int mod_ReadMemory(lua_State *L)
 		return luaL_error(L, "Failed to read xml string");
 
 	struct lxml2Object *xml2 = lua_newuserdata(L, sizeof(*xml2));
-	luaL_setmetatable(L, LXML2_XMLDOC);
+	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
 	fprintf(stderr, "Created XML DOC from mem %p\n", (void *) doc);
@@ -162,7 +162,7 @@ static int node_ChildrenNode(lua_State *L)
 
 	if (cur && cur->xmlChildrenNode) {
 		lua_pushlightuserdata(L, cur->xmlChildrenNode);
-		luaL_setmetatable(L, LXML2_XMLNODE);
+		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
 	}
@@ -196,7 +196,7 @@ static int node_next(lua_State *L)
 
 	if (cur && cur->next) {
 		lua_pushlightuserdata(L, cur->next);
-		luaL_setmetatable(L, LXML2_XMLNODE);
+		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
 	}
@@ -294,7 +294,7 @@ static int node_parent(lua_State *L)
 
 	if (cur && cur->parent) {
 		lua_pushlightuserdata(L, cur->parent);
-		luaL_setmetatable(L, LXML2_XMLNODE);
+		luaL_setmetatable(L, WRAP_XMLNODE);
 		return 1;
 	}
 
@@ -327,7 +327,7 @@ static int doc_GetRootElement(lua_State *L)
 	cur = xmlDocGetRootElement(xml2->doc);
 	if (cur) {
 		lua_pushlightuserdata(L, cur);
-		luaL_setmetatable(L, LXML2_XMLNODE);
+		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
 	}
@@ -410,7 +410,7 @@ int xmlwrap_init(lua_State *L)
 
 	/* Register metatable for the xmlDoc objects */
 
-	luaL_newmetatable(L, LXML2_XMLDOC); /* create metatable to handle xmlDoc objects */
+	luaL_newmetatable(L, WRAP_XMLDOC); /* create metatable to handle xmlDoc objects */
 	lua_pushvalue(L, -1);               /* push metatable */
 	lua_setfield(L, -2, "__index");     /* metatable.__index = metatable */
 	luaL_setfuncs(L, xmlwrap_doc, 0);   /* add xmlDoc methods to the new metatable */
@@ -418,7 +418,7 @@ int xmlwrap_init(lua_State *L)
 
 	/* Register metatable for the xmlNode objects */
 
-	luaL_newmetatable(L, LXML2_XMLNODE); /* create metatable to handle xmlNode objects */
+	luaL_newmetatable(L, WRAP_XMLNODE); /* create metatable to handle xmlNode objects */
 	lua_pushvalue(L, -1);               /* push metatable */
 	lua_setfield(L, -2, "__index");     /* metatable.__index = metatable */
 	luaL_setfuncs(L, xmlwrap_node, 0);  /* add xmlNode methods to the new metatable */
