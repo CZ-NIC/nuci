@@ -57,9 +57,9 @@ local model_names = {
 			local keys = list_keys(model);
 			local found = true;
 			for key_name in keys do
-				io.stderr:write(key_name .. "\n");
+				io.stderr:write((command_key or "[nil value]") .. "\n");
 				local command_key = extract_leaf_subvalue(command_node, model, key_name);
-				io.stderr:write(command_key .. "\n");
+				io.stderr:write((command_key or "[nil value]") .. "\n");
 				local config_key = extract_leaf_subvalue(config_node, model, key_name);
 				if not command_key or not config_key or config_key ~= command_key then
 					-- FIXME: Properly handle missing keys
