@@ -1,3 +1,0 @@
-
-include $(S)/3rd_party/lxml2/Makefile.dir
-

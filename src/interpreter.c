@@ -1,7 +1,7 @@
 #include "interpreter.h"
 #include "register.h"
 #include "model.h"
-#include "../3rd_party/lxml2/lxml2.h"
+#include "xmlwrap/xmlwrap.h"
 
 #include <libnetconf.h>
 #include <uci.h>
@@ -313,7 +313,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "xml_escape", xml_escape_lua);
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
 
-	lxml2_init(result->state);
+	xmlwrap_init(result->state);
 
 	// Set the package.path so our own libraries are found. Prepend to the list.
 	lua_getglobal(result->state, "package");

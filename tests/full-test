@@ -38,5 +38,7 @@ test -e ./tests/xmlnorm/xmlnorm || (
 	make
 )
 ./tests/xmlnorm/xmlnorm < "$TMP" | diff -u "$DIR"/output -
-uci -c "$CFG" show | sort | diff -u "$DIR"/uci-after -
+uci -c "$CFG" show | sort > "$CFG"/todiff1
+cat "$DIR"/uci-after | sort > "$CFG"/todiff2
+diff -u "$CFG"/todiff1 "$CFG"/todiff2
 rm -rf "$TMP" "$CFG"

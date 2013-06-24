@@ -4,7 +4,7 @@ LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $
 
 # List of all makefiles in direct subdirectories. If a new subdirectory is
 # made, it goes here.
-include $(S)/3rd_party/Makefile.dir
+#include $(S)/3rd_party/Makefile.dir
 include $(S)/src/Makefile.dir
 include $(S)/tests/Makefile.dir
 # This one for documentation for the build system

@@ -55,11 +55,18 @@ local model_names = {
 				return false;
 			end
 			local keys = list_keys(model);
-			local found = true;
 			for key_name in keys do
-				io.stderr:write(key_name .. "\n");
+				io.stderr:write((command_key or "[nil value]") .. "\n");
 				local command_key = extract_leaf_subvalue(command_node, model, key_name);
-				io.stderr:write(command_key .. "\n");
+				io.stderr:write((command_key or "[nil value]") .. "\n");
+				if not command_key then
+					return nil, {
+						msg="Missing key in configuration: " .. key_name,
+						tag="data missing",
+						info_badelem=model,
+						info_badns=ns
+					};
+				end
 				local config_key = extract_leaf_subvalue(config_node, model, key_name);
 				if not command_key or not config_key or config_key ~= command_key then
 					-- FIXME: Properly handle missing keys
@@ -120,7 +127,11 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				};
 			end
 			io.stderr:write("Found model node " .. model_node:name() .. " for " .. command_name .. "\n");
-			local config_node = config_identify(model_node, model_opts, command_node, config, ns);
+			local config_node, err = config_identify(model_node, model_opts, command_node, config, ns);
+			if err then
+				return err;
+			end
+
 			-- Is there an override for the operation here?
 			local operation = command_node:attribute('operation', netconf_ns) or defop;
 			-- What we are asked to do (may be different from what we actually do)

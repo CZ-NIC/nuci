@@ -1,7 +1,13 @@
 #!/bin/sh
 
-set -ex
+set -e
 
 for case in tests/full/cases/* ; do
+	echo "===================================================================="
+	echo "Running test: $case"
+	echo "===================================================================="
 	./tests/full-test "$case"
 done
+
+echo "Test end"
+
