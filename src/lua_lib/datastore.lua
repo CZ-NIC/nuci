@@ -32,8 +32,8 @@ function datastore(model_file)
 	corresponding operations on the config.
 	]]
 	function result:edit_config_ops(config, defop, deferr)
-		local current = lxml2.read_memory('<config>' .. self:get_config() .. '</config>');
-		local operation = lxml2.read_memory('<edit>' .. config .. '</edit>');
+		local current = xmlwrap.read_memory('<config>' .. self:get_config() .. '</config>');
+		local operation = xmlwrap.read_memory('<edit>' .. config .. '</edit>');
 		return editconfig(current, operation, self.model, self.model_ns, defop, deferr);
 	end
 	--[[
@@ -75,7 +75,7 @@ function datastore(model_file)
 	--[[
 	Upon the registration, the core sets these:
 	- model_path -- full path to the model file.
-	- model -- parsed lxml2 object of the model.
+	- model -- parsed xmlwrap object of the model.
 	- model_ns -- namespace of the model.
 	]]
 	return result;
