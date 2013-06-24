@@ -235,7 +235,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 end
 --[[
 Turn the <edit-config /> method into a list of trivial changes to the given
-current config. The current_config, command and model are lxml2 objects. The
+current config. The current_config, command and model are xmlwrap objects. The
 defop and errop are strings, specifying the default operation/error operation
 on the document.
 

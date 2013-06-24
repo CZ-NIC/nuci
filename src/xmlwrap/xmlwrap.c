@@ -35,7 +35,7 @@
 #define WRAP_XMLDOC		"xmlDocPtr"
 #define WRAP_XMLNODE		"xmlNodePtr"
 
-struct lxml2Object {
+struct xmlwrap_object {
 	xmlDocPtr doc;
 };
 
@@ -119,7 +119,7 @@ static int mod_ReadFile(lua_State *L)
 	const char *encoding = lua_tostring(L, 2);
 
 	xmlDocPtr doc = NULL;
-	struct lxml2Object *xml2 = NULL;
+	struct xmlwrap_object *xml2 = NULL;
 
 	doc = xmlReadFile(filename, encoding, options);
 	if (!doc)
@@ -143,7 +143,7 @@ static int mod_ReadMemory(lua_State *L)
 	if (!doc)
 		return luaL_error(L, "Failed to read xml string");
 
-	struct lxml2Object *xml2 = lua_newuserdata(L, sizeof(*xml2));
+	struct xmlwrap_object *xml2 = lua_newuserdata(L, sizeof(*xml2));
 	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
@@ -153,7 +153,7 @@ static int mod_ReadMemory(lua_State *L)
 }
 
 /*
- * lxml2xmlNode object handlers
+ * Node handlers
  */
 
 static int node_ChildrenNode(lua_State *L)
@@ -316,13 +316,13 @@ static const luaL_Reg xmlwrap_node[] = {
 };
 
 /*
- * lxml2xmlDoc object handlers
+ * Document handlers
  */
 
 static int doc_GetRootElement(lua_State *L)
 {
 	xmlNodePtr cur = NULL;
-	struct lxml2Object *xml2 = lua_touserdata(L, 1);
+	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 
 	cur = xmlDocGetRootElement(xml2->doc);
 	if (cur) {
@@ -357,7 +357,7 @@ static int doc_NodeListGetString(lua_State *L)
 
 static int doc_gc(lua_State *L)
 {
-	struct lxml2Object *xml2 = lua_touserdata(L, 1);
+	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 	fprintf(stderr, "GC XML document %p\n", (void *) xml2->doc);
 
 	if (xml2->doc != NULL)
@@ -368,7 +368,7 @@ static int doc_gc(lua_State *L)
 
 static int doc_tostring(lua_State *L)
 {
-	struct lxml2Object *xml2 = lua_touserdata(L, 1);
+	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 
 	lua_pushfstring(L, "(xml2:xmlDoc@%p:%p)", xml2, xml2->doc);
 
@@ -401,8 +401,8 @@ int xmlwrap_init(lua_State *L)
 	lua_newtable(L);
 	add_func(L, "read_file", mod_ReadFile);
 	add_func(L, "read_memory", mod_ReadMemory);
-	// Push the package as lxml2 (which pops it)
-	lua_setglobal(L, "lxml2");
+	// Push the package as xmlwrap (which pops it)
+	lua_setglobal(L, "xmlwrap");
 
 	/*
 	 * Register metatables
