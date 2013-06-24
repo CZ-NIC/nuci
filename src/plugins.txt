@@ -161,7 +161,119 @@ to use the `get_uci_cursor()` function to get the cursor, as that one
 is shared across the plugins, to avoid overwriting changes of other
 plugins accidentally.
 
+call(rpc)::
+  This is called to handle a custom RPC call from client. The
+  datastore to call it on is decided based on the namespace of the
+  RPC. The whole RPC is passed as parameter. It expects the response
+  to be returned as result.
 
-TODO:
+commit()::
+  Called when all the `set_config` methods on all the data stores were
+  successfully called. This should store the changes into permanent
+  storage. By default, it calls all the commit functions registered by
+  `schedule_commit`. It can be overridden to replace this
+  functionality (but then, schedule_commit` will not work).
+
+rollback()::
+  Called when one of the `set_config` method on some data store
+  failed. It can be called on a data store even if no `set_config` was
+  called on it yet. This is the place to discard changes scheduled for
+  commit. The default implementation discards the functions scheduled
+  by `schedule_commit`, but it can be overridden (probably together
+  with `commit()`).
+
+Useful functions
+----------------
+
+There are some useful functions in the library `nutils` (nuci utils).
+
+find_node(parent_node, predicate)::
+  Go through child nodes of the `parent_node` and apply predicate to
+  each of them in order. Once the predicate returns true, return the
+  current child node. If none returns true, return nil at the end.
+
+find_node_name_ns(parent_node, name, ns)::
+  Similar to the previous, but pass desired name and namespace of the
+  node to match for equality.
+
+split(string)::
+  Split the string on whitespace into table of smaller strings.
+
+dump_table(table)::
+  Mostly debugging function. Writes the content of the table to the
+  error output.
+
+get_uci_cursor()::
+  Get a global uci cursor that can be used to go through the config
+  files. This respects the `NUCI_TEST_CONFIG_DIR` environment
+  variable, which is used in several tests that use different place
+  than `/etc/config` to store the files.
+
 Error descriptions
+------------------
 
+There are three ways how to return errors.
+
+The first one is mostly a fallback mechanism. If the lua code crashes
+(eg. by calling a variable containing `nil`), an error is generated,
+containing the error string.
+
+The second is returning string as the error description. In such case,
+the string is taken as the error message, in an error of this form:
+
+  <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <rpc-error>
+      <error-type>application</error-type>
+      <error-tag>operation-failed</error-tag>
+      <error-severity>error</error-severity>
+      <error-message>The error message</error-message>
+    </rpc-error>
+  </rpc-reply>
+
+The last one is specifying the whole error, as a lua table. The table
+should contain items with these names (not all of them must be
+present):
+
+msg::
+  The error text (human readable description).
+type::
+  Value of the `error-type` element. Defaults to `application`.
+tag::
+  Value of the `error-tag` element. It is expected to be mapped
+  directly in future, but currently, it accepts these values:
+  * `empty`
+  * `in use`
+  * `invalid value`
+  * `too big`
+  * `missing attribute`
+  * `bad attribute`
+  * `unknown attribute`
+  * `missing element`
+  * `bad element`
+  * `unknown element`
+  * `unknown namespace`
+  * `access denied`
+  * `lock denied`
+  * `resource denied`
+  * `rollback failed`
+  * `data exists`
+  * `data missing`
+  * `operation not supported`
+  * `operation failed`
+  * `malformed message`
+severity::
+  Value of the `error-severity` element. Defaults to `error` and it
+  should be probably left at that, since usual processing in `nuci` is
+  aborted on any error reported, even if it is of severity `warning`.
+app_tag::
+  Value of the `app_tag` element.
+path::
+  Value of the `path` elemente.
+info_badattr::
+  Value of the `error-info/bad-attribute` element.
+info_badelem::
+  Value of the `error-info/bad-element` element.
+info_badns::
+  Value of the `error-info/bad-namespace` element.
+info_sid::
+  Value of the `error-info/sid` element.
