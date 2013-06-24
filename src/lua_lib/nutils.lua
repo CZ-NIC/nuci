@@ -1,7 +1,12 @@
 -- Find the first child node matching a predicate, or nil.
 function find_node(node, predicate)
 	for child in node:iterate() do
-		if predicate(child) then
+		local result, err = predicate(child)
+		if err then
+			return nil, err;
+		end
+
+		if result then
 			return child;
 		end
 	end
