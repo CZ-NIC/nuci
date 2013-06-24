@@ -23,12 +23,12 @@ ENDXML
 	echo "]]>]]>"
 ) | socat STDIO EXEC:./bin/nuci,pty >"$TMP"
 ed "$TMP" <<ENDED
+%s/]]>]]>//g
 $
 d
 ?UTF-8
 -1
 1,.d
-%s/]]>]]>//g
 w
 q
 ENDED
