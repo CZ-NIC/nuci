@@ -1,13 +1,7 @@
-require("uci")
 require("datastore")
 require("nutils")
 
 local uci_datastore = datastore("uci-raw.yin")
-
-local function get_cursor()
-	local cursor = uci.cursor(os.getenv("NUCI_TEST_CONFIG_DIR"));
-	return cursor;
-end
 
 local function sort_by_index(input)
 	-- Sort by the value in ".index"
@@ -68,7 +62,7 @@ local function list_config(cursor, config)
 end
 
 function uci_datastore:get_config()
-	local cursor = get_cursor();
+	local cursor = get_uci_cursor();
 	local result = [[<uci xmlns='http://www.nic.cz/ns/router/uci-raw'>]];
 	for _, config in ipairs(uci_list_configs()) do
 		result = result .. list_config(cursor, config);
@@ -316,7 +310,7 @@ function uci_datastore:set_config(config, defop, deferr)
 	if err then
 		return err;
 	else
-		local cursor = get_cursor();
+		local cursor = get_uci_cursor();
 		-- Prepare data structures.
 		self.changed = {};
 		self.delayed_lists = {}
@@ -365,13 +359,15 @@ function uci_datastore:set_config(config, defop, deferr)
 				end
 			end
 		end
-		-- FIXME: Support some kind of callback that happens after everything is successfully prepared, to commit
-		-- TODO: Restart the daemons there
-		for config in pairs(self.changed) do
-			cursor:commit(config)
-		end
+		local changed = self.changed;
 		self.changed = nil;
 		self.delayed_lists = nil;
+		self:schedule_commit(function ()
+			-- TODO: Restart the daemons there
+			for config in pairs(changed) do
+				cursor:commit(config)
+			end
+		end);
 	end
 end
 

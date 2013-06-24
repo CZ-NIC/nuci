@@ -395,6 +395,18 @@ const char *interpreter_get(struct interpreter *interpreter, lua_datastore datas
 		return lua_tostring(lua, -2);
 }
 
+void interpreter_procedure(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
+	lua_State *lua = interpreter->state;
+	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works when called many times from C
+	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore); // Get the datastore object
+	lua_getfield(lua, -1, method); // Copy the function from the table
+	lua_pushvalue(lua, -2); // Copy the object so it's the first parameter of the function
+	lua_pcall(lua, 1, 1, 0);
+	// If it returns anything but nil, it's error (even if it's automatic because error()).
+	bool error = !lua_isnil(lua, -1);
+	flag_error(interpreter, error, - error);
+}
+
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
@@ -410,10 +422,8 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	// which is the same as what the lua function should do. No need to
 	// distinguish.
 	lua_pcall(lua, 4, 1, 0);
-	if (lua_isnil(lua, -1))
-		flag_error(interpreter, false, 0);
-	else
-		flag_error(interpreter, true, -1);
+	bool error = !lua_isnil(lua, -1);
+	flag_error(interpreter, error, - error);
 }
 
 void flag_error(struct interpreter *interpreter, bool error, int err_index) {

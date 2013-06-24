@@ -25,6 +25,7 @@ tools/test_gui/test_gui
 
 #Link to documentation output in build
 build/buildsystem.html
+src/*.html
 
 # Created by the binary at run time.
 src/datastore.xml

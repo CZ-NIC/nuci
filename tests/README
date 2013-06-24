@@ -1,0 +1,51 @@
+Tests
+=====
+
+Here are some tests for nuci. They are not covering everything, there's no
+manpower for that, but it helped discover some bugs. All the tests are expected
+to be run from top-level project directory.
+
+Currently, there are three kinds of tests.
+
+Manual tests
+------------
+
+The first one are manual tests ‒
+they start nuci, put some pre-defined input into it and print the output, for
+user to check. These are the tests that start with `test-`, like `test-get`.
+
+Unit tests
+----------
+
+Then there are unit-tests. These call some functions from inside and check what
+the output is. Generally, they use the `test_runner` program as their lua
+interpretter (it can't use plain lua, since we add few more functions to the
+global namespace). These can be run automatically and they signal success or
+failure by their exit code (and provide some info in case of failure).
+Currently, there are:
+
+• editconfig_test.lua: This tsts the src/lua_lib/editconfig.lua library, that,
+  given model, editconfig command and current configuration, generates sequence
+  of operations to perform on the config.
+
+Full tests
+----------
+
+The last kind is full answer tests. They take some config files, copy them,
+start nuci on them, feed it with predefined input. Then they check the output
+and the things stored in the config files.
+
+These tests are run by calling the full-test-all (to run all of them) or
+full-test $PATH_TO_TEST_CASE.
+
+The test cases live in full/cases, each directory there is one test. It
+contains `input` (the middle of the rpc request), `output` (expected output),
+`config` (all the config files for the test) and `uci-after` ‒ output of
+
+  uci -c $PATH_TO_CONFIGS show | sort
+
+after the test has run.
+
+The xmlnorm utility is used by these tests internally.
+
+It is possible to generate such tests by the test_gui tool.

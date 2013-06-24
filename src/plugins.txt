@@ -1,0 +1,320 @@
+Writing nuci plugins
+====================
+
+Nuci is just empty server, doing nothing. All the visible
+functionality is implemented in lua plugins. The server just provides
+support for the plugins.
+
+Each plugin is a lua file in the `src/lua_plugins` directory. In the main
+chunk of the file an „object“ should be created and registered it in
+the server. Then the plugin takes care about part of the configuration
+tree.
+
+Any code shared between multiple plugins can be placed as a library in
+`src/lua_lib`.
+
+Anatomy of basic plugin file
+----------------------------
+
+This is how basic plugin (that does nothing) would look like:
+
+  require("datastore");
+
+  local datastore = datastore("test.yin");
+
+  register_datastore_provider(datastore);
+
+This imports the `datastore` library (which lives in `src/lua_lib`)
+and creates a new datastore object. The `test.yin` is file describing
+the model served by this plugin. The yin description is in subset of
+the standard yin (RFC 6020), which is understood by nuci. Then the
+datastore is registered in the server.
+
+Members of the datastore
+------------------------
+
+The datastore, once created and registered, already provides some
+functionality. However, such functionality is only for internal use,
+by the datastore implementation itself.
+
+Here are the member variables and methods of such datastore:
+
+Useful member variables
+~~~~~~~~~~~~~~~~~~~~~~~
+
+model_file::
+  File name of the model yin description, as passed to the
+  constructor.
+model_path::
+  Full path to the model yin file. This is filled in by nuci in
+  `register_datastore_provider`.
+model_ns::
+  The namespace of the model. Filled in by the
+  `register_datastore_provider`.
+model::
+  The parsed XML document representing the model. Filled in by the
+  `register_datastore_provider`.
+
+Utility methods
+~~~~~~~~~~~~~~~
+
+schedule_commit(func)::
+  Schedules the function `func` to be called once all the changes are
+  prepared by all the plugins, to commit them to configuration. The
+  function may be discarded by the datastore without being called, if
+  some of the plugins report an error. In such case the changes are
+  not to be applied. The function must not raise errors or return
+  anything but `nil`. This is specially designed for the `set_config`
+  method and makes no sense to be called elsewhere.
+edit_config_ops(config, defop, deferr)::
+  This function takes the config parameter of the `<edit-config/>`
+  method and converts the description to sequence of operations on the
+  current data to perform the required changes. The `defop` is the
+  default operation of the netconf's method. Similarly, deferr is the
+  default error handling (but this parameter is currently unused).
++
+The returned operations is table of operation tables. Each operation
+table contains following items:
++
+  op;;
+    The operation to perform.
+  command_node;;
+    Corresponding XML node in the `config` passed to the function,
+    coming from the command parameter.
+  model_node;;
+    Corresponding XML node in the model description.
+  config_node;;
+    Corresponding XML node in the current configuration. This may be
+    `nil` in case no corresponding node exists (eg. with operation
+    `create`).
+  note;;
+    Optional note about the operation.
++
+Possible values of the `op` are:
++
+  enter;;
+    Go one level deeper in the tree. The nodes describe where to go in
+    the tree.
+  leave;;
+    Go one level up in the tree.
+  create;;
+    Create the desired node in the configuration. The `config_node`
+    may be empty, the node to create is in `command_node`. Note that
+    the node to create may contain sub-nodes. It is up to the caller
+    to create them as well (there are not separate operations to
+    create them).
+  remove;;
+    Remove a node, marked in the `config_node`.
++
+If a node in the configuration should be replaced, pair of operations
+(`remove` immediately followed by `create`) is produced, both having
+`replace` in their note.
++
+On error, the first result (the list of operations) is `nil`, the
+second contains an error description. The error description should be
+propagated up.
+
+Methods to be overriden by the implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are default implementations of several methods that do some
+feasible version of nothing for the functionality of the data store
+(for example, returning empty set of configuration). If the given
+model should provide that part of functionality, it needs to override
+the given method.
+
+All bits of XML are passed encoded as strings here. Note that the
+passed XML parts may be rootless ‒ for example this can be passed,
+even if it's not valid XML document (it, however, can be part of valid
+XML document).
+
+  <data>
+    <something/>
+  </data>
+  <more-data/>
+
+get()::
+  Return the state data (statistics) for the model, as bit of XML. If
+  there's an error during the call, it should return `nil,
+  error_description`. This should return it without the configuration
+  data, if the `<get/>` netconf method is called, both `get()` and
+  `get_config()` is called internally to form the answer.
+get_config()::
+  Similar to `get()`, but instead of state data, it should return the
+  current content of configuration.
+set_config(config, defop, deferr)::
+  This implements the `<edit-config/>` netconf method. The `config` is
+  the fragment of XML inside the `<config/>` parameter of the method,
+  the part relevant to this data store (recognized by the namespace).
+  The `defop` and `deferr` are the default operation and error
+  handling specified by the parameters.
++
+The method should apply the changes to some temporary place and
+schedule a commit by `schedule_commit`, or return an error description
+if it fails.
++
+Usually, it would call `self:edit_config_ops` method to convert the
+XML description to something more digestible, walk through them and
+perform them. The `uci` library implicitly offers the temporary
+storage (it needs to be `commit()` ed for changes to be saved). Be sure
+to use the `get_uci_cursor()` function to get the cursor, as that one
+is shared across the plugins, to avoid overwriting changes of other
+plugins accidentally.
+
+call(rpc)::
+  This is called to handle a custom RPC call from client. The
+  datastore to call it on is decided based on the namespace of the
+  RPC. The whole RPC is passed as parameter. It expects the response
+  to be returned as result.
+
+commit()::
+  Called when all the `set_config` methods on all the data stores were
+  successfully called. This should store the changes into permanent
+  storage. By default, it calls all the commit functions registered by
+  `schedule_commit`. It can be overridden to replace this
+  functionality (but then, schedule_commit` will not work).
+
+rollback()::
+  Called when one of the `set_config` method on some data store
+  failed. It can be called on a data store even if no `set_config` was
+  called on it yet. This is the place to discard changes scheduled for
+  commit. The default implementation discards the functions scheduled
+  by `schedule_commit`, but it can be overridden (probably together
+  with `commit()`).
+
+Useful functions
+----------------
+
+There are some useful functions in the library `nutils` (nuci utils).
+
+find_node(parent_node, predicate)::
+  Go through child nodes of the `parent_node` and apply predicate to
+  each of them in order. Once the predicate returns true, return the
+  current child node. If none returns true, return nil at the end.
+
+find_node_name_ns(parent_node, name, ns)::
+  Similar to the previous, but pass desired name and namespace of the
+  node to match for equality.
+
+split(string)::
+  Split the string on whitespace into table of smaller strings.
+
+dump_table(table)::
+  Mostly debugging function. Writes the content of the table to the
+  error output.
+
+get_uci_cursor()::
+  Get a global uci cursor that can be used to go through the config
+  files. This respects the `NUCI_TEST_CONFIG_DIR` environment
+  variable, which is used in several tests that use different place
+  than `/etc/config` to store the files.
+
+Error descriptions
+------------------
+
+There are three ways how to return errors.
+
+The first one is mostly a fallback mechanism. If the lua code crashes
+(eg. by calling a variable containing `nil`), an error is generated,
+containing the error string.
+
+The second is returning string as the error description. In such case,
+the string is taken as the error message, in an error of this form:
+
+  <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <rpc-error>
+      <error-type>application</error-type>
+      <error-tag>operation-failed</error-tag>
+      <error-severity>error</error-severity>
+      <error-message>The error message</error-message>
+    </rpc-error>
+  </rpc-reply>
+
+The last one is specifying the whole error, as a lua table. The table
+should contain items with these names (not all of them must be
+present):
+
+msg::
+  The error text (human readable description).
+type::
+  Value of the `error-type` element. Defaults to `application`.
+tag::
+  Value of the `error-tag` element. It is expected to be mapped
+  directly in future, but currently, it accepts these values:
+  * `empty`
+  * `in use`
+  * `invalid value`
+  * `too big`
+  * `missing attribute`
+  * `bad attribute`
+  * `unknown attribute`
+  * `missing element`
+  * `bad element`
+  * `unknown element`
+  * `unknown namespace`
+  * `access denied`
+  * `lock denied`
+  * `resource denied`
+  * `rollback failed`
+  * `data exists`
+  * `data missing`
+  * `operation not supported`
+  * `operation failed`
+  * `malformed message`
+severity::
+  Value of the `error-severity` element. Defaults to `error` and it
+  should be probably left at that, since usual processing in `nuci` is
+  aborted on any error reported, even if it is of severity `warning`.
+app_tag::
+  Value of the `app_tag` element.
+path::
+  Value of the `path` elemente.
+info_badattr::
+  Value of the `error-info/bad-attribute` element.
+info_badelem::
+  Value of the `error-info/bad-element` element.
+info_badns::
+  Value of the `error-info/bad-namespace` element.
+info_sid::
+  Value of the `error-info/sid` element.
+
+Handling XML data
+-----------------
+
+Nuci contains a parser to a DOM tree. There are two functions to parse
+XML, living in the `xmlwrap` package. They are
+`xmlwrap.read_file(filename)` and `xmlwrap.read_memory(xml_data)`.
+They differ in the source of data ‒ one takes a filename, the other a
+string with XML data. They both return a XML document object.
+
+The only method on the document currently is `document:root()`, which
+returns a node object. The nodes are more rich:
+
+node:first_child()::
+  Returns the first child of the current node (may be `nil` if there
+  are no children).
+node:next()::
+  Returns the next sibling. It is `nil` if this one is last.
+node:iterate()::
+  Returns the iterator function. It can be used to go through all the
+  children of the node, like this:
++
+  for child in node:iterate() do
+    -- Do something
+  end
+
+node:parent()::
+  Return the parent of the node (may be `nil`).
+node:attribute(name, ns)::
+  Get value of an attribute with given name and namespace. The `ns`
+  parameter may be `nil`, in which case the attributes without
+  namespace are taken.
+node:name()::
+  Return the name and namespace of the node.
+node:text()::
+  Return the text of the node. This has some limitations (like it
+  doesn't really work with `<body>xyz<p/>abc</body>`). What happens
+  with CDATA is yet to be tested.
+node:set_text(text)::
+  Replace the text with some other. The node must already have some
+  text to be replaced.
