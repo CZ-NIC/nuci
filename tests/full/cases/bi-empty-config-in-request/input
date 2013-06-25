@@ -1,0 +1,7 @@
+<edit-config>
+    <target>
+        <running/>
+    </target>
+    <config>
+    </config>
+</edit-config>
