@@ -62,7 +62,7 @@ local model_names = {
 				if not command_key then
 					return nil, {
 						msg="Missing key in configuration: " .. key_name,
-						tag="data missing",
+						tag="data-missing",
 						info_badelem=model,
 						info_badns=ns
 					};
@@ -122,7 +122,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				-- TODO What about errop = continue?
 				return {
 					msg="Unknown element",
-					tag="unknown element",
+					tag="unknown-element",
 					info_badelem=command_name
 				};
 			end
@@ -146,7 +146,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				if operation == 'create' then
 					return {
 						msg="Can't create an element, such element already exists: " .. command_name,
-						tag="data exists",
+						tag="data-exists",
 						info_badelem=command_name,
 						info_badns=command_ns
 					};
@@ -165,7 +165,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				if operation == 'none' or operation == 'delete' then
 					return {
 						msg="Missing element in configuration: " .. command_name,
-						tag="data missing",
+						tag="data-missing",
 						info_badelem=command_name,
 						info_badns=command_ns
 					};
@@ -227,7 +227,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			-- Skip empty namespaced stuff, that's just the whitespace between the nodes
 			return {
 				msg="Element in foreing namespace found",
-				tag="unknown namespace",
+				tag="unknown-namespace",
 				info_badns=command_ns
 			};
 		end

@@ -120,7 +120,7 @@ function uci_datastore:perform_create(cursor, op)
 	if name == 'config' then
 		return {
 			msg="Creating whole configs is not possible, you have to live with what there is already",
-			tag="operation not supported",
+			tag="operation-not-supported",
 			info_badelem=name,
 			info_badns=self.model_ns
 		};
@@ -151,7 +151,7 @@ function uci_datastore:perform_create(cursor, op)
 				else
 					return {
 						msg="Unknown or misplaced element " .. name .. " in section",
-						tag="unknown element",
+						tag="unknown-element",
 						info_badns=ns,
 						info_badelem=name
 					};
@@ -159,7 +159,7 @@ function uci_datastore:perform_create(cursor, op)
 			elseif ns then
 				return {
 					msg="Foreign namespace " .. ns .. " on " .. name,
-					tag="unknown namespace",
+					tag="unknown-namespace",
 					info_badns=ns,
 					info_badelem=name
 				};
@@ -184,14 +184,14 @@ function uci_datastore:perform_create(cursor, op)
 				if ns == self.model_ns then
 					return {
 						msg="Unknown or misplaced element " .. name .. " in list",
-						tag="unknown element",
+						tag="unknown-element",
 						info_badelem=name,
 						info_badns=ns
 					};
 				else
 					return {
 						msg="Foreign namespace " .. ns .. " with element " .. name .. " in list",
-						tag="unknown namespace",
+						tag="unknown-namespace",
 						info_badelem=name,
 						info_badns=ns
 					};
@@ -217,7 +217,7 @@ function uci_datastore:perform_create(cursor, op)
 	elseif name == 'anonymous' then
 		return {
 			msg="Can't anonymise a section, remove and readd",
-			tag="operation not supported",
+			tag="operation-not-supported",
 			info_badelem=name,
 			info_badns=self.model_ns
 		};
@@ -235,7 +235,7 @@ function uci_datastore:perform_remove(cursor, op)
 	if name == 'config' then
 		return {
 			msg="Deleting (or replacing) whole configs is not possible",
-			tag="operation not supported",
+			tag="operation-not-supported",
 			info_badelem=name,
 			info_badns=self.model_ns
 		};
@@ -255,7 +255,7 @@ function uci_datastore:perform_remove(cursor, op)
 			if op.note ~= 'replace' then
 				return {
 					msg="The value element is mandatory",
-					tag="missing element",
+					tag="missing-element",
 					info_badelem='value',
 					info_badns=self.model_ns
 				};
@@ -276,14 +276,14 @@ function uci_datastore:perform_remove(cursor, op)
 			-- TODO: implement?
 			return {
 				msg="Can't replace " .. name .. ", replace the whole owner",
-				tag="operation not supported",
+				tag="operation-not-supported",
 				bad_elemname=name,
 				bad_elemns=self.model_ns
 			};
 		else
 			return {
 				msg="Can't delete mandatory node " .. name,
-				tag="data missing",
+				tag="data-missing",
 				bad_elemname=name,
 				bad_elemns=self.model_ns
 			};
@@ -292,7 +292,7 @@ function uci_datastore:perform_remove(cursor, op)
 		-- TODO: Implement?
 		return {
 			msg="Can't un-anonymise a section. That is possible, but makes little sense and it is hard to do.",
-			tag="operation not supported",
+			tag="operation-not-supported",
 			bad_elemname="anonymous",
 			bad_elemns=self.model_ns
 		};
