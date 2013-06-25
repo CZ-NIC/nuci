@@ -12,7 +12,7 @@ function datastore(model_file)
 	function result:get_config()
 		return ""; -- No config, empty store by default.
 	end
-	function result:set_cofig(config, defop, deferr)
+	function result:set_config(config, defop, deferr)
 		-- It is empty, so setting it always works
 	end
 	function result:get()
