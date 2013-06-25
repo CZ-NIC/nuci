@@ -22,6 +22,35 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+/*
+ * For debug purposes
+ */
+#if 0
+static void explain_statuscode(char *callname, int status) {
+	const char *result;
+
+	switch (status) {
+		case 0:
+			result = "OK";
+			break;
+		case LUA_ERRRUN:
+			result = "LUA_ERRRUN: a runtime error";
+			break;
+		case LUA_ERRMEM:
+			result = "LUA_ERRMEM: memory allocation error. For such errors, Lua does not call the error handler function.";
+			break;
+		case LUA_ERRERR:
+			result = "LUA_ERRERR: error while running the error handler function.";
+			break;
+		default:
+			result = "Unrecognized ERROR code";
+			break;
+		}
+
+		fprintf(stderr, "Called %s: %s\n", callname, result);
+}
+#endif
+
 static int register_datastore_provider_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)

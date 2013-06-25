@@ -41,3 +41,16 @@ function get_uci_cursor()
 	end
 	return uci_cursor;
 end
+
+-- For debug
+function var_test(varname, var)
+	local str;
+	if var == nil then str = ""; else str = "not "; end
+	io.stderr:write(varname .. " is " .. str .. "nil " .. "\n");
+end
+
+function var_len(varname, var)
+	if var then
+		io.stderr:write(varname .. " has length " .. #var .. "\n");
+	end
+end
