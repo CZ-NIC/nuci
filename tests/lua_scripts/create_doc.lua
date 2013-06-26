@@ -1,6 +1,6 @@
 
-local doc = new_xml_doc();
-local root_node = doc:create_root_node("root");
+local doc = xmlwrap.new_xml_doc();
+local root = doc:create_root_node("root");
 
 
 
