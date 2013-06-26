@@ -288,7 +288,7 @@ void comm_start_loop(const struct srv_config *config) {
 			//Some interpreter error
 			} else if (ds_reply == NULL) { //ds_reply shoud be NULL even if datastore was found
 				//This is for all cases: If lua detect some error enterpreter is better send any status message.
-				communication.reply = nc_reply_error(nc_err_new(NC_ERR_OP_FAILED));
+				communication.reply = nc_reply_error(nc_err_create_from_lua(config->interpreter));
 
 			//Interpreter send answer
 			} else {

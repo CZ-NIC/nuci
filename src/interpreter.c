@@ -472,12 +472,21 @@ char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastor
 	lua_pushstring(lua, procedure);
 	lua_pushstring(lua, data);
 
-	lua_pcall(lua, 3, 1, 0);
+	/**
+	 * 1st return parameter is string with reply
+	 * 2nd return parameter is error (nil - OK; string - errmsg
+	 */
+	int status = lua_pcall(lua, 3, 2, 0);
 
-	if (lua_isnil(lua, -1))
+	if (status != 0) { //Runtime error and error message is on the top of stack
+		flag_error(interpreter, true, -1); //only one result, i.e. on the top
 		return NULL;
-	else
-		return strdup(lua_tostring(lua, -1));
+	} else if (status == 0 && !lua_isnil(lua, -1)) {
+		flag_error(interpreter, true, -1);
+		return NULL;
+	} else { //all is OK an I have result
+		return strdup(lua_tostring(lua, -2));
+	}
 }
 
 static const char *get_err_value(lua_State *lua, int eindex, const char *name, const char *def) {

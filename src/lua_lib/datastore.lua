@@ -24,8 +24,13 @@ function datastore(model_file)
 		]]
 		return "";
 	end
-	function result:call(rpc)
-		return "Custom RPCs are not implemented yet";
+	--[[
+	Error reporting from user_rpcs:
+	OK, no error, some data: return data, nil;
+	FAILED with "error message" error: return nil, "error message";
+	]]
+	function result:user_rpc(rpc)
+		return nil, "Custom RPCs are not implemented yet";
 	end
 	--[[
 	Helper function. Wrapper around the global editconfig, to get the
