@@ -387,18 +387,13 @@ static int new_xml_doc(lua_State *L) {
 	return 1;
 }
 
-static int doc_create_root_node(lua_State *L) {
-	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
-	return 0;
-	const char *name = lua_tostring(L, -1);
+static int new_node(lua_State *L) {
+	const char *name = lua_tostring(L, 1);
 
-	if (xml2 == NULL) return luaL_error(L, "Invalid xml document");
 	if (name == NULL) return luaL_error(L, "I can't create node without its name");
 
 	xmlNodePtr node = xmlNewNode(NULL, BAD_CAST name); //without namespace for now
 	if (node == NULL) return luaL_error(L, "Error during creating node.");
-
-	xmlDocSetRootElement(xml2->doc, node);
 
 	lua_pushlightuserdata(L, node);
 	luaL_setmetatable(L, WRAP_XMLNODE);
@@ -406,10 +401,22 @@ static int doc_create_root_node(lua_State *L) {
 	return 1;
 }
 
+static int doc_set_root_node(lua_State *L) {
+	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
+	xmlNodePtr node = lua_touserdata(L, 2);
+
+	if (xml2 == NULL) return luaL_error(L, "Invalid xml document");
+	if (node == NULL) return luaL_error(L, "set_root_node: Invalid node");
+
+	xmlDocSetRootElement(xml2->doc, node);
+
+	return 0;
+}
+
 static const luaL_Reg xmlwrap_doc[] = {
 	{ "root", doc_GetRootElement },
 	{ "NodeListGetString", doc_NodeListGetString },
-	{ "create_root_node", doc_create_root_node },
+	{ "set_root_node", doc_set_root_node },
 	{ "__gc", doc_gc },
 	{ "__tostring", doc_tostring },
 	{ NULL, NULL }
@@ -434,6 +441,8 @@ int xmlwrap_init(lua_State *L)
 	add_func(L, "read_file", mod_ReadFile);
 	add_func(L, "read_memory", mod_ReadMemory);
 	add_func(L, "new_xml_doc", new_xml_doc);
+	add_func(L, "new_node", new_node);
+
 	// Push the package as xmlwrap (which pops it)
 	lua_setglobal(L, "xmlwrap");
 
