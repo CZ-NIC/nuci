@@ -112,7 +112,7 @@ static void lua_stack_dump(lua_State *L, const char *func)
 /*
  * Creates an xmlDocPtr document and returns the handle to lua
  */
-static int mod_ReadFile(lua_State *L)
+static int mod_read_file(lua_State *L)
 {
 	int options = lua_tointeger(L, 3);
 	const char *filename = luaL_checkstring(L, 1);
@@ -134,7 +134,7 @@ static int mod_ReadFile(lua_State *L)
 	return 1;
 }
 
-static int mod_ReadMemory(lua_State *L)
+static int mod_read_memory(lua_State *L)
 {
 	size_t len;
 	const char *memory = luaL_checklstring(L, 1, &len);
@@ -156,7 +156,7 @@ static int mod_ReadMemory(lua_State *L)
  * Node handlers
  */
 
-static int node_ChildrenNode(lua_State *L)
+static int node_children_node(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -228,12 +228,12 @@ static int node_iterate_next(lua_State *L)
 static int node_iterate(lua_State *L)
 {
 	lua_pushcfunction(L, node_iterate_next); // The 'next' function
-	node_ChildrenNode(L); // The 'state'
+	node_children_node(L); // The 'state'
 	// One implicit nil.
 	return 2;
 }
 
-static int node_getProp(lua_State *L)
+static int node_get_prop(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	const char *name = luaL_checkstring(L, 2);
@@ -249,7 +249,7 @@ static int node_getProp(lua_State *L)
 	return 1;
 }
 
-static int node_getText(lua_State *L)
+static int node_get_text(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	if (cur->type == XML_TEXT_NODE) {// This is directly the text node, get the content
@@ -266,7 +266,7 @@ static int node_getText(lua_State *L)
 	}
 }
 
-static int node_setText(lua_State *L)
+static int node_set_text(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	const char *text = lua_tostring(L, 2);
@@ -305,7 +305,7 @@ static int node_parent(lua_State *L)
  * Document handlers
  */
 
-static int doc_GetRootElement(lua_State *L)
+static int doc_get_root_element(lua_State *L)
 {
 	xmlNodePtr cur = NULL;
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
@@ -324,7 +324,7 @@ static int doc_GetRootElement(lua_State *L)
 	return 1;
 }
 
-static int doc_NodeListGetString(lua_State *L)
+static int doc_node_list_get_string(lua_State *L)
 {
 	xmlChar *v;
 	xmlDocPtr doc = lua_touserdata(L, 1);
@@ -454,13 +454,13 @@ static int doc_strdump(lua_State *L) {
 }
 
 static const luaL_Reg xmlwrap_node[] = {
-	{ "first_child", node_ChildrenNode },
+	{ "first_child", node_children_node },
 	{ "name", node_name },
 	{ "next", node_next },
 	{ "iterate", node_iterate },
-	{ "attribute", node_getProp },
-	{ "text", node_getText },
-	{ "set_text", node_setText },
+	{ "attribute", node_get_prop },
+	{ "text", node_get_text },
+	{ "set_text", node_set_text },
 	{ "parent", node_parent },
 	{ "add_child", node_add_child },
 	// { "__gc", node_gc }, # FIXME Anything to free here?
@@ -469,8 +469,8 @@ static const luaL_Reg xmlwrap_node[] = {
 };
 
 static const luaL_Reg xmlwrap_doc[] = {
-	{ "root", doc_GetRootElement },
-	{ "NodeListGetString", doc_NodeListGetString },
+	{ "root", doc_get_root_element },
+	{ "NodeListGetString", doc_node_list_get_string },
 	{ "set_root_node", doc_set_root_node },
 	{ "strdump", doc_strdump },
 	{ "__gc", doc_gc },
@@ -494,8 +494,8 @@ int xmlwrap_init(lua_State *L)
 {
 	// New table for the package
 	lua_newtable(L);
-	add_func(L, "read_file", mod_ReadFile);
-	add_func(L, "read_memory", mod_ReadMemory);
+	add_func(L, "read_file", mod_read_file);
+	add_func(L, "read_memory", mod_read_memory);
 	add_func(L, "new_xml_doc", new_xml_doc);
 	add_func(L, "new_node", new_node);
 	add_func(L, "new_text", new_text);
