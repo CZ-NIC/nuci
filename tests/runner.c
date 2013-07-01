@@ -12,6 +12,8 @@ int main(int argc, const char *argv[]) {
 	luaL_openlibs(lua);
 	xmlwrap_init(lua);
 	for (const char **arg = argv + 1; *arg; arg ++) {
+		printf("Running file %s\n", *arg);
+		printf("================================================================================\n");
 		if (luaL_dofile(lua, *arg) != 0) {
 			fprintf(stderr, "Failure test %s: %s\n", *arg, lua_tostring(lua, -1));
 			return 1;
