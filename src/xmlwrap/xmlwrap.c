@@ -30,6 +30,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <assert.h>
 
 #define WRAP_XMLDOC		"xmlDocPtr"
@@ -249,21 +250,41 @@ static int node_get_prop(lua_State *L)
 	return 1;
 }
 
-static int node_get_text(lua_State *L)
-{
-	xmlNodePtr cur = lua_touserdata(L, 1);
-	if (cur->type == XML_TEXT_NODE) {// This is directly the text node, get the content
-		lua_pushstring(L, (const char *) cur->content);
-		return 1;
-	} else {// Scan the direct children if one of them is text. Pick the first one to be so.
-		for (xmlNodePtr child = cur->children; child; child = child->next)
-			if (child->type == XML_TEXT_NODE) {
-				lua_pushstring(L, (const char *) child->content);
-				return 1;
+/**
+ * Function expected parent node off all text and CDATA nodes you want
+ */
+static int node_get_text(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+
+	if (node == NULL) return luaL_error(L, "get_text: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "get_text: Invalid parent node type (not element node)");
+
+	char *str = NULL;
+	size_t len;
+
+	/**
+	 * This loop needs some explanation:
+	 * Multiple realloc is inefficient. However, data that we are expecting,
+	 * will be composed from one or two text nodes. I hope this solution will not be an issue.
+	 */
+	for (xmlNodePtr child = node->children; child; child = child->next) {
+		if (child->type == XML_TEXT_NODE || child->type == XML_CDATA_SECTION_NODE) {
+			if (str == NULL) {
+				len = strlen((const char *) child->content);
+				str = (char *) calloc(len+1, sizeof(char));
+				str[0] = '\0';
+				strcat(str, (const char *) child->content);
+			} else {
+				len = strlen((const char *) child->content);
+				str = (char *)realloc(str, strlen(str)+len+1);
+				strcat(str, (const char *) child->content);
 			}
-		// No text found and run out of children.
-		return 0;
+		}
 	}
+
+	lua_pushstring(L, str);
+
+	return 1;
 }
 
 static int node_parent(lua_State *L)
@@ -410,8 +431,8 @@ static void delete_node(xmlNodePtr node) {
 static int node_delete_node(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 
-	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
-	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type (not element node)");
+	if (node == NULL) return luaL_error(L, "delete_node: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "delete_node: Invalid parent node type (not element node)");
 
 	delete_node(node);
 
@@ -430,8 +451,8 @@ static int node_set_text(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *text = lua_tostring(L, 2);
 
-	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
-	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type (not element node)");
+	if (node == NULL) return luaL_error(L, "set_text: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "set_text: Invalid parent node type (not element node)");
 	if (text == NULL) return luaL_error(L, "I can't create node without its name");
 
 	//First, delete all CDATA and text nodes
