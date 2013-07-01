@@ -448,7 +448,7 @@ static int doc_strdump(lua_State *L) {
 		return luaL_error(L, "String Dump error");
 	}
 
-	lua_pushstring(L, str);
+	lua_pushstring(L, (char *)str);
 
 	return 1;
 }
