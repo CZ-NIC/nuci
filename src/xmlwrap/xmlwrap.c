@@ -301,20 +301,6 @@ static int node_parent(lua_State *L)
 	return 0;
 }
 
-static const luaL_Reg xmlwrap_node[] = {
-	{ "first_child", node_ChildrenNode },
-	{ "name", node_name },
-	{ "next", node_next },
-	{ "iterate", node_iterate },
-	{ "attribute", node_getProp },
-	{ "text", node_getText },
-	{ "set_text", node_setText },
-	{ "parent", node_parent },
-	// { "__gc", node_gc }, # FIXME Anything to free here?
-	{ "__tostring", node_tostring },
-	{ NULL, NULL }
-};
-
 /*
  * Document handlers
  */
@@ -375,17 +361,23 @@ static int doc_tostring(lua_State *L)
 	return 1;
 }
 
-// Creating document section
+/*
+ * Create new document handlers
+ */
 
 static int new_xml_doc(lua_State *L) {
-	struct xmlwrap_object *xml2 = (struct xmlwrap_object *)calloc(1, sizeof(struct xmlwrap_object));
-	xml2->doc = xmlNewDoc(BAD_CAST "1.0");
+	xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
 
-	lua_pushlightuserdata(L, xml2);
+	if (doc == NULL) return luaL_error(L, "Allocation of new document error.");
+
+	struct xmlwrap_object *xml2 = lua_newuserdata(L, sizeof(*xml2));
 	luaL_setmetatable(L, WRAP_XMLDOC);
+
+	xml2->doc = doc;
 
 	return 1;
 }
+
 
 static int new_node(lua_State *L) {
 	const char *name = lua_tostring(L, 1);
@@ -410,8 +402,52 @@ static int doc_set_root_node(lua_State *L) {
 
 	xmlDocSetRootElement(xml2->doc, node);
 
-	return 0;
+	return 1;
 }
+
+static int node_add_child(lua_State *L) {
+	//xmlAddChild
+	xmlNodePtr cur = lua_touserdata(L, 1);
+	xmlNodePtr node = lua_touserdata(L, 2);
+
+	if (cur == NULL) return luaL_error(L, "add_child: Invalid parent node");
+	if (node == NULL) return luaL_error(L, "add_child: Invalid child node");
+
+	xmlNodePtr ret = xmlAddChild(cur, node);
+
+	if (ret == NULL) return luaL_error(L, "add_child: operation failed");
+
+	return 1;
+}
+
+static int new_text(lua_State *L) {
+	const char *content = (const char *)lua_tostring(L, 1);
+
+	if (content == NULL) return luaL_error(L, "I can't create text node without its value");
+
+	xmlNodePtr node = xmlNewText(BAD_CAST content);
+	//no error return code
+
+	lua_pushlightuserdata(L, node);
+	luaL_setmetatable(L, WRAP_XMLNODE);
+
+	return 1;
+}
+
+static const luaL_Reg xmlwrap_node[] = {
+	{ "first_child", node_ChildrenNode },
+	{ "name", node_name },
+	{ "next", node_next },
+	{ "iterate", node_iterate },
+	{ "attribute", node_getProp },
+	{ "text", node_getText },
+	{ "set_text", node_setText },
+	{ "parent", node_parent },
+	{ "add_child", node_add_child },
+	// { "__gc", node_gc }, # FIXME Anything to free here?
+	{ "__tostring", node_tostring },
+	{ NULL, NULL }
+};
 
 static const luaL_Reg xmlwrap_doc[] = {
 	{ "root", doc_GetRootElement },
@@ -442,6 +478,7 @@ int xmlwrap_init(lua_State *L)
 	add_func(L, "read_memory", mod_ReadMemory);
 	add_func(L, "new_xml_doc", new_xml_doc);
 	add_func(L, "new_node", new_node);
+	add_func(L, "new_text", new_text);
 
 	// Push the package as xmlwrap (which pops it)
 	lua_setglobal(L, "xmlwrap");
