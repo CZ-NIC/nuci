@@ -340,7 +340,7 @@ static int doc_tostring(lua_State *L)
 }
 
 /*
- * Create new document handlers
+ * Create new document and edit document handlers
  */
 
 static int new_xml_doc(lua_State *L) {
@@ -376,7 +376,8 @@ static int node_add_child(lua_State *L) {
 	const char *ns_str = lua_touserdata(L, 3);
 	xmlNsPtr ns = NULL;
 
-	if (node == NULL || !(node->type != XML_DOCUMENT_NODE)) return luaL_error(L, "add_child: Invalid parent node (maybe not document node)");
+	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type  (not element node)");
 	if (name == NULL) return luaL_error(L, "I can't create node without its name");
 	if (ns_str != NULL) {
 		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
@@ -395,36 +396,62 @@ static int node_add_child(lua_State *L) {
 }
 
 /**
+ * This function recursively delete this node and it's childs.
+ * void return code is OK, because both function has void too
+ */
+static void delete_node(xmlNodePtr node) {
+	xmlUnlinkNode(node);
+	xmlFreeNode(node);
+}
+
+/**
+ * This function enables to delete some node itself
+ */
+static int node_delete_node(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+
+	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type (not element node)");
+
+	delete_node(node);
+
+	return 0;
+}
+
+/**
  * New API expected new behavior of this function
  * Example: node:set_text("text");
- * 	- node is regular node, not text one
+ * 	- node is regular node, not the text one
  * 	- text will be set as new child of node
  * 	- if node has some text as it's child, it will be replaced
+ *	- replacing text mean delete all text and CDATA nodes and crete new text one
  */
 static int node_set_text(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *text = lua_tostring(L, 2);
 
-	if (node == NULL || !(node->type != XML_DOCUMENT_NODE)) return luaL_error(L, "add_child: Invalid parent node (maybe not document node)");
+	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type (not element node)");
 	if (text == NULL) return luaL_error(L, "I can't create node without its name");
 
-	bool found = false;
-	xmlNodePtr text_node;
-	for (xmlNodePtr child = node->children; child; child = child->next) {
-		if (child->type == XML_TEXT_NODE) {
-			found = true;
-			text_node = child;
-			break;
+	//First, delete all CDATA and text nodes
+	//It is not good idea to use for loop...
+	xmlNodePtr child = node->children;
+	xmlNodePtr to_del;
+	while (child) {
+		if (child->type == XML_TEXT_NODE || child->type == XML_CDATA_SECTION_NODE) {
+			to_del = child;
+			child = child->next;
+
+			delete_node(to_del);
+		} else {
+			child = child->next;
 		}
 	}
 
-	if (found) {
-		xmlFree(text_node->content);
-		text_node->content = (xmlChar *) xmlMemoryStrdup(text);
-	} else {
-		text_node = xmlNewText(BAD_CAST text);
-		xmlAddChild(node, text_node);
-	}
+	//Second, create new text node
+	xmlNodePtr text_node = xmlNewText(BAD_CAST text);
+	xmlAddChild(node, text_node);
 
 	return 0;
 }
@@ -458,6 +485,7 @@ static const luaL_Reg xmlwrap_node[] = {
 	{ "set_text", node_set_text },
 	{ "parent", node_parent },
 	{ "add_child", node_add_child },
+	{ "delete", node_delete_node },
 	// { "__gc", node_gc }, # FIXME Anything to free here?
 	{ "__tostring", node_tostring },
 	{ NULL, NULL }
