@@ -434,6 +434,25 @@ static int new_text(lua_State *L) {
 	return 1;
 }
 
+static int doc_strdump(lua_State *L) {
+	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
+
+	if (xml2 == NULL) return luaL_error(L, "Invalid xml document");
+
+	xmlChar *str;
+	int size;
+
+	xmlDocDumpMemory(xml2->doc, &str, &size);
+
+	if (str == NULL) {
+		return luaL_error(L, "String Dump error");
+	}
+
+	lua_pushstring(L, str);
+
+	return 1;
+}
+
 static const luaL_Reg xmlwrap_node[] = {
 	{ "first_child", node_ChildrenNode },
 	{ "name", node_name },
@@ -453,6 +472,7 @@ static const luaL_Reg xmlwrap_doc[] = {
 	{ "root", doc_GetRootElement },
 	{ "NodeListGetString", doc_NodeListGetString },
 	{ "set_root_node", doc_set_root_node },
+	{ "strdump", doc_strdump },
 	{ "__gc", doc_gc },
 	{ "__tostring", doc_tostring },
 	{ NULL, NULL }
