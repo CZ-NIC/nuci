@@ -1,48 +1,34 @@
 -- Example and basic test case for part of API that is providing manipulation with new document
 
 -- Create new document
-local doc = xmlwrap.new_xml_doc();
--- Create new node
-local root_node = xmlwrap.new_node("employees");
--- Set root_node node as root node of this document
-doc:set_root_node(root_node);
+local doc = xmlwrap.new_xml_doc("employees");
+-- Get root element
+local root_node = doc:root();
 
 -- Prepare variables
 local person = nil;
 local node = nil;
 
 -- Add some data
-person = xmlwrap.new_node("person"); -- Create new node
-root_node:add_child(person); -- And add it to root
+person = root_node:add_child("person");
+	node = person:add_child("name");
+	node:set_text("Marry");
 
-node = xmlwrap.new_node("name");
-	node:add_child(xmlwrap.new_text("Marry"));
-	person:add_child(node);
+	node = person:add_child("phone_number");
+	node:set_text("123456789");
 
-node = xmlwrap.new_node("phone_number");
-	node:add_child(xmlwrap.new_text("123456789"));
-	person:add_child(node);
+	node = person:add_child("post");
+	node:set_text("accountant");
 
-node = xmlwrap.new_node("post");
-	node:add_child(xmlwrap.new_text("accountant"));
-	person:add_child(node);
+person = root_node:add_child("person");
+	node = person:add_child("name");
+	node:set_text("Joe");
 
+	node = person:add_child("phone_number");
+	node:set_text("987654321");
 
--- Add more data
-person = xmlwrap.new_node("person");
-root_node:add_child(person);
-
-node = xmlwrap.new_node("name");
-	node:add_child(xmlwrap.new_text("Joe"));
-	person:add_child(node);
-
-node = xmlwrap.new_node("phone_number");
-	node:add_child(xmlwrap.new_text("987654321"));
-	person:add_child(node);
-
-node = xmlwrap.new_node("post");
-	node:add_child(xmlwrap.new_text("CEO"));
-	person:add_child(node);
+	node = person:add_child("post");
+	node:set_text("CEO");
 
 
 -- Get my XML
@@ -63,3 +49,4 @@ io.stdout:write(doc:strdump() .. "\n");
 	</person>
 </employees>
 ]]
+

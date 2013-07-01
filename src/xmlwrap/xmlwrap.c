@@ -266,28 +266,6 @@ static int node_get_text(lua_State *L)
 	}
 }
 
-static int node_set_text(lua_State *L)
-{
-	xmlNodePtr cur = lua_touserdata(L, 1);
-	const char *text = lua_tostring(L, 2);
-	if (cur->type != XML_TEXT_NODE) { // It either is a TEXT_NODE already, or we try to find one inside.
-		bool found = false;
-		for (xmlNodePtr child = cur->children; child; child = child->next)
-			if (child->type == XML_TEXT_NODE) {
-				found = true;
-				cur = child;
-				break;
-			}
-		if (!found) {
-			return luaL_error(L, "Don't know how to add text to node without one");
-		}
-	}
-	assert(cur->type == XML_TEXT_NODE);
-	xmlFree(cur->content);
-	cur->content = (xmlChar *) xmlMemoryStrdup(text);
-	return 0;
-}
-
 static int node_parent(lua_State *L)
 {
 	xmlNodePtr cur = lua_touserdata(L, 1);
@@ -366,72 +344,89 @@ static int doc_tostring(lua_State *L)
  */
 
 static int new_xml_doc(lua_State *L) {
-	xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
+	const char *name = lua_tostring(L, 1);
+	const char *ns_str = lua_tostring(L, 2);
+	xmlNsPtr ns = NULL;
 
-	if (doc == NULL) return luaL_error(L, "Allocation of new document error.");
+	if (name == NULL) return luaL_error(L, "new_xml_doc needs name of root node.");
+	if (ns_str != NULL) {
+		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
+		if (ns == NULL) return luaL_error(L, "Allocation of new namespace error.");
+	}
+
+	xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
+	xmlNodePtr root_node = xmlNewNode(ns, BAD_CAST name);
+
+	if (doc == NULL || root_node == NULL) return luaL_error(L, "Allocation of new document error.");
+
 
 	struct xmlwrap_object *xml2 = lua_newuserdata(L, sizeof(*xml2));
 	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
+	xmlDocSetRootElement(xml2->doc, root_node);
 
-	return 1;
-}
-
-
-static int new_node(lua_State *L) {
-	const char *name = lua_tostring(L, 1);
-
-	if (name == NULL) return luaL_error(L, "I can't create node without its name");
-
-	xmlNodePtr node = xmlNewNode(NULL, BAD_CAST name); //without namespace for now
-	if (node == NULL) return luaL_error(L, "Error during creating node.");
-
-	lua_pushlightuserdata(L, node);
-	luaL_setmetatable(L, WRAP_XMLNODE);
-
-	return 1;
-}
-
-static int doc_set_root_node(lua_State *L) {
-	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
-	xmlNodePtr node = lua_touserdata(L, 2);
-
-	if (xml2 == NULL) return luaL_error(L, "Invalid xml document");
-	if (node == NULL) return luaL_error(L, "set_root_node: Invalid node");
-
-	xmlDocSetRootElement(xml2->doc, node);
 
 	return 1;
 }
 
 static int node_add_child(lua_State *L) {
-	//xmlAddChild
-	xmlNodePtr cur = lua_touserdata(L, 1);
-	xmlNodePtr node = lua_touserdata(L, 2);
+	xmlNodePtr node = lua_touserdata(L, 1);
+	const char *name = lua_tostring(L, 2);
+	const char *ns_str = lua_touserdata(L, 3);
+	xmlNsPtr ns = NULL;
 
-	if (cur == NULL) return luaL_error(L, "add_child: Invalid parent node");
-	if (node == NULL) return luaL_error(L, "add_child: Invalid child node");
+	if (node == NULL || !(node->type != XML_DOCUMENT_NODE)) return luaL_error(L, "add_child: Invalid parent node (maybe not document node)");
+	if (name == NULL) return luaL_error(L, "I can't create node without its name");
+	if (ns_str != NULL) {
+		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
+		if (ns == NULL) return luaL_error(L, "Allocation of new namespace error.");
+	}
 
-	xmlNodePtr ret = xmlAddChild(cur, node);
+	xmlNodePtr child = xmlNewNode(ns, BAD_CAST name);
+	if (child == NULL) return luaL_error(L, "add_child: operation failed");
 
-	if (ret == NULL) return luaL_error(L, "add_child: operation failed");
+	xmlAddChild(node, child);
+
+	lua_pushlightuserdata(L, child);
+	luaL_setmetatable(L, WRAP_XMLNODE);
 
 	return 1;
 }
 
-static int new_text(lua_State *L) {
-	const char *content = (const char *)lua_tostring(L, 1);
+/**
+ * New API expected new behavior of this function
+ * Example: node:set_text("text");
+ * 	- node is regular node, not text one
+ * 	- text will be set as new child of node
+ * 	- if node has some text as it's child, it will be replaced
+ */
+static int node_set_text(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+	const char *text = lua_tostring(L, 2);
 
-	if (content == NULL) return luaL_error(L, "I can't create text node without its value");
+	if (node == NULL || !(node->type != XML_DOCUMENT_NODE)) return luaL_error(L, "add_child: Invalid parent node (maybe not document node)");
+	if (text == NULL) return luaL_error(L, "I can't create node without its name");
 
-	xmlNodePtr node = xmlNewText(BAD_CAST content);
-	//no error return code
+	bool found = false;
+	xmlNodePtr text_node;
+	for (xmlNodePtr child = node->children; child; child = child->next) {
+		if (child->type == XML_TEXT_NODE) {
+			found = true;
+			text_node = child;
+			break;
+		}
+	}
 
-	lua_pushlightuserdata(L, node);
-	luaL_setmetatable(L, WRAP_XMLNODE);
+	if (found) {
+		xmlFree(text_node->content);
+		text_node->content = (xmlChar *) xmlMemoryStrdup(text);
+	} else {
+		text_node = xmlNewText(BAD_CAST text);
+		xmlAddChild(node, text_node);
+	}
 
-	return 1;
+	return 0;
 }
 
 static int doc_strdump(lua_State *L) {
@@ -471,7 +466,6 @@ static const luaL_Reg xmlwrap_node[] = {
 static const luaL_Reg xmlwrap_doc[] = {
 	{ "root", doc_get_root_element },
 	{ "NodeListGetString", doc_node_list_get_string },
-	{ "set_root_node", doc_set_root_node },
 	{ "strdump", doc_strdump },
 	{ "__gc", doc_gc },
 	{ "__tostring", doc_tostring },
@@ -497,8 +491,6 @@ int xmlwrap_init(lua_State *L)
 	add_func(L, "read_file", mod_read_file);
 	add_func(L, "read_memory", mod_read_memory);
 	add_func(L, "new_xml_doc", new_xml_doc);
-	add_func(L, "new_node", new_node);
-	add_func(L, "new_text", new_text);
 
 	// Push the package as xmlwrap (which pops it)
 	lua_setglobal(L, "xmlwrap");
