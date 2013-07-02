@@ -306,7 +306,8 @@ static int node_rm_prop(lua_State *L) {
 
 	return 1;
 }
-
+#define MY_OWN_GET_TEXT
+#ifdef MY_OWN_GET_TEXT
 /**
  * Function expected parent node off all text and CDATA nodes you want
  */
@@ -345,6 +346,26 @@ static int node_get_text(lua_State *L) {
 
 	return 1;
 }
+#else //MY_OWN_GET_TEXT
+/**
+ * Function expected parent node off all text and CDATA nodes you want
+ */
+static int node_get_text(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+
+	if (node == NULL) return luaL_error(L, "get_text: Invalid parent node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "get_text: Invalid parent node type (not element node)");
+
+	xmlChar *str = xmlNodeGetContent(node);
+
+	lua_pushstring(L, (char *)str);
+
+	xmlFree(str);
+
+	return 1;
+}
+
+#endif
 
 static int node_parent(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
