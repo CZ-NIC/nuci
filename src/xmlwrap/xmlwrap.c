@@ -471,19 +471,21 @@ static int new_xml_doc(lua_State *L) {
 static int node_add_child(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *name = lua_tostring(L, 2);
-	const char *ns_str = lua_touserdata(L, 3);
+	const char *ns_str = lua_tostring(L, 3);
 	xmlNsPtr ns = NULL;
 
 	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
 	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type  (not element node)");
 	if (name == NULL) return luaL_error(L, "I can't create node without its name");
-	if (ns_str != NULL) {
-		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
-		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
-	}
 
-	xmlNodePtr child = xmlNewNode(ns, BAD_CAST name);
+	xmlNodePtr child = xmlNewNode(NULL, BAD_CAST name);
 	if (child == NULL) return luaL_error(L, "add_child: operation failed");
+
+	if (ns_str != NULL) {
+		ns = xmlNewNs(child, BAD_CAST ns_str, NULL);
+		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+		xmlSetNs(child, ns);
+	}
 
 	xmlAddChild(node, child);
 
