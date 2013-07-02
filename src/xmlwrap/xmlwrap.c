@@ -438,23 +438,25 @@ static int doc_tostring(lua_State *L) {
 /*
  * Create new document and edit document handlers
  */
-
 static int new_xml_doc(lua_State *L) {
 	const char *name = lua_tostring(L, 1);
 	const char *ns_str = lua_tostring(L, 2);
 	xmlNsPtr ns = NULL;
 
 	if (name == NULL) return luaL_error(L, "new_xml_doc needs name of root node.");
-	if (ns_str != NULL) {
-		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
+	/**
+	 * http://www.acooke.org/cute/Usinglibxm0.html was very helpful with this issue
+	 */
+	xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0"); //create document
+	xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST name); //create root node
+
+	if (doc == NULL || root_node == NULL) return luaL_error(L, "New document allocation error.");
+
+	if (ns_str != NULL) { //if NS is requested
+		ns = xmlNewNs(root_node, BAD_CAST ns_str, NULL);
 		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+		xmlSetNs(root_node, ns);
 	}
-
-	xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
-	xmlNodePtr root_node = xmlNewNode(ns, BAD_CAST name);
-
-	if (doc == NULL || root_node == NULL) return luaL_error(L, "Allocation of new document error.");
-
 
 	struct xmlwrap_object *xml2 = lua_newuserdata(L, sizeof(*xml2));
 	luaL_setmetatable(L, WRAP_XMLDOC);
