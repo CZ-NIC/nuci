@@ -226,17 +226,25 @@ static int node_iterate(lua_State *L) {
 }
 
 static int node_get_prop(lua_State *L) {
-	xmlNodePtr cur = lua_touserdata(L, 1);
+	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *name = luaL_checkstring(L, 2);
 	const char *ns = lua_tostring(L, 3);
 	xmlChar *prop;
+
+	if (node == NULL) return luaL_error(L, "attribute: Invalid node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "attribute: Invalid node type (not element node)");
+
+	if (name == NULL) return luaL_error(L, "attribute: Specify attribute name");
+
 	if (ns) {
-		prop = xmlGetNsProp(cur, (const xmlChar *) name, (const xmlChar *) ns);
+		prop = xmlGetNsProp(node, BAD_CAST name, BAD_CAST ns);
 	} else {
-		prop = xmlGetNoNsProp(cur, (const xmlChar *) name);
+		prop = xmlGetNoNsProp(node, BAD_CAST name);
 	}
+
 	lua_pushstring(L, (char *) prop);
 	xmlFree(prop);
+
 	return 1;
 }
 
