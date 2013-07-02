@@ -77,8 +77,7 @@ static void luaL_setmetatable (lua_State *L, const char *tname) {
  * We doesn't need it now, but it should be useful.
  */
 #if 0
-static void lua_stack_dump(lua_State *L, const char *func)
-{
+static void lua_stack_dump(lua_State *L, const char *func) {
 	int i;
 	int top = lua_gettop(L);
 
@@ -113,8 +112,7 @@ static void lua_stack_dump(lua_State *L, const char *func)
 /*
  * Creates an xmlDocPtr document and returns the handle to lua
  */
-static int mod_read_file(lua_State *L)
-{
+static int mod_read_file(lua_State *L) {
 	int options = lua_tointeger(L, 3);
 	const char *filename = luaL_checkstring(L, 1);
 	const char *encoding = lua_tostring(L, 2);
@@ -135,8 +133,7 @@ static int mod_read_file(lua_State *L)
 	return 1;
 }
 
-static int mod_read_memory(lua_State *L)
-{
+static int mod_read_memory(lua_State *L) {
 	size_t len;
 	const char *memory = luaL_checklstring(L, 1, &len);
 
@@ -157,8 +154,7 @@ static int mod_read_memory(lua_State *L)
  * Node handlers
  */
 
-static int node_children_node(lua_State *L)
-{
+static int node_children_node(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
 	if (cur && cur->xmlChildrenNode) {
@@ -171,8 +167,7 @@ static int node_children_node(lua_State *L)
 	return 1;
 }
 
-static int node_name(lua_State *L)
-{
+static int node_name(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
 	if (cur) {
@@ -191,8 +186,7 @@ static int node_name(lua_State *L)
 	}
 }
 
-static int node_next(lua_State *L)
-{
+static int node_next(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
 	if (cur && cur->next) {
@@ -205,8 +199,7 @@ static int node_next(lua_State *L)
 	return 1;
 }
 
-static int node_tostring(lua_State *L)
-{
+static int node_tostring(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
 	lua_pushfstring(L, "(xmlNode@%p)", cur);
@@ -214,8 +207,7 @@ static int node_tostring(lua_State *L)
 	return 1;
 }
 
-static int node_iterate_next(lua_State *L)
-{
+static int node_iterate_next(lua_State *L) {
 	if (lua_isnil(L, 2)) { // The first iteration
 		// Copy the state
 		lua_pushvalue(L, 1);
@@ -226,16 +218,14 @@ static int node_iterate_next(lua_State *L)
 	return 1;
 }
 
-static int node_iterate(lua_State *L)
-{
+static int node_iterate(lua_State *L) {
 	lua_pushcfunction(L, node_iterate_next); // The 'next' function
 	node_children_node(L); // The 'state'
 	// One implicit nil.
 	return 2;
 }
 
-static int node_get_prop(lua_State *L)
-{
+static int node_get_prop(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 	const char *name = luaL_checkstring(L, 2);
 	const char *ns = lua_tostring(L, 3);
@@ -247,6 +237,65 @@ static int node_get_prop(lua_State *L)
 	}
 	lua_pushstring(L, (char *) prop);
 	xmlFree(prop);
+	return 1;
+}
+
+static int node_set_prop(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+	const char *name = lua_tostring(L, 2);
+	const char *value = lua_tostring(L, 3);
+	const char *ns_str = lua_tostring(L, 4);
+	xmlNsPtr ns = NULL;
+
+	if (node == NULL) return luaL_error(L, "set_attribute: Invalid node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "set_attribute: Invalid node type (not element node)");
+
+	if (name == NULL) return luaL_error(L, "set_attribute: Specify attribute name");
+	if (value == NULL) return luaL_error(L, "set_attribute: Specify attribute value");
+
+	if (ns_str != NULL) {
+		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
+		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+	}
+
+	if (ns == NULL) {
+		xmlSetProp(node, BAD_CAST name, BAD_CAST value);
+	} else {
+		xmlSetNsProp(node, ns, BAD_CAST name, BAD_CAST value);
+	}
+
+	return 0;
+}
+
+static int node_rm_prop(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+	const char *name = lua_tostring(L, 2);
+	const char *ns_str = lua_tostring(L, 3);
+	xmlNsPtr ns = NULL;
+	int ret;
+
+	if (node == NULL) return luaL_error(L, "rm_attribute: Invalid node");
+	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "rm_attribute: Invalid node type (not element node)");
+	if (name == NULL) return luaL_error(L, "rm_attribute: Specify attribute name");
+
+	if (ns_str != NULL) {
+		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
+		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+	}
+
+	if (ns == NULL) {
+		ret = xmlUnsetProp(node, BAD_CAST name);
+	} else {
+		ret = xmlUnsetNsProp(node, ns, BAD_CAST name);
+	}
+
+	/**
+	 * Boolean variable indicates TRUE as 1 and FALSE as 0
+	 * xmlUnset*Prop returns O for OK and -1 for error
+	 * 0(ok) + 1 = 1(true) and -1(error) + 1 = 0(false)
+	 */
+	lua_pushboolean(L, ret+1);
+
 	return 1;
 }
 
@@ -284,11 +333,12 @@ static int node_get_text(lua_State *L) {
 
 	lua_pushstring(L, str);
 
+	free(str);
+
 	return 1;
 }
 
-static int node_parent(lua_State *L)
-{
+static int node_parent(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
 	if (cur && cur->parent) {
@@ -304,8 +354,7 @@ static int node_parent(lua_State *L)
  * Document handlers
  */
 
-static int doc_get_root_element(lua_State *L)
-{
+static int doc_get_root_element(lua_State *L) {
 	xmlNodePtr cur = NULL;
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 
@@ -323,8 +372,7 @@ static int doc_get_root_element(lua_State *L)
 	return 1;
 }
 
-static int doc_node_list_get_string(lua_State *L)
-{
+static int doc_node_list_get_string(lua_State *L) {
 	xmlChar *v;
 	xmlDocPtr doc = lua_touserdata(L, 1);
 	xmlDocPtr cur = lua_touserdata(L, 2);
@@ -340,8 +388,7 @@ static int doc_node_list_get_string(lua_State *L)
 	return 1;
 }
 
-static int doc_gc(lua_State *L)
-{
+static int doc_gc(lua_State *L) {
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 	fprintf(stderr, "GC XML document %p\n", (void *) xml2->doc);
 
@@ -351,8 +398,7 @@ static int doc_gc(lua_State *L)
 	return 0;
 }
 
-static int doc_tostring(lua_State *L)
-{
+static int doc_tostring(lua_State *L) {
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 
 	lua_pushfstring(L, "(xml2:xmlDoc@%p:%p)", xml2, xml2->doc);
@@ -372,7 +418,7 @@ static int new_xml_doc(lua_State *L) {
 	if (name == NULL) return luaL_error(L, "new_xml_doc needs name of root node.");
 	if (ns_str != NULL) {
 		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
-		if (ns == NULL) return luaL_error(L, "Allocation of new namespace error.");
+		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
 	}
 
 	xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
@@ -402,7 +448,7 @@ static int node_add_child(lua_State *L) {
 	if (name == NULL) return luaL_error(L, "I can't create node without its name");
 	if (ns_str != NULL) {
 		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
-		if (ns == NULL) return luaL_error(L, "Allocation of new namespace error.");
+		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
 	}
 
 	xmlNodePtr child = xmlNewNode(ns, BAD_CAST name);
@@ -420,7 +466,7 @@ static int node_add_child(lua_State *L) {
  * This function recursively delete this node and it's childs.
  * void return code is OK, because both function has void too
  */
-static void delete_node(xmlNodePtr node) {
+static void internal_delete_node(xmlNodePtr node) {
 	xmlUnlinkNode(node);
 	xmlFreeNode(node);
 }
@@ -434,7 +480,7 @@ static int node_delete_node(lua_State *L) {
 	if (node == NULL) return luaL_error(L, "delete_node: Invalid parent node");
 	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "delete_node: Invalid parent node type (not element node)");
 
-	delete_node(node);
+	internal_delete_node(node);
 
 	return 0;
 }
@@ -464,7 +510,7 @@ static int node_set_text(lua_State *L) {
 			to_del = child;
 			child = child->next;
 
-			delete_node(to_del);
+			internal_delete_node(to_del);
 		} else {
 			child = child->next;
 		}
@@ -493,6 +539,8 @@ static int doc_strdump(lua_State *L) {
 
 	lua_pushstring(L, (char *)str);
 
+	free(str);
+
 	return 1;
 }
 
@@ -502,6 +550,8 @@ static const luaL_Reg xmlwrap_node[] = {
 	{ "next", node_next },
 	{ "iterate", node_iterate },
 	{ "attribute", node_get_prop },
+	{ "set_attribute", node_set_prop },
+	{ "rm_attribute", node_rm_prop },
 	{ "text", node_get_text },
 	{ "set_text", node_set_text },
 	{ "parent", node_parent },
@@ -533,8 +583,7 @@ static void add_func(lua_State *L, const char *name, lua_CFunction function) {
  * Lua libxml2 binding registration
  */
 
-int xmlwrap_init(lua_State *L)
-{
+int xmlwrap_init(lua_State *L) {
 	// New table for the package
 	lua_newtable(L);
 	add_func(L, "read_file", mod_read_file);
