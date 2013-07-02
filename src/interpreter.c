@@ -535,7 +535,6 @@ struct errfield {
 static const struct errfield errfields[] = {
 	{ "msg", "Unspecified error", NC_ERR_PARAM_MSG },
 	{ "type", "application", NC_ERR_PARAM_TYPE },
-	{ "tag", NULL, NC_ERR_PARAM_TAG },
 	{ "severity", "error", NC_ERR_PARAM_SEVERITY },
 	{ "app_tag", NULL, NC_ERR_PARAM_APPTAG },
 	{ "path", NULL, NC_ERR_PARAM_PATH },
@@ -563,13 +562,16 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter) {
 				return nc_err_create_from_lua(interpreter);
 			}
 			int eindex = lua_gettop(lua);
-			const char *error = get_err_value(lua, eindex, "error", "empty");
+			const char *error = get_err_value(lua, eindex, "tag", "empty");
 			NC_ERR errtype_value = NC_ERR_EMPTY; // Fallback to no error
+			bool found = false;
 			for (const struct errtype_def *def = errtype_def; def->string; def ++)
 				if (strcasecmp(def->string, error) == 0) {
 					errtype_value = def->value;
+					found = true;
 					break;
 				}
+			assert(found);
 			struct nc_err *result = nc_err_new(errtype_value);
 			for (const struct errfield *field = errfields; field->name; field ++) {
 				const char *value = get_err_value(lua, eindex, field->name, field->def);
