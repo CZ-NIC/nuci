@@ -225,7 +225,7 @@ static int node_iterate(lua_State *L) {
 	return 2;
 }
 
-static int node_get_prop(lua_State *L) {
+static int node_get_attr(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *name = luaL_checkstring(L, 2);
 	const char *ns = lua_tostring(L, 3);
@@ -248,7 +248,7 @@ static int node_get_prop(lua_State *L) {
 	return 1;
 }
 
-static int node_set_prop(lua_State *L) {
+static int node_set_attr(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *name = lua_tostring(L, 2);
 	const char *value = lua_tostring(L, 3);
@@ -275,7 +275,7 @@ static int node_set_prop(lua_State *L) {
 	return 0;
 }
 
-static int node_rm_prop(lua_State *L) {
+static int node_rm_attr(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *name = lua_tostring(L, 2);
 	const char *ns_str = lua_tostring(L, 3);
@@ -306,7 +306,7 @@ static int node_rm_prop(lua_State *L) {
 
 	return 1;
 }
-#define MY_OWN_GET_TEXT
+//#define MY_OWN_GET_TEXT
 #ifdef MY_OWN_GET_TEXT
 /**
  * Function expected parent node off all text and CDATA nodes you want
@@ -349,6 +349,9 @@ static int node_get_text(lua_State *L) {
 #else //MY_OWN_GET_TEXT
 /**
  * Function expected parent node off all text and CDATA nodes you want
+ * This function uses internal libxml2 function xmlNodeGetContent.
+ * xmlNodeGetContent returns text from all text nodes, CDATA nodes and
+ * recursively from all children element nodes.
  */
 static int node_get_text(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
@@ -582,9 +585,9 @@ static const luaL_Reg xmlwrap_node[] = {
 	{ "name", node_name },
 	{ "next", node_next },
 	{ "iterate", node_iterate },
-	{ "attribute", node_get_prop },
-	{ "set_attribute", node_set_prop },
-	{ "rm_attribute", node_rm_prop },
+	{ "attribute", node_get_attr },
+	{ "set_attribute", node_set_attr },
+	{ "rm_attribute", node_rm_attr },
 	{ "text", node_get_text },
 	{ "set_text", node_set_text },
 	{ "parent", node_parent },
