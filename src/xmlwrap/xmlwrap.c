@@ -257,13 +257,12 @@ static int node_set_attr(lua_State *L) {
 
 	if (node == NULL) return luaL_error(L, "set_attribute: Invalid node");
 	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "set_attribute: Invalid node type (not element node)");
-
 	if (name == NULL) return luaL_error(L, "set_attribute: Specify attribute name");
 	if (value == NULL) return luaL_error(L, "set_attribute: Specify attribute value");
 
 	if (ns_str != NULL) {
-		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
-		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+		ns = xmlSearchNsByHref(node->doc, node, BAD_CAST ns_str);
+		if (ns == NULL) return luaL_error(L, "Namespace not defined yet.");
 	}
 
 	if (ns == NULL) {
@@ -287,8 +286,8 @@ static int node_rm_attr(lua_State *L) {
 	if (name == NULL) return luaL_error(L, "rm_attribute: Specify attribute name");
 
 	if (ns_str != NULL) {
-		ns = xmlNewNs(NULL, NULL, BAD_CAST ns_str);
-		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+		ns = xmlSearchNsByHref(node->doc, node, BAD_CAST ns_str);
+		if (ns == NULL) return luaL_error(L, "Namespace not defined yet.");
 	}
 
 	if (ns == NULL) {
@@ -443,7 +442,7 @@ static int doc_tostring(lua_State *L) {
  */
 static int new_xml_doc(lua_State *L) {
 	const char *name = lua_tostring(L, 1);
-	const char *ns_str = lua_tostring(L, 2);
+	const char *ns_href = lua_tostring(L, 2);
 	xmlNsPtr ns = NULL;
 
 	if (name == NULL) return luaL_error(L, "new_xml_doc needs name of root node.");
@@ -455,8 +454,8 @@ static int new_xml_doc(lua_State *L) {
 
 	if (doc == NULL || root_node == NULL) return luaL_error(L, "New document allocation error.");
 
-	if (ns_str != NULL) { //if NS is requested
-		ns = xmlNewNs(root_node, BAD_CAST ns_str, NULL);
+	if (ns_href != NULL) { //if NS is requested
+		ns = xmlNewNs(root_node, BAD_CAST ns_href, NULL);
 		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
 		xmlSetNs(root_node, ns);
 	}
@@ -474,7 +473,7 @@ static int new_xml_doc(lua_State *L) {
 static int node_add_child(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 	const char *name = lua_tostring(L, 2);
-	const char *ns_str = lua_tostring(L, 3);
+	const char *ns_href = lua_tostring(L, 3);
 	xmlNsPtr ns = NULL;
 
 	if (node == NULL) return luaL_error(L, "add_child: Invalid parent node");
@@ -484,8 +483,8 @@ static int node_add_child(lua_State *L) {
 	xmlNodePtr child = xmlNewNode(NULL, BAD_CAST name);
 	if (child == NULL) return luaL_error(L, "add_child: operation failed");
 
-	if (ns_str != NULL) {
-		ns = xmlNewNs(child, BAD_CAST ns_str, NULL);
+	if (ns_href != NULL) {
+		ns = xmlNewNs(child, BAD_CAST ns_href, NULL);
 		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
 		xmlSetNs(child, ns);
 	}
@@ -559,6 +558,22 @@ static int node_set_text(lua_State *L) {
 	return 0;
 }
 
+static int node_register_ns(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+	const char *href = lua_tostring(L, 2);
+	const char *pref = lua_tostring(L, 3);
+	xmlNsPtr ns = NULL;
+
+	if (node == NULL) return luaL_error(L, "Invalid xml document");
+	if (href == NULL) return luaL_error(L, "Specify namespace href");
+	if (pref == NULL) return luaL_error(L, "Specify namespace prefix");
+
+	ns = xmlNewNs(node, BAD_CAST href, BAD_CAST pref);
+	if (ns == NULL) return luaL_error(L, "Namespace allocation error");
+
+	return 0;
+}
+
 static int doc_strdump(lua_State *L) {
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
 
@@ -592,6 +607,7 @@ static const luaL_Reg xmlwrap_node[] = {
 	{ "set_text", node_set_text },
 	{ "parent", node_parent },
 	{ "add_child", node_add_child },
+	{ "register_ns", node_register_ns },
 	{ "delete", node_delete_node },
 	// { "__gc", node_gc }, # FIXME Anything to free here?
 	{ "__tostring", node_tostring },
