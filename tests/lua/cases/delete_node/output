@@ -1,0 +1,15 @@
+O1: <?xml version="1.0"?>
+<employees><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O2: <?xml version="1.0"?>
+<employees><person><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O3: <?xml version="1.0"?>
+<employees><person><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O4: <?xml version="1.0"?>
+<employees><person/><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O5: <?xml version="1.0"?>
+<employees><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+

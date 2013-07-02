@@ -1,0 +1,4 @@
+Original XML: <?xml version="1.0"?>
+<elem>text <!-- comment --> some text before CDATA <![CDATA[ I'm Pretty cool example of CDATA ]]> and some more text</elem>
+
+Obtained text: text  some text before CDATA  I'm Pretty cool example of CDATA  and some more text
