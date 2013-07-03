@@ -262,7 +262,8 @@ static int node_set_attr(lua_State *L) {
 
 	if (ns_str != NULL) {
 		ns = xmlSearchNsByHref(node->doc, node, BAD_CAST ns_str);
-		if (ns == NULL) return luaL_error(L, "Namespace not defined yet.");
+		if (ns == NULL) return luaL_error(L, "Namespace not registered yet.");
+		if (ns->prefix == NULL) return luaL_error(L, "Namespace not registered yet.");
 	}
 
 	if (ns == NULL) {
