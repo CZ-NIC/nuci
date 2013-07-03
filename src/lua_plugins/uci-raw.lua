@@ -209,12 +209,21 @@ function uci_datastore:perform_create(cursor, op)
 	local node = op.command_node;
 	local name, path = self:node_path(node);
 	if name == 'config' then
-		return {
-			msg="Creating whole configs is not possible, you have to live with what there is already",
-			tag="operation-not-supported",
-			info_badelem=name,
-			info_badns=self.model_ns
-		};
+		if op.note == 'replace' then
+			for child in node:iterate() do
+				local name, ns = child:name();
+				if ns == self.model_ns and name == 'section' then
+					self:perform_create(cursor, {command_node=child});
+				end
+			end
+		else
+			return {
+				msg="Creating whole configs is not possible, you have to live with what there is already",
+				tag="operation-not-supported",
+				info_badelem=name,
+				info_badns=self.model_ns
+			};
+		end
 	elseif name == 'section' then
 		local result = self:create_section(cursor, node, path)
 		if result then
@@ -254,12 +263,24 @@ function uci_datastore:perform_remove(cursor, op)
 	local node = op.config_node;
 	local name, path = self:node_path(node);
 	if name == 'config' then
-		return {
-			msg="Deleting (or replacing) whole configs is not possible",
-			tag="operation-not-supported",
-			info_badelem=name,
-			info_badns=self.model_ns
-		};
+		if op.note == 'replace' then
+			-- We can't remove it, but we can remove all stuff from within and create it again.
+			for child in node:iterate() do
+				local name, ns = child:name();
+				if ns == self.model_ns and name == 'section' then
+					self:perform_remove(cursor, {config_node=child});
+				elseif ns and name ~= 'name' then
+					error("Unknown element to remove: " .. name);
+				end
+			end
+		else
+			return {
+				msg="Deleting (or replacing) whole configs is not possible",
+				tag="operation-not-supported",
+				info_badelem=name,
+				info_badns=self.model_ns
+			};
+		end
 	elseif name == 'section' then
 		cursor:delete(path.config_name, path.section_name);
 	elseif name == 'option' then
