@@ -267,6 +267,7 @@ function applyops(ops, description)
 		local result;
 		-- Stack manipulation function
 		local function pop()
+			-- TODO: Pop hook
 			-- Pop the stack
 			current_desc = table.remove(desc_stack);
 			if not current_desc then
@@ -274,6 +275,7 @@ function applyops(ops, description)
 			end
 		end
 		local function push()
+			-- TODO: Push hook
 			-- Store the current one in the stack
 			local name, ns = op.command_node:name();
 			table.insert(desc_stack, current_desc);
@@ -284,22 +286,72 @@ function applyops(ops, description)
 				error('Entering invalid node ' .. name .. '@' .. ns);
 			end
 		end
-		-- Apply a function or other behaviour to the operation
-		local function apply(name, node, operation, older_operation)
+		local apply;
+		-- Recurse through children and apply the operation on them.
+		local function recurse(name, node, operation)
+			-- Prepare list of skipped children
+			local skip_ar = current_desc[name .. '_recurse_skip'] or {};
+			local skip = {};
+			for _, s in ipairs(skip_ar) do
+				skip[s] = true;
+			end
+			-- Go through children and apply their operations on them.
+			for child in node:iterate() do
+				local nname, nns = child:name();
+				if ns == description.namespace then -- Namespace is ours
+					if not skip[nname] then
+						table.insert(desc_stack, current_desc);
+						current_desc = (current_desc.children or {})[nname];
+						if not current_desc then
+							result = {
+								msg="Unknown element " .. nname,
+								tag="unknown-element",
+								info_badelem=nname,
+								info_badns=nns
+							}
+							return;
+						end
+						apply(name, child, child, child, op);
+						current_desc = table.remove(desc_stack);
+						if result then
+							return;
+						end
+					end;
+				elseif ns then -- Some foreign stuff
+					result = {
+						msg="Foreign namespace " .. nns .. " with element " .. nname,
+						tag="unknown-namespace",
+						info_badelem=nname,
+						info_badns=nns
+					}
+					return;
+				end -- Else: empty, some text node or so.
+			end
+		end
+		-- Apply a function or other behaviour to the operation.
+		apply = function(name, node, node_before, node_after, operation, older_operation)
 			push();
-			local what = current_desc[name];
-			if not what then
-				local nname, nns = node:name();
-				result = {
-					msg="Can not " .. name .. " " .. nname .. '@' .. nns,
-					tag="operation-not-supported",
-					info_badelem=name,
-					info_badns=nns
-				};
-			elseif type(what) == 'table' or type(what) == 'string' then
-				result = what;
-			else
-				result = current_desc[name](operation, older_operation)
+			if current_desc[name .. '_recurse_before'] then
+				recurse(current_desc[name .. '_recurse_before'], node_before, operation);
+			end
+			if not result then
+				local what = current_desc[name];
+				if not what then
+					local nname, nns = node:name();
+					result = {
+						msg="Can not " .. name .. " " .. nname .. '@' .. nns,
+						tag="operation-not-supported",
+						info_badelem=name,
+						info_badns=nns
+					};
+				elseif type(what) == 'table' or type(what) == 'string' then
+					result = what;
+				else
+					result = current_desc[name](node, operation, older_operation)
+				end
+			end
+			if not result and current_desc[name .. '_recurse_after'] then
+				recurse(current_desc[name .. '_recurse_after'], node_after, operation);
 			end
 			pop();
 		end
@@ -310,13 +362,13 @@ function applyops(ops, description)
 			push();
 		elseif op.op == 'add-tree' then
 			if current_desc.replace and op.note == 'replace' then
-				apply('replace', op.command_node, op, ops[i - 1]);
+				apply('replace', op.command_node, op.config_node, op.command_node, op, ops[i - 1]);
 			else
-				apply('create', op.command_node, op);
+				apply('create', op.command_node, op.command_node, op.command_node, op);
 			end
 		elseif op.op == 'remove-tree' then
 			if not (current_desc.replace and op.note == 'replace') then
-				apply('remove', op.config_node, op);
+				apply('remove', op.config_node, op.config_node, op.config_node, op);
 			end
 		end
 		if result then -- An error happened
