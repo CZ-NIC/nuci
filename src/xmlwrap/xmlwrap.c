@@ -488,12 +488,12 @@ static int node_add_child(lua_State *L) {
 	}
 
 	if (ns_href != NULL && ns == NULL) { //ns requested and not found
-		child = xmlNewChild(node, ns, name, NULL); //crete node w/o ns
+		child = xmlNewChild(node, ns, BAD_CAST name, NULL); //crete node w/o ns
 		ns = xmlNewNs(child, BAD_CAST ns_href, NULL); //create namespace and define it in child
 		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
 		xmlSetNs(child, ns); //set new ns to child
 	} else {
-		child = xmlNewChild(node, ns, name, NULL); //ns nor requested ir was found... use it
+		child = xmlNewChild(node, ns, BAD_CAST name, NULL); //ns nor requested ir was found... use it
 	}
 
 	lua_pushlightuserdata(L, child);
