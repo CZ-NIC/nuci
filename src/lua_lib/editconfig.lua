@@ -263,23 +263,49 @@ TODO: Describe the description.
 function applyops(ops, description)
 	local desc_stack = {}
 	local current_desc = description;
+	function pop()
+		-- Pop the stack
+		current_desc = table.remove(desc_stack);
+		if not current_desc then
+			error('More leaves then enters!');
+		end
+	end
+	function push()
+		-- Store the current one in the stack
+		local name, ns = op.command_node:name();
+		table.insert(desc_stack, current_desc);
+		-- Go one level deeper.
+		current_desc = current_desc.children[name];
+		if ns ~= description.namespace or not current_desc then
+			-- This should not get here, it is checked by editconfig above
+			error('Entering invalid node ' .. name .. '@' .. ns);
+		end
+	end
 	for i, op in ipairs(ops) do
+		local result;
+		function apply(name, operation, older_operation)
+			push();
+			-- TODO: Detect an error value
+			result = current_desc[name](operation, older_operation)
+			pop();
+		end
 		if op.op == 'leave' then
-			-- Pop the stack
-			current_desc = table.remove(desc_stack);
-			if not current_desc then
-				error('More leaves then enters!');
-			end
+			pop();
 		elseif op.op == 'enter' then
-			-- Store the current one in the stack
-			local name, ns = op.command_node:name();
-			table.insert(desc_stack, current_desc);
-			-- Go one level deeper.
-			current_desc = current_desc.children[name];
-			if ns ~= description.namespace or not current_desc then
-				-- This should not get here, it is checked by editconfig above
-				error('Entering invalid node ' .. name .. '@' .. ns);
+			push();
+		elseif op.op == 'add-tree' then
+			if current_desc.replace and op.note == 'replace' then
+				apply('replace', op, ops[i - 1]);
+			else
+				apply('create', op);
 			end
+		elseif op.op == 'remove-tree' then
+			if not (current_desc.replace and op.note == 'replace') then
+				apply('remove', op);
+			end
+		end
+		if result then -- An error happened
+			return result;
 		end
 	end
 end
