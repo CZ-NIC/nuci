@@ -1,8 +1,8 @@
-Original XML (1): <?xml version="1.0"?>
+O1: <?xml version="1.0"?>
 <elem>text <!-- comment --> some text before CDATA <![CDATA[ I'm Pretty cool example of CDATA ]]> and some more text</elem>
 
-Obtained text (1): text  some text before CDATA  I'm Pretty cool example of CDATA  and some more text
-Original XML (2): <?xml version="1.0"?>
+O2: text  some text before CDATA  I'm Pretty cool example of CDATA  and some more text
+O3: <?xml version="1.0"?>
 <root> BEFORE ELEM <elem>text <!-- comment --> some text before CDATA <![CDATA[ I'm Pretty cool example of CDATA ]]> and some more text</elem> AFTER ELEM </root>
 
-Obtained text (2):  BEFORE ELEM text  some text before CDATA  I'm Pretty cool example of CDATA  and some more text AFTER ELEM 
+O4:  BEFORE ELEM text  some text before CDATA  I'm Pretty cool example of CDATA  and some more text AFTER ELEM 
