@@ -267,15 +267,16 @@ function applyops(ops, description)
 		local result;
 		-- Stack manipulation function
 		local function pop()
-			-- TODO: Pop hook
 			-- Pop the stack
+			if current_desc.leave then
+				current_desc.leave(op);
+			end
 			current_desc = table.remove(desc_stack);
 			if not current_desc then
 				error('More leaves then enters!');
 			end
 		end
 		local function push()
-			-- TODO: Push hook
 			-- Store the current one in the stack
 			local name, ns = op.command_node:name();
 			table.insert(desc_stack, current_desc);
@@ -284,6 +285,9 @@ function applyops(ops, description)
 			if ns ~= description.namespace or not current_desc then
 				-- This should not get here, it is checked by editconfig above
 				error('Entering invalid node ' .. name .. '@' .. ns);
+			end
+			if current_desc.enter then
+				current_desc.enter(op)
 			end
 		end
 		local apply;
@@ -311,7 +315,13 @@ function applyops(ops, description)
 							}
 							return;
 						end
+						if current_desc.enter then
+							current_desc.enter({command_node=child, config_node=child})
+						end
 						apply(name, child, child, child, op);
+						if not result and current_desc.leave then
+							current_desc.leave({command_node=child, config_node=child});
+						end
 						current_desc = table.remove(desc_stack);
 						if result then
 							return;

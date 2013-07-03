@@ -296,6 +296,11 @@ function uci_datastore:set_config(config, defop, deferr)
 			replace_recurse_after='create',
 			create_recurse_skip={'name'},
 			remove_recurse_skip={'name'},
+			-- When we enter a config, we're going to change stuff inside, so schedule it for commit.
+			enter = function(operation)
+				local _, path = self:node_path(operation.command_node);
+				self.changed[path.config_name] = true;
+			end,
 			children = {
 				name = name_desc,
 				section = section_desc
