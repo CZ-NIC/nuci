@@ -114,103 +114,133 @@ function uci_datastore:set_empty_delayed_list(cursor, path)
 	self.delayed_lists[config][section][name] = {};
 end
 
+function uci_datastore:create_section(cursor, node, path)
+	-- Create the section (either anonymous or not)
+	local sectype = self:subnode_value(node, 'type');
+	local anonymous = find_node_name_ns(node, 'anonymous', self.model_ns);
+	local name = cursor:add(path.config_name, sectype);
+	if anonymous then
+		local name_node = find_node_name_ns(node, 'name', self.model_ns);
+		name_node:set_text(name);
+	else
+		cursor:rename(path.config_name, name, path.section_name);
+		name = path.section_name;
+	end
+	-- Now let's go over all stuff inside and recurse on it.
+	for child in node:iterate() do
+		local name, ns = child:name();
+		if ns == self.model_ns then
+			if name == 'option' or name == 'list' then
+				-- Fill in some stuff inside, recursively
+				local result = self:perform_create(cursor, {command_node=child});
+				if result then
+					return result;
+				end
+			elseif name == 'name' or name == 'type' or name == 'anonymous' then
+				-- We handled these here. It's OK for them to be here.
+			else
+				return {
+					msg="Unknown or misplaced element " .. name .. " in section",
+					tag="unknown-element",
+					info_badns=ns,
+					info_badelem=name
+				};
+			end
+		elseif ns then
+			return {
+				msg="Foreign namespace " .. ns .. " on " .. name,
+				tag="unknown-namespace",
+				info_badns=ns,
+				info_badelem=name
+			};
+		end -- Otherwise - text or comments or stuff
+	end
+end
+
+function uci_datastore:create_list(cursor, node, path)
+	-- Create an empty list here (or overwrite one)
+	self:set_empty_delayed_list(cursor, path);
+	for child in node:iterate() do
+		local name, ns = child:name();
+		if name == 'name' and ns == self.model_ns then
+			-- We already handled <name/>
+		elseif name == 'value' and ns == self.model_ns then
+			local result = uci_datastore:perform_create(cursor, {command_node=child});
+			if result then
+				return result;
+			end
+		elseif ns then
+			if ns == self.model_ns then
+				return {
+					msg="Unknown or misplaced element " .. name .. " in list",
+					tag="unknown-element",
+					info_badelem=name,
+					info_badns=ns
+				};
+			else
+				return {
+					msg="Foreign namespace " .. ns .. " with element " .. name .. " in list",
+					tag="unknown-namespace",
+					info_badelem=name,
+					info_badns=ns
+				};
+			end
+			-- Else these are stuff like empty text nodes and comments
+		end
+	end
+end
+
+function uci_datastore:create_value(cursor, node, path)
+	if path.option then
+		-- Handle the whole option at once.
+		return uci_datastore:perform_create(cursor, {command_node=path.option});
+	else -- One value inside the list
+		-- Get the delayed list. It'll be put into UCI at the end of the processing.
+		local list = self:get_delayed_list(cursor, path);
+		-- Get the index and value
+		local index = self:subnode_value(node, 'index');
+		local value = self:subnode_value(node, 'content');
+		-- And store it there.
+		list[tonumber(index)] = value;
+	end
+end
+
 function uci_datastore:perform_create(cursor, op)
 	local node = op.command_node;
 	local name, path = self:node_path(node);
 	if name == 'config' then
-		return {
-			msg="Creating whole configs is not possible, you have to live with what there is already",
-			tag="operation-not-supported",
-			info_badelem=name,
-			info_badns=self.model_ns
-		};
-	elseif name == 'section' then
-		-- Create the section (either anonymous or not)
-		local sectype = self:subnode_value(node, 'type');
-		local anonymous = find_node_name_ns(node, 'anonymous', self.model_ns);
-		local name = cursor:add(path.config_name, sectype);
-		if anonymous then
-			local name_node = find_node_name_ns(node, 'name', self.model_ns);
-			name_node:set_text(name);
-		else
-			cursor:rename(path.config_name, name, path.section_name);
-			name = path.section_name;
-		end
-		-- Now let's go over all stuff inside and recurse on it.
-		for child in node:iterate() do
-			local name, ns = child:name();
-			if ns == self.model_ns then
-				if name == 'option' or name == 'list' then
-					-- Fill in some stuff inside, recursively
-					local result = self:perform_create(cursor, {command_node=child});
-					if result then
-						return result;
-					end
-				elseif name == 'name' or name == 'type' or name == 'anonymous' then
-					-- We handled these here. It's OK for them to be here.
-				else
-					return {
-						msg="Unknown or misplaced element " .. name .. " in section",
-						tag="unknown-element",
-						info_badns=ns,
-						info_badelem=name
-					};
+		if op.note == 'replace' then
+			for child in node:iterate() do
+				local name, ns = child:name();
+				if ns == self.model_ns and name == 'section' then
+					self:perform_create(cursor, {command_node=child});
 				end
-			elseif ns then
-				return {
-					msg="Foreign namespace " .. ns .. " on " .. name,
-					tag="unknown-namespace",
-					info_badns=ns,
-					info_badelem=name
-				};
-			end -- Otherwise - text or comments or stuff
+			end
+		else
+			return {
+				msg="Creating whole configs is not possible, you have to live with what there is already",
+				tag="operation-not-supported",
+				info_badelem=name,
+				info_badns=self.model_ns
+			};
+		end
+	elseif name == 'section' then
+		local result = self:create_section(cursor, node, path)
+		if result then
+			return result
 		end
 	elseif name == 'option' then
 		local value = self:subnode_value(node, 'value');
 		cursor:set(path.config_name, path.section_name, path.option_name, value);
 	elseif name == 'list' then
-		-- Create an empty list here (or overwrite one)
-		self:set_empty_delayed_list(cursor, path);
-		for child in node:iterate() do
-			local name, ns = child:name();
-			if name == 'name' and ns == self.model_ns then
-				-- We already handled <name/>
-			elseif name == 'value' and ns == self.model_ns then
-				local result = uci_datastore:perform_create(cursor, {command_node=child});
-				if result then
-					return result;
-				end
-			elseif ns then
-				if ns == self.model_ns then
-					return {
-						msg="Unknown or misplaced element " .. name .. " in list",
-						tag="unknown-element",
-						info_badelem=name,
-						info_badns=ns
-					};
-				else
-					return {
-						msg="Foreign namespace " .. ns .. " with element " .. name .. " in list",
-						tag="unknown-namespace",
-						info_badelem=name,
-						info_badns=ns
-					};
-				end
-				-- Else these are stuff like empty text nodes and comments
-			end
+		local result = self:create_list(cursor, node, path)
+		if result then
+			return result
 		end
 	elseif name == 'value' then
-		if path.option then
-			-- Handle the whole option at once.
-			return uci_datastore:perform_create(cursor, {command_node=path.option});
-		else -- One value inside the list
-			-- Get the delayed list. It'll be put into UCI at the end of the processing.
-			local list = self:get_delayed_list(cursor, path);
-			-- Get the index and value
-			local index = self:subnode_value(node, 'index');
-			local value = self:subnode_value(node, 'content');
-			-- And store it there.
-			list[tonumber(index)] = value;
+		local result = self:create_value(cursor, node, path)
+		if result then
+			return result
 		end
 	elseif name == 'content' or name == 'type' or name == 'index' or name == 'name' then
 		error("Trying to create " .. name .. ", but it should have already existed and such thing should not pass the conversion");
@@ -233,12 +263,24 @@ function uci_datastore:perform_remove(cursor, op)
 	local node = op.config_node;
 	local name, path = self:node_path(node);
 	if name == 'config' then
-		return {
-			msg="Deleting (or replacing) whole configs is not possible",
-			tag="operation-not-supported",
-			info_badelem=name,
-			info_badns=self.model_ns
-		};
+		if op.note == 'replace' then
+			-- We can't remove it, but we can remove all stuff from within and create it again.
+			for child in node:iterate() do
+				local name, ns = child:name();
+				if ns == self.model_ns and name == 'section' then
+					self:perform_remove(cursor, {config_node=child});
+				elseif ns and name ~= 'name' then
+					error("Unknown element to remove: " .. name);
+				end
+			end
+		else
+			return {
+				msg="Deleting (or replacing) whole configs is not possible",
+				tag="operation-not-supported",
+				info_badelem=name,
+				info_badns=self.model_ns
+			};
+		end
 	elseif name == 'section' then
 		cursor:delete(path.config_name, path.section_name);
 	elseif name == 'option' then
