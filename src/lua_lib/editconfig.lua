@@ -263,45 +263,60 @@ TODO: Describe the description.
 function applyops(ops, description)
 	local desc_stack = {}
 	local current_desc = description;
-	function pop()
-		-- Pop the stack
-		current_desc = table.remove(desc_stack);
-		if not current_desc then
-			error('More leaves then enters!');
-		end
-	end
-	function push()
-		-- Store the current one in the stack
-		local name, ns = op.command_node:name();
-		table.insert(desc_stack, current_desc);
-		-- Go one level deeper.
-		current_desc = current_desc.children[name];
-		if ns ~= description.namespace or not current_desc then
-			-- This should not get here, it is checked by editconfig above
-			error('Entering invalid node ' .. name .. '@' .. ns);
-		end
-	end
 	for i, op in ipairs(ops) do
 		local result;
-		function apply(name, operation, older_operation)
+		-- Stack manipulation function
+		local function pop()
+			-- Pop the stack
+			current_desc = table.remove(desc_stack);
+			if not current_desc then
+				error('More leaves then enters!');
+			end
+		end
+		local function push()
+			-- Store the current one in the stack
+			local name, ns = op.command_node:name();
+			table.insert(desc_stack, current_desc);
+			-- Go one level deeper.
+			current_desc = (current_desc.children or {})[name];
+			if ns ~= description.namespace or not current_desc then
+				-- This should not get here, it is checked by editconfig above
+				error('Entering invalid node ' .. name .. '@' .. ns);
+			end
+		end
+		-- Apply a function or other behaviour to the operation
+		local function apply(name, node, operation, older_operation)
 			push();
-			-- TODO: Detect an error value
-			result = current_desc[name](operation, older_operation)
+			local what = current_desc[name];
+			if not what then
+				local nname, nns = node:name();
+				result = {
+					msg="Can not " .. name .. " " .. nname .. '@' .. nns,
+					tag="operation-not-supported",
+					info_badelem=name,
+					info_badns=nns
+				};
+			elseif type(what) == 'table' or type(what) == 'string' then
+				result = what;
+			else
+				result = current_desc[name](operation, older_operation)
+			end
 			pop();
 		end
+		-- What operation is it?
 		if op.op == 'leave' then
 			pop();
 		elseif op.op == 'enter' then
 			push();
 		elseif op.op == 'add-tree' then
 			if current_desc.replace and op.note == 'replace' then
-				apply('replace', op, ops[i - 1]);
+				apply('replace', op.command_node, op, ops[i - 1]);
 			else
-				apply('create', op);
+				apply('create', op.command_node, op);
 			end
 		elseif op.op == 'remove-tree' then
 			if not (current_desc.replace and op.note == 'replace') then
-				apply('remove', op);
+				apply('remove', op.config_node, op);
 			end
 		end
 		if result then -- An error happened
