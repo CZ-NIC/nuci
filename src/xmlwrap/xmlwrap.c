@@ -263,7 +263,7 @@ static int node_set_attr(lua_State *L) {
 	if (ns_str != NULL) {
 		ns = xmlSearchNsByHref(node->doc, node, BAD_CAST ns_str);
 		if (ns == NULL) return luaL_error(L, "Namespace not registered yet.");
-		if (ns->prefix == NULL) return luaL_error(L, "Namespace not registered yet.");
+		if (ns->prefix == NULL) return luaL_error(L, "Namespace has not registered prefix.");
 	}
 
 	if (ns == NULL) {
@@ -481,16 +481,20 @@ static int node_add_child(lua_State *L) {
 	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "add_child: Invalid parent node type  (not element node)");
 	if (name == NULL) return luaL_error(L, "I can't create node without its name");
 
-	xmlNodePtr child = xmlNewNode(NULL, BAD_CAST name);
-	if (child == NULL) return luaL_error(L, "add_child: operation failed");
+	xmlNodePtr child;
 
-	if (ns_href != NULL) {
-		ns = xmlNewNs(child, BAD_CAST ns_href, NULL);
-		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
-		xmlSetNs(child, ns);
+	if (ns_href != NULL) { //add namespace requested
+		ns = xmlSearchNsByHref(node->doc, node, BAD_CAST ns_href); //try to find ns
 	}
 
-	xmlAddChild(node, child);
+	if (ns_href != NULL && ns == NULL) { //ns requested and not found
+		child = xmlNewChild(node, ns, name, NULL); //crete node w/o ns
+		ns = xmlNewNs(child, BAD_CAST ns_href, NULL); //create namespace and define it in child
+		if (ns == NULL) return luaL_error(L, "Namespace allocation error.");
+		xmlSetNs(child, ns); //set new ns to child
+	} else {
+		child = xmlNewChild(node, ns, name, NULL); //ns nor requested ir was found... use it
+	}
 
 	lua_pushlightuserdata(L, child);
 	luaL_setmetatable(L, WRAP_XMLNODE);
@@ -568,6 +572,14 @@ static int node_register_ns(lua_State *L) {
 	if (node == NULL) return luaL_error(L, "Invalid xml document");
 	if (href == NULL) return luaL_error(L, "Specify namespace href");
 	if (pref == NULL) return luaL_error(L, "Specify namespace prefix");
+
+	ns = xmlSearchNsByHref(node->doc, node, BAD_CAST href);
+	if (ns != NULL) { //namespace exists, but has not prefix defined
+		if (ns->prefix == NULL) {
+			ns->prefix = BAD_CAST strdup(pref); //hack prefix into structure
+			return 0;
+		}
+	}
 
 	ns = xmlNewNs(node, BAD_CAST href, BAD_CAST pref);
 	if (ns == NULL) return luaL_error(L, "Namespace allocation error");
