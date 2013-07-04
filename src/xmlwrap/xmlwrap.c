@@ -243,13 +243,23 @@ static int node_tostring(lua_State *L) {
 	return 1;
 }
 
+static xmlNodePtr internal_next_element_node(xmlNodePtr node) {
+	while (node && node->type != XML_ELEMENT_NODE) {
+		node = node->next;
+	}
+
+	return node;
+}
+
 static int node_children_node(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 
 	if (node == NULL) return luaL_error(L, "first_child: Invalid node");
 
-	if (node && node->children) {
-		lua_pushlightuserdata(L, node->children);
+	xmlNodePtr element_node = internal_next_element_node(node->children);
+
+	if (element_node) {
+		lua_pushlightuserdata(L, element_node);
 		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
@@ -263,8 +273,10 @@ static int node_next(lua_State *L) {
 
 	if (node == NULL) return luaL_error(L, "next: Invalid node");
 
-	if (node && node->next) {
-		lua_pushlightuserdata(L, node->next);
+	xmlNodePtr element_node = internal_next_element_node(node->next);
+
+	if (element_node) {
+		lua_pushlightuserdata(L, element_node);
 		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
