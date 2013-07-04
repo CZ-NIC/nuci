@@ -164,6 +164,7 @@ function uci_datastore:set_config(config, defop, deferr)
 			create = function() end, -- Just recurse to the content
 			create_recurse_after = 'create',
 			create_recurse_skip = {'index'},
+			create_recurse_mandatory = {'index', 'content'},
 			replace = function() end,
 			replace_recurse_after = 'create',
 			remove = function(node)
@@ -198,6 +199,7 @@ function uci_datastore:set_config(config, defop, deferr)
 			create = empty_list, -- prepare fresh empty list (create or replace)
 			create_recurse_after = 'create',
 			create_recurse_skip = {'name'},
+			create_recurse_mandatory = {'name', 'value'},
 			remove = empty_list,
 			children = {
 				name = name_desc,
@@ -214,6 +216,7 @@ function uci_datastore:set_config(config, defop, deferr)
 			create = function() end, -- Just recurse to the value
 			create_recurse_after = 'create',
 			create_recurse_skip = {'name'},
+			create_recurse_mandatory = {'name', 'value'},
 			replace = function() end, -- The same, with replace
 			replace_recurse_after = 'create',
 			remove = function(node)
