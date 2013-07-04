@@ -186,6 +186,66 @@ static int node_name(lua_State *L) {
 	}
 }
 
+static char *translate_node_type(xmlElementType type) {
+	switch (type) {
+		case XML_ELEMENT_NODE:
+			return "XML_ELEMENT_NODE";
+		case XML_ATTRIBUTE_NODE:
+			return "XML_ATTRIBUTE_NODE";
+		case XML_TEXT_NODE:
+			return "XML_TEXT_NODE";
+		case XML_CDATA_SECTION_NODE:
+			return "XML_CDATA_SECTION_NODE";
+		case XML_ENTITY_REF_NODE:
+			return "XML_ENTITY_REF_NODE";
+		case XML_ENTITY_NODE:
+			return "XML_ENTITY_NODE";
+		case XML_PI_NODE:
+			return "XML_PI_NODE";
+		case XML_COMMENT_NODE:
+			return "XML_COMMENT_NODE";
+		case XML_DOCUMENT_NODE:
+			return "XML_DOCUMENT_NODE";
+		case XML_DOCUMENT_TYPE_NODE:
+			return "XML_DOCUMENT_TYPE_NODE";
+		case XML_DOCUMENT_FRAG_NODE:
+			return "XML_DOCUMENT_FRAG_NODE";
+		case XML_NOTATION_NODE:
+			return "XML_NOTATION_NODE";
+		case XML_HTML_DOCUMENT_NODE:
+			return "XML_HTML_DOCUMENT_NODE";
+		case XML_DTD_NODE:
+			return "XML_DTD_NODE";
+		case XML_ELEMENT_DECL:
+			return "XML_ELEMENT_DECL";
+		case XML_ATTRIBUTE_DECL:
+			return "XML_ATTRIBUTE_DECL";
+		case XML_ENTITY_DECL:
+			return "XML_ENTITY_DECL";
+		case XML_NAMESPACE_DECL:
+			return "XML_NAMESPACE_DECL";
+		case XML_XINCLUDE_START:
+			return "XML_XINCLUDE_START";
+		case XML_XINCLUDE_END:
+			return "XML_XINCLUDE_END";
+		case XML_DOCB_DOCUMENT_NODE:
+			return "XML_DOCB_DOCUMENT_NODE";
+		default:
+			return "VALUE IS NOT ON THE LIST";
+	}
+}
+
+
+static int node_type(lua_State *L) {
+	xmlNodePtr node = lua_touserdata(L, 1);
+
+	if (node == NULL) return luaL_error(L, "attribute: Invalid node");
+
+	lua_pushstring(L, translate_node_type(node->type));
+
+	return 1;
+}
+
 static int node_next(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -611,6 +671,7 @@ static int doc_strdump(lua_State *L) {
 static const luaL_Reg xmlwrap_node[] = {
 	{ "first_child", node_children_node },
 	{ "name", node_name },
+	{ "type", node_type },
 	{ "next", node_next },
 	{ "iterate", node_iterate },
 	{ "attribute", node_get_attr },
