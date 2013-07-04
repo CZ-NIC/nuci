@@ -244,8 +244,8 @@ static int node_tostring(lua_State *L) {
 static int node_children_node(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
-	if (cur && cur->xmlChildrenNode) {
-		lua_pushlightuserdata(L, cur->xmlChildrenNode);
+	if (cur && cur->children) {
+		lua_pushlightuserdata(L, cur->children);
 		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
@@ -469,7 +469,7 @@ static int doc_node_list_get_string(lua_State *L) {
 	xmlDocPtr doc = lua_touserdata(L, 1);
 	xmlDocPtr cur = lua_touserdata(L, 2);
 
-	v = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+	v = xmlNodeListGetString(doc, cur->children, 1);
 	if (v) {
 		lua_pushfstring(L, "%s", v);
 		xmlFree(v);
