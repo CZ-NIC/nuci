@@ -1,0 +1,27 @@
+O1: <?xml version="1.0"?>
+<employees xmlns="http://nic.cz/router/document"><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O2: <?xml version="1.0"?>
+<employees xmlns="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O3: <?xml version="1.0"?>
+<employees xmlns="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><person empl:key="value"><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O4: <?xml version="1.0"?>
+<employees xmlns="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><person empl:key="value"><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O5: <?xml version="1.0"?>
+<employees xmlns="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O6: <?xml version="1.0"?>
+<employees xmlns="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><person xmlns:marry="http://nic.cz/router/employee/marry"><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O7: <?xml version="1.0"?>
+<routerdoc:employees xmlns:routerdoc="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><routerdoc:person xmlns:marry="http://nic.cz/router/employee/marry"><routerdoc:name>Marry</routerdoc:name><routerdoc:phone_number>123456789</routerdoc:phone_number><routerdoc:post>accountant</routerdoc:post></routerdoc:person><routerdoc:person><routerdoc:name>Anne</routerdoc:name><routerdoc:phone_number>123456799</routerdoc:phone_number><routerdoc:post>secretary</routerdoc:post></routerdoc:person><routerdoc:person><routerdoc:name>Joe</routerdoc:name><routerdoc:phone_number>987654321</routerdoc:phone_number><routerdoc:post>CEO</routerdoc:post></routerdoc:person></routerdoc:employees>
+
+O8: <?xml version="1.0"?>
+<routerdoc:employees xmlns:routerdoc="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><routerdoc:person xmlns:marry="http://nic.cz/router/employee/marry"><routerdoc:name>Marry</routerdoc:name><routerdoc:phone_number>123456789</routerdoc:phone_number><routerdoc:post>accountant</routerdoc:post></routerdoc:person><routerdoc:person><routerdoc:name>Anne</routerdoc:name><routerdoc:phone_number>123456799</routerdoc:phone_number><routerdoc:post>secretary</routerdoc:post></routerdoc:person><routerdoc:person><routerdoc:name>Joe</routerdoc:name><routerdoc:phone_number>987654321</routerdoc:phone_number><routerdoc:post>CEO</routerdoc:post></routerdoc:person><empl:manager_person/></routerdoc:employees>
+
+O9: <?xml version="1.0"?>
+<routerdoc:employees xmlns:routerdoc="http://nic.cz/router/document" xmlns:empl="http://nic.cz/router/employee"><routerdoc:person xmlns:marry="http://nic.cz/router/employee/marry"><routerdoc:name>Marry</routerdoc:name><routerdoc:phone_number>123456789</routerdoc:phone_number><routerdoc:post>accountant</routerdoc:post></routerdoc:person><routerdoc:person><routerdoc:name>Anne</routerdoc:name><routerdoc:phone_number>123456799</routerdoc:phone_number><routerdoc:post>secretary</routerdoc:post></routerdoc:person><routerdoc:person><routerdoc:name>Joe</routerdoc:name><routerdoc:phone_number>987654321</routerdoc:phone_number><routerdoc:post>CEO</routerdoc:post></routerdoc:person><empl:manager_person/><manager_person xmlns="http://nic.cz/router/employee/marry"/></routerdoc:employees>
+

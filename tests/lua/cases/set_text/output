@@ -1,0 +1,15 @@
+O1: <?xml version="1.0"?>
+<root><elem>Lorem ipsum dolor sit amet</elem></root>
+
+O2: <?xml version="1.0"?>
+<root><elem>Lorem ipsum...</elem></root>
+
+O3: <?xml version="1.0"?>
+<root><elem></elem></root>
+
+O4: <?xml version="1.0"?>
+<elem>text <!-- comment --> some text before CDATA <![CDATA[ I'm Pretty cool example of CDATA ]]> and some more text</elem>
+
+O5: <?xml version="1.0"?>
+<elem><!-- comment -->Lorem ipsum</elem>
+

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -ex
+
+TMP=$(tempfile)
+CASE="$1"
+
+./tests/test_runner "$CASE/script.lua" > "$TMP"
+diff "$CASE/output" "$TMP"
+
+rm -f "$TMP"

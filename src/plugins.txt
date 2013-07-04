@@ -287,8 +287,16 @@ XML, living in the `xmlwrap` package. They are
 They differ in the source of data ‒ one takes a filename, the other a
 string with XML data. They both return a XML document object.
 
-The only method on the document currently is `document:root()`, which
-returns a node object. The nodes are more rich:
+Another option is using `xmlwrap.new_xml_doc(root_node_name)` or
+`xmlwrap.new_xml_doc(root_node_name, namespace_href)` function.
+This function creates new document and root node with `root_node_name`
+name and (optionally) declares `namespace_href` and use it for root
+node.
+
+The only two methods on the document currently is `document:root()`,
+which returns a node object, and `document:strdump()`, which returns
+complete XML document represented by `document` as string.
+The nodes are more rich:
 
 node:first_child()::
   Returns the first child of the current node (may be `nil` if there
@@ -312,9 +320,25 @@ node:attribute(name, ns)::
 node:name()::
   Return the name and namespace of the node.
 node:text()::
-  Return the text of the node. This has some limitations (like it
-  doesn't really work with `<body>xyz<p/>abc</body>`). What happens
-  with CDATA is yet to be tested.
+  Return the text of the node. It aggregate all text and CDATA nodes and
+  subnodes.
 node:set_text(text)::
-  Replace the text with some other. The node must already have some
-  text to be replaced.
+  Replace the text with some other. Function erases all text and
+  CDATA nodes. Then create new text node with requested content.
+node:add_child(node_name, namespace_href)::
+  Create new child of `node` named `node_name`. Optionally declares
+  `namespace_href` and use it for created node.
+node:register_ns(namespace_href, namespace_prefix)::
+  In node's tag declares new `namespace_href` namespace with
+  `namespace_prefix`.
+node:set_attribute(name, value, namespace_href)::
+  Add to node's tag new attribute or change the value of existing one.
+  If attribute should be set in some namespace call function with
+  `namespace_href` parameter. This namespace has to be registered with
+  `register_ns`   method.
+node:rm_attribute(name, namespace_href)::
+  Remove node's attribute. If attribute is in namespace call function
+  with `namespace_href` parameter. This namespace has to be registered
+  with `register_ns` method.
+node:delete()::
+  Delete itself and all children.

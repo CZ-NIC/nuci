@@ -1,0 +1,19 @@
+O1: <?xml version="1.0"?>
+<employees><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O2: raise
+O3: <?xml version="1.0"?>
+<employees><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person salary="raise" eye_color="blue"><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O4: not raise
+O5: <?xml version="1.0"?>
+<employees><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person salary="not raise" eye_color="blue"><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O6: not raise
+O7: <?xml version="1.0"?>
+<employees><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person salary="not raise"><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
+O8: 
+O9: <?xml version="1.0"?>
+<employees><person><name>Marry</name><phone_number>123456789</phone_number><post>accountant</post></person><person salary=""><name>Anne</name><phone_number>123456799</phone_number><post>secretary</post></person><person><name>Joe</name><phone_number>987654321</phone_number><post>CEO</post></person></employees>
+
