@@ -263,10 +263,14 @@ TODO: Describe the description.
 function applyops(ops, description)
 	local desc_stack = {}
 	local current_desc = description;
+	io.stderr:write("Opcount: " .. #ops .. "\n");
 	for i, op in ipairs(ops) do
+		io.stderr:write("Operation " .. op.op .. "\n");
 		local result;
+		local recursing = 0;
 		-- Stack manipulation function
 		local function pop()
+			if recursing > 0 then return end; -- Recursion manages the stack itself
 			-- Pop the stack
 			if current_desc.leave then
 				current_desc.leave(op);
@@ -277,6 +281,7 @@ function applyops(ops, description)
 			end
 		end
 		local function push()
+			if recursing > 0 then return end; -- Recursion manages the stack itself
 			-- Store the current one in the stack
 			local name, ns = op.command_node:name();
 			table.insert(desc_stack, current_desc);
@@ -293,17 +298,21 @@ function applyops(ops, description)
 		local apply;
 		-- Recurse through children and apply the operation on them.
 		local function recurse(name, node, operation)
+			io.stderr:write("Recurse " .. name .. "\n")
 			-- Prepare list of skipped children
 			local skip_ar = current_desc[name .. '_recurse_skip'] or {};
 			local skip = {};
 			for _, s in ipairs(skip_ar) do
+				io.stderr:write("Skip " .. s .. "\n");
 				skip[s] = true;
 			end
 			-- Go through children and apply their operations on them.
 			for child in node:iterate() do
 				local nname, nns = child:name();
-				if ns == description.namespace then -- Namespace is ours
+				io.stderr:write("Child " .. nname .. "@" .. (nns or "") .. "\n");
+				if nns == description.namespace then -- Namespace is ours
 					if not skip[nname] then
+						io.stderr:write("Recursing " .. nname .. "\n");
 						table.insert(desc_stack, current_desc);
 						current_desc = (current_desc.children or {})[nname];
 						if not current_desc then
@@ -326,8 +335,10 @@ function applyops(ops, description)
 						if result then
 							return;
 						end
+					else
+						io.stderr:write("Skipping " .. nname .. "\n");
 					end;
-				elseif ns then -- Some foreign stuff
+				elseif nns then -- Some foreign stuff
 					result = {
 						msg="Foreign namespace " .. nns .. " with element " .. nname,
 						tag="unknown-namespace",
@@ -340,11 +351,15 @@ function applyops(ops, description)
 		end
 		-- Apply a function or other behaviour to the operation.
 		apply = function(name, node, node_before, node_after, operation, older_operation)
+			io.stderr:write("Apply " .. name .. " to " .. node:name() .. "\n");
 			push();
 			if current_desc[name .. '_recurse_before'] then
+				recursing = recursing + 1;
 				recurse(current_desc[name .. '_recurse_before'], node_before, operation);
+				recursing = recursing - 1;
 			end
 			if not result then
+				io.stderr:write("Tag: " .. (current_desc.dbg or '<none>') .. "\n");
 				local what = current_desc[name];
 				if not what then
 					local nname, nns = node:name();
@@ -357,11 +372,14 @@ function applyops(ops, description)
 				elseif type(what) == 'table' or type(what) == 'string' then
 					result = what;
 				else
+					io.stderr:write("Func\n");
 					result = current_desc[name](node, operation, older_operation)
 				end
 			end
 			if not result and current_desc[name .. '_recurse_after'] then
+				recursing = recursing + 1;
 				recurse(current_desc[name .. '_recurse_after'], node_after, operation);
+				recursing = recursing - 1;
 			end
 			pop();
 		end
@@ -371,15 +389,19 @@ function applyops(ops, description)
 		elseif op.op == 'enter' then
 			push();
 		elseif op.op == 'add-tree' then
-			if current_desc.replace and op.note == 'replace' then
+			local name = op.command_node:name();
+			if ((current_desc.children or {})[name] or {}).replace and op.note == 'replace' then
 				apply('replace', op.command_node, op.config_node, op.command_node, op, ops[i - 1]);
 			else
 				apply('create', op.command_node, op.command_node, op.command_node, op);
 			end
 		elseif op.op == 'remove-tree' then
-			if not (current_desc.replace and op.note == 'replace') then
+			local name = op.config_node:name();
+			if not (((current_desc.children or {})[name] or {}).replace and op.note == 'replace') then
 				apply('remove', op.config_node, op.config_node, op.config_node, op);
 			end
+		else
+			error("Unknown operation " .. op.op);
 		end
 		if result then -- An error happened
 			return result;

@@ -143,7 +143,8 @@ function uci_datastore:set_config(config, defop, deferr)
 					tag="data-exists",
 					bad_elemname=name,
 					bad_elemns=self.model_ns
-				}
+				},
+				dbg = name
 			}
 		end
 		local name_desc = mandatory_node('name');
@@ -152,7 +153,8 @@ function uci_datastore:set_config(config, defop, deferr)
 			-- Get the delayed list. It'll be put into UCI at the end of the processing.
 			local list = self:get_delayed_list(cursor, path);
 			-- Get the index and value
-			local parent = path.list;
+			local parent = path.value;
+			io.stderr:write("Parent " .. parent:name() .. "\n");
 			local index = self:subnode_value(parent, 'index');
 			local value = node:text();
 			-- And store it there.
@@ -182,9 +184,11 @@ function uci_datastore:set_config(config, defop, deferr)
 						tag="data-missing",
 						bad_elemname=name,
 						bad_elemns=self.model_ns
-					}
+					},
+					dbg = 'content'
 				}
-			}
+			},
+			dbg = 'value (list)'
 		}
 		local function empty_list(node)
 			local _, path = self:node_path(node);
@@ -193,15 +197,17 @@ function uci_datastore:set_config(config, defop, deferr)
 		local list_desc = {
 			create = empty_list, -- prepare fresh empty list (create or replace)
 			create_recurse_after = 'create',
-			create_recurse_skip = 'name',
+			create_recurse_skip = {'name'},
 			remove = empty_list,
 			children = {
 				name = name_desc,
 				value = value_desc
-			}
+			},
+			dbg = 'list'
 		}
 		local function option_set(node)
 			local _, path = self:node_path(node);
+			io.stderr:write("Option set: " .. path.config_name .. '/' .. path.section_name .. '/' .. path.option_name .. '/' .. node:text() .. "\n");
 			cursor:set(path.config_name, path.section_name, path.option_name, node:text());
 		end
 		local option_desc = {
@@ -224,9 +230,11 @@ function uci_datastore:set_config(config, defop, deferr)
 						tag="data-missing",
 						bad_elemname=name,
 						bad_elemns=self.model_ns
-					}
+					},
+					dbg = "value (option)"
 				}
-			}
+			},
+			dbg = "option"
 		}
 		local section_desc = {
 			-- Create the section (either anonymous or not)
@@ -268,9 +276,10 @@ function uci_datastore:set_config(config, defop, deferr)
 						info_badns=self.model_ns
 					}
 				},
-				value = value_desc,
+				list = list_desc,
 				option = option_desc
-			}
+			},
+			dbg = "section",
 		}
 		local config_desc = {
 			-- Configs can't be added or removed.
@@ -278,7 +287,7 @@ function uci_datastore:set_config(config, defop, deferr)
 				return {
 					msg="Deleting (or replacing) whole configs is not possible",
 					tag="operation-not-supported",
-					info_badelem=name,
+					info_badelem='config',
 					info_badns=self.model_ns
 				};
 			end,
@@ -286,7 +295,7 @@ function uci_datastore:set_config(config, defop, deferr)
 				return {
 					msg="Creating whole configs is not possible, you have to live with what there is already",
 					tag="operation-not-supported",
-					info_badelem=name,
+					info_badelem='config',
 					info_badns=self.model_ns
 				};
 			end,
@@ -304,7 +313,8 @@ function uci_datastore:set_config(config, defop, deferr)
 			children = {
 				name = name_desc,
 				section = section_desc
-			}
+			},
+			dbg = "config"
 		}
 		local description = {
 			namespace = self.model_ns,
@@ -314,7 +324,8 @@ function uci_datastore:set_config(config, defop, deferr)
 						config = config_desc
 					}
 				}
-			}
+			},
+			dbg = "uci"
 		}
 		local err = applyops(ops, description);
 		if err then
