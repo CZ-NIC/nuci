@@ -154,19 +154,6 @@ static int mod_read_memory(lua_State *L) {
  * Node handlers
  */
 
-static int node_children_node(lua_State *L) {
-	xmlNodePtr cur = lua_touserdata(L, 1);
-
-	if (cur && cur->xmlChildrenNode) {
-		lua_pushlightuserdata(L, cur->xmlChildrenNode);
-		luaL_setmetatable(L, WRAP_XMLNODE);
-	} else {
-		lua_pushnil(L);
-	}
-
-	return 1;
-}
-
 static int node_name(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -186,7 +173,7 @@ static int node_name(lua_State *L) {
 	}
 }
 
-static char *translate_node_type(xmlElementType type) {
+static const char *translate_node_type(xmlElementType type) {
 	switch (type) {
 		case XML_ELEMENT_NODE:
 			return "XML_ELEMENT_NODE";
@@ -246,6 +233,27 @@ static int node_type(lua_State *L) {
 	return 1;
 }
 
+static int node_tostring(lua_State *L) {
+	xmlNodePtr cur = lua_touserdata(L, 1);
+
+	lua_pushfstring(L, "(xmlNode@%p)", cur);
+
+	return 1;
+}
+
+static int node_children_node(lua_State *L) {
+	xmlNodePtr cur = lua_touserdata(L, 1);
+
+	if (cur && cur->xmlChildrenNode) {
+		lua_pushlightuserdata(L, cur->xmlChildrenNode);
+		luaL_setmetatable(L, WRAP_XMLNODE);
+	} else {
+		lua_pushnil(L);
+	}
+
+	return 1;
+}
+
 static int node_next(lua_State *L) {
 	xmlNodePtr cur = lua_touserdata(L, 1);
 
@@ -255,14 +263,6 @@ static int node_next(lua_State *L) {
 	} else {
 		lua_pushnil(L);
 	}
-
-	return 1;
-}
-
-static int node_tostring(lua_State *L) {
-	xmlNodePtr cur = lua_touserdata(L, 1);
-
-	lua_pushfstring(L, "(xmlNode@%p)", cur);
 
 	return 1;
 }
