@@ -226,7 +226,7 @@ static const char *translate_node_type(xmlElementType type) {
 static int node_type(lua_State *L) {
 	xmlNodePtr node = lua_touserdata(L, 1);
 
-	if (node == NULL) return luaL_error(L, "attribute: Invalid node");
+	if (node == NULL) return luaL_error(L, "type: Invalid node");
 
 	lua_pushstring(L, translate_node_type(node->type));
 
@@ -234,18 +234,22 @@ static int node_type(lua_State *L) {
 }
 
 static int node_tostring(lua_State *L) {
-	xmlNodePtr cur = lua_touserdata(L, 1);
+	xmlNodePtr node = lua_touserdata(L, 1);
 
-	lua_pushfstring(L, "(xmlNode@%p)", cur);
+	if (node == NULL) return luaL_error(L, "tostring: Invalid node");
+
+	lua_pushfstring(L, "(xmlNode@%p)", node);
 
 	return 1;
 }
 
 static int node_children_node(lua_State *L) {
-	xmlNodePtr cur = lua_touserdata(L, 1);
+	xmlNodePtr node = lua_touserdata(L, 1);
 
-	if (cur && cur->children) {
-		lua_pushlightuserdata(L, cur->children);
+	if (node == NULL) return luaL_error(L, "first_child: Invalid node");
+
+	if (node && node->children) {
+		lua_pushlightuserdata(L, node->children);
 		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
@@ -255,10 +259,12 @@ static int node_children_node(lua_State *L) {
 }
 
 static int node_next(lua_State *L) {
-	xmlNodePtr cur = lua_touserdata(L, 1);
+	xmlNodePtr node = lua_touserdata(L, 1);
 
-	if (cur && cur->next) {
-		lua_pushlightuserdata(L, cur->next);
+	if (node == NULL) return luaL_error(L, "next: Invalid node");
+
+	if (node && node->next) {
+		lua_pushlightuserdata(L, node->next);
 		luaL_setmetatable(L, WRAP_XMLNODE);
 	} else {
 		lua_pushnil(L);
