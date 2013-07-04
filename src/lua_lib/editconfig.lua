@@ -306,11 +306,19 @@ function applyops(ops, description)
 				io.stderr:write("Skip " .. s .. "\n");
 				skip[s] = true;
 			end
+			-- Have a list of mandatory sub nodes (and remove them if we see them)
+			local mandatory_ar = current_desc[name .. '_recurse_mandatory'] or {};
+			local mandatory = {};
+			for _, m in ipairs(mandatory_ar) do
+				io.stderr:write("Preparing mandatory " .. m .. "\n");
+				mandatory[m] = true;
+			end
 			-- Go through children and apply their operations on them.
 			for child in node:iterate() do
 				local nname, nns = child:name();
 				io.stderr:write("Child " .. nname .. "@" .. (nns or "") .. "\n");
 				if nns == description.namespace then -- Namespace is ours
+					mandatory[nname] = nil; -- Seen this, mandatory satisfied
 					if not skip[nname] then
 						io.stderr:write("Recursing " .. nname .. "\n");
 						table.insert(desc_stack, current_desc);
@@ -347,6 +355,16 @@ function applyops(ops, description)
 					}
 					return;
 				end -- Else: empty, some text node or so.
+			end
+			local missing = next(mandatory);
+			if missing then
+				result = {
+					msg="Missing mandatory element <" .. missing .. "/>",
+					tag="data-missing",
+					info_badelem=missing,
+					info_badns=description.namespace
+				}
+				return;
 			end
 		end
 		-- Apply a function or other behaviour to the operation.
