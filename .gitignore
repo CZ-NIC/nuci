@@ -10,10 +10,13 @@ bin/
 
 #Libraries
 lib/
+/lua_lib/
+/lua_plugins/
 
 #All created .so files
 *.so
 *.o
+*.luac
 
 #Documentation output
 docs/
