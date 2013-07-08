@@ -12,3 +12,12 @@ PAGE_SIZE := $(shell getconf PAGE_SIZE)
 PLUGIN_PATH := $(abspath $(S)/src)
 
 include $(S)/Makefile.dir
+
+check: all
+	./tests/full-test-all
+	./tests/editconfig_test.lua
+	./tests/lua-test-all
+	./tests/stress2_xml.lua
+	./tests/stress_xml.lua
+
+.PHONY: check
