@@ -348,7 +348,11 @@ struct interpreter *interpreter_create(void) {
 	lua_getglobal(result->state, "package");
 	lua_getfield(result->state, -1, "path");
 	const char *old_path = lua_tostring(result->state, -1);
-	const char *path = PLUGIN_PATH "/lua_lib/?.lua;" PLUGIN_PATH "/lua_lib/?.luac";
+#ifdef LUA_COMPILE
+	const char *path = PLUGIN_PATH "/lua_lib/?.luac";
+#else
+	const char *path = PLUGIN_PATH "/lua_lib/?.lua";
+#endif
 	size_t p_len = strlen(path) + 2 + strlen(old_path ? old_path : ""); // One for ;, one for \n
 	char path_data[p_len];
 	if (old_path) {
@@ -376,7 +380,12 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 		// First, check if it ends with .lua
 		const char *dot = rindex(ent->d_name, '.');
 		// Either no file extention, or the extention is not lua nor luac
-		if (!dot || (strcmp(dot, ".lua") != 0 && strcmp(dot, ".luac") != 0))
+#ifdef LUA_COMPILE
+		const char *ext = ".luac";
+#else
+		const char *ext = ".lua";
+#endif
+		if (!dot || strcmp(dot, ext) != 0)
 			continue;
 
 		size_t complete_len = strlen(ent->d_name) + path_len + 2; // 1 for '\0', 1 for '/'
