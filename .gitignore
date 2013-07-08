@@ -16,7 +16,6 @@ lib/
 #All created .so files
 *.so
 *.o
-*.luac
 
 #Documentation output
 docs/
