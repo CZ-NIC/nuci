@@ -16,3 +16,5 @@ DOCS += src/plugins \
 	src/design
 
 include $(S)/src/xmlwrap/Makefile.dir
+include $(S)/src/lua_lib/Makefile.dir
+include $(S)/src/lua_plugins/Makefile.dir
