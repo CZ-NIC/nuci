@@ -117,26 +117,18 @@ endef
 define REGISTER_LUA
 
 ifneq (,$(findstring ^$(RESTRICT),^$(1)))
-TARGETS_LUA += $(O)/$(1).luac
+TARGETS_LUA += $(O)/lua_lib/$(notdir $(1)).luac
 endif
 $(O)/lua_lib/$$(notdir $(1)).luac: $(S)/$$(addsuffix .lua,$(1))
-$(O)/$(1).luac: $(O)/lua_lib/$$(notdir $(1)).luac
-	$(M) LN $$@
-	$(Q)mkdir -p $$(dir $(O)/$(1))
-	$(Q)ln -sf $$(abspath $$<) $$@
 endef
 
 define REGISTER_LUA_PLUGIN
 
 ifneq (,$(findstring ^$(RESTRICT),^$(1)))
-TARGETS_LUA += $(O)/$(1).luac $(O)/lua_plugins/$$(notdir $(1)).yin
+TARGETS_LUA += $(O)/lua_plugins/$(notdir $(1)).luac $(O)/lua_plugins/$$(notdir $(1)).yin
 endif
 $(O)/lua_plugins/$$(notdir $(1)).luac: $(S)/$$(addsuffix .lua,$(1))
 $(O)/lua_plugins/$$(notdir $(1)).yin: $(S)/$$(addsuffix .yin,$(1))
-$(O)/$(1).luac: $(O)/lua_plugins/$$(notdir $(1)).luac
-	$(M) LN $$@
-	$(Q)mkdir -p $$(dir $(O)/$(1))
-	$(Q)ln -sf $$(abspath $$<) $$@
 endef
 
 define REGISTER_SCRIPT
