@@ -177,7 +177,7 @@ local function op_matches(op, expected, ns)
 		if node_text and not node_text:find('%S') then
 			node_text = nil;
 		end
-		if node_text ~= ex_text then
+		if node_text ~= ex_text and ex_text then
 			reason = "Text of " .. node_type .. " differs: " .. (node_text or '(nil)') .. " vs. " .. (ex_text or '(nil)');
 			return nil;
 		end
@@ -191,9 +191,9 @@ end
 
 local function perform_test(name, test)
 	io.write('Running test "', name, '"\t');
-	local command_xml = lxml2.read_memory(test.command);
-	local config_xml = lxml2.read_memory(test.config);
-	local model_xml = lxml2.read_memory(test.model);
+	local command_xml = xmlwrap.read_memory(test.command);
+	local config_xml = xmlwrap.read_memory(test.config);
+	local model_xml = xmlwrap.read_memory(test.model);
 	io.write('XML\t');
 	local ops, err = editconfig(config_xml, command_xml, model_xml, test.ns, test.defop or 'merge', nil);
 	io.write('Run\t');
