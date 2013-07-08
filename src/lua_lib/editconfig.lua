@@ -254,3 +254,175 @@ function editconfig(config, command, model, ns, defop, errop)
 	err = children_perform(config_node, command_node, model_node, ns, defop, errop, ops);
 	return ops, err;
 end
+
+--[[
+Go through the list of operations and apply them using definitions from the passed description.
+
+TODO: Describe the description.
+]]
+function applyops(ops, description)
+	local desc_stack = {}
+	local current_desc = description;
+	io.stderr:write("Opcount: " .. #ops .. "\n");
+	for i, op in ipairs(ops) do
+		io.stderr:write("Operation " .. op.op .. "\n");
+		local result;
+		local recursing = 0;
+		-- Stack manipulation function
+		local function pop()
+			if recursing > 0 then return end; -- Recursion manages the stack itself
+			-- Pop the stack
+			if current_desc.leave then
+				current_desc.leave(op);
+			end
+			current_desc = table.remove(desc_stack);
+			if not current_desc then
+				error('More leaves then enters!');
+			end
+		end
+		local function push()
+			if recursing > 0 then return end; -- Recursion manages the stack itself
+			-- Store the current one in the stack
+			local name, ns = op.command_node:name();
+			table.insert(desc_stack, current_desc);
+			-- Go one level deeper.
+			current_desc = (current_desc.children or {})[name];
+			if ns ~= description.namespace or not current_desc then
+				-- This should not get here, it is checked by editconfig above
+				error('Entering invalid node ' .. name .. '@' .. ns);
+			end
+			if current_desc.enter then
+				current_desc.enter(op)
+			end
+		end
+		local apply;
+		-- Recurse through children and apply the operation on them.
+		local function recurse(name, node, operation)
+			io.stderr:write("Recurse " .. name .. "\n")
+			-- Prepare list of skipped children
+			local skip_ar = current_desc[name .. '_recurse_skip'] or {};
+			local skip = {};
+			for _, s in ipairs(skip_ar) do
+				io.stderr:write("Skip " .. s .. "\n");
+				skip[s] = true;
+			end
+			-- Have a list of mandatory sub nodes (and remove them if we see them)
+			local mandatory_ar = current_desc[name .. '_recurse_mandatory'] or {};
+			local mandatory = {};
+			for _, m in ipairs(mandatory_ar) do
+				io.stderr:write("Preparing mandatory " .. m .. "\n");
+				mandatory[m] = true;
+			end
+			-- Go through children and apply their operations on them.
+			for child in node:iterate() do
+				local nname, nns = child:name();
+				io.stderr:write("Child " .. nname .. "@" .. (nns or "") .. "\n");
+				if nns == description.namespace then -- Namespace is ours
+					mandatory[nname] = nil; -- Seen this, mandatory satisfied
+					if not skip[nname] then
+						io.stderr:write("Recursing " .. nname .. "\n");
+						table.insert(desc_stack, current_desc);
+						current_desc = (current_desc.children or {})[nname];
+						if not current_desc then
+							result = {
+								msg="Unknown element " .. nname,
+								tag="unknown-element",
+								info_badelem=nname,
+								info_badns=nns
+							}
+							return;
+						end
+						if current_desc.enter then
+							current_desc.enter({command_node=child, config_node=child})
+						end
+						apply(name, child, child, child, op);
+						if not result and current_desc.leave then
+							current_desc.leave({command_node=child, config_node=child});
+						end
+						current_desc = table.remove(desc_stack);
+						if result then
+							return;
+						end
+					else
+						io.stderr:write("Skipping " .. nname .. "\n");
+					end;
+				elseif nns then -- Some foreign stuff
+					result = {
+						msg="Foreign namespace " .. nns .. " with element " .. nname,
+						tag="unknown-namespace",
+						info_badelem=nname,
+						info_badns=nns
+					}
+					return;
+				end -- Else: empty, some text node or so.
+			end
+			local missing = next(mandatory);
+			if missing then
+				result = {
+					msg="Missing mandatory element <" .. missing .. "/>",
+					tag="data-missing",
+					info_badelem=missing,
+					info_badns=description.namespace
+				}
+				return;
+			end
+		end
+		-- Apply a function or other behaviour to the operation.
+		apply = function(name, node, node_before, node_after, operation, older_operation)
+			io.stderr:write("Apply " .. name .. " to " .. node:name() .. "\n");
+			push();
+			if current_desc[name .. '_recurse_before'] then
+				recursing = recursing + 1;
+				recurse(current_desc[name .. '_recurse_before'], node_before, operation);
+				recursing = recursing - 1;
+			end
+			if not result then
+				io.stderr:write("Tag: " .. (current_desc.dbg or '<none>') .. "\n");
+				local what = current_desc[name];
+				if not what then
+					local nname, nns = node:name();
+					result = {
+						msg="Can not " .. name .. " " .. nname .. '@' .. nns,
+						tag="operation-not-supported",
+						info_badelem=name,
+						info_badns=nns
+					};
+				elseif type(what) == 'table' or type(what) == 'string' then
+					result = what;
+				else
+					io.stderr:write("Func\n");
+					result = current_desc[name](node, operation, older_operation)
+				end
+			end
+			if not result and current_desc[name .. '_recurse_after'] then
+				recursing = recursing + 1;
+				recurse(current_desc[name .. '_recurse_after'], node_after, operation);
+				recursing = recursing - 1;
+			end
+			pop();
+		end
+		-- What operation is it?
+		if op.op == 'leave' then
+			pop();
+		elseif op.op == 'enter' then
+			push();
+		elseif op.op == 'add-tree' then
+			local name = op.command_node:name();
+			if ((current_desc.children or {})[name] or {}).replace and op.note == 'replace' then
+				apply('replace', op.command_node, op.config_node, op.command_node, op, ops[i - 1]);
+			else
+				apply('create', op.command_node, op.command_node, op.command_node, op);
+			end
+		elseif op.op == 'remove-tree' then
+			local name = op.config_node:name();
+			if not (((current_desc.children or {})[name] or {}).replace and op.note == 'replace') then
+				apply('remove', op.config_node, op.config_node, op.config_node, op);
+			end
+		else
+			error("Unknown operation " .. op.op);
+		end
+		if result then -- An error happened
+			return result;
+		end
+	end
+end
