@@ -87,6 +87,11 @@ the `DOCS` variable.
 
 Both `LIBRARIES` and `DOCS` are listed without the suffix.
 
+For compiling lua, use the variables `LUA` or `LUA_PLUGINS` (the
+results are placed under `lua_lib` or `lua_plugins` respectively). The
+names are without suffixes too. In the case of `LUA_PLUGINS`,
+corresponding `.yin` file is copied as well.
+
 Note that the results are created in `bin/`, `lib` or `docs`
 respectively. They are only symlinked to the directory where they come
 from. That means `src/hello_world/hello_world` will be symlink to
@@ -153,6 +158,10 @@ LDFLAGS::
 This overrides whatever is set by the `TARGET` and `RELEASE`
 variables.
 
+COMPILE_LUA::
+  If set to `yes` (the default), it compiles lua files for syntax
+  checking and faster loading. If set to anything else, it leaves the
+  lua files be.
 MAX_LOG_LEVEL::
   Maximum level of log messages that are output. Default is LOG_DEBUG.
 NO_DOC::
@@ -167,7 +176,7 @@ PAGE_SIZE::
 PLUGIN_PATH::
   Path where the plugins (subfolders `lua_plugins` and `lua_lib`)
   should be found in the target system.  May be absolute or relative.
-  Defaults to `src/`.
+  Defaults to `./` when compiling lua and `./src/`.
 RELEASE::
   By default, it compiles with debug flags (eg. `-O0 -ggdb3`). With
   this set, it uses optimisation flags (`-O2`).
@@ -208,6 +217,8 @@ We use compiler defines (`-D`) to provide some configuration to the
 compiled source code, instead of generating `config.h`. These are the
 currently passed ones.
 
+COMPILE_LUA::
+  Defined if the lua files are being compiled.
 DEBUG::
   Defined if the RELEASE is not turned on.
 MAX_LOG_LEVEL::
