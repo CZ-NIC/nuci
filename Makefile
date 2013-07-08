@@ -6,10 +6,16 @@ O := $(RELATIVE).
 S := $(RELATIVE).
 ASCIIDOC := asciidoc
 AR := ar
+LUAC := luac
 MAX_LOG_LEVEL := LOG_DEBUG_VERBOSE
 PAGE_SIZE := $(shell getconf PAGE_SIZE)
+LUA_COMPILE := yes
 
+ifeq ($(LUA_COMPILE),yes)
+PLUGIN_PATH := $(abspath $(S))
+else
 PLUGIN_PATH := $(abspath $(S)/src)
+endif
 
 include $(S)/Makefile.dir
 
