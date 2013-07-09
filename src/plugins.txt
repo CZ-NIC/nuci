@@ -403,21 +403,20 @@ node:text()::
   subnodes.
 node:set_text(text)::
   Replace the text with some other. Function erases all text and
-  CDATA nodes. Then create new text node with requested content.
+  CDATA nodes. Then creates new text node with requested content.
 node:add_child(node_name, namespace_href)::
   Create new child of `node` named `node_name`. Optionally declares
-  `namespace_href` and use it for created node.
+  `namespace_href` and uses it for created node.
 node:register_ns(namespace_href, namespace_prefix)::
-  In node's tag declares new `namespace_href` namespace with
-  `namespace_prefix`.
+  Declares new namespace `namespace_href` with given
+  `namespace_prefix`. Places the declaration onto the `node`.
 node:set_attribute(name, value, namespace_href)::
-  Add to node's tag new attribute or change the value of existing one.
-  If attribute should be set in some namespace call function with
-  `namespace_href` parameter. This namespace has to be registered with
-  `register_ns`   method.
+  Adds a new attribute or replaces an existing one. It may optionally
+  live in a namespace (set `namespace_href` then). The namespace must
+  be registered with `register_ns` on the `node` or any of its direct
+  or indirect parents.
 node:rm_attribute(name, namespace_href)::
-  Remove node's attribute. If attribute is in namespace call function
-  with `namespace_href` parameter. This namespace has to be registered
-  with `register_ns` method.
+  Remove node's attribute. If attribute is in namespace, call function
+  with `namespace_href` parameter.
 node:delete()::
-  Delete itself and all children.
+  Delete the node and all children.
