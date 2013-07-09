@@ -265,7 +265,7 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *confi
 	}
 
 	if (!test_access_status(d->lock_info)) {
-		*error = nc_err_new(NC_ERR_LOCK_DENIED);
+		*error = nc_err_new(NC_ERR_IN_USE);
 		return EXIT_FAILURE;
 	}
 
