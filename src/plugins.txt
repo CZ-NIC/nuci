@@ -409,4 +409,10 @@ node:rm_attribute(name, namespace_href)::
   Remove node's attribute. If attribute is in namespace, call function
   with `namespace_href` parameter.
 node:delete()::
-  Delete the node and all children.
+  Delete the node and all children. Note that this invalidates the
+  node and can't be used any more. If the node is used for iteration,
+  then the iteration must be restarted. This is *broken*:
++
+  for node in parent:iterate() do
+    node:delete();
+  end
