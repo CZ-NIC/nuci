@@ -1,9 +1,9 @@
-#include <QApplication>
+#include <QCoreApplication>
 #include <QFile>
 #include <QDomDocument>
 
 int main(int argc, char *argv[]) {
-	QApplication app(argc, argv);
+	QCoreApplication app(argc, argv);
 	QFile f;
 	f.open(stdin, QIODevice::ReadOnly);
 	QDomDocument doc;
