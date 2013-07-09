@@ -318,28 +318,8 @@ msg::
 type::
   Value of the `error-type` element. Defaults to `application`.
 tag::
-  Value of the `error-tag` element. It is expected to be mapped
-  directly in future, but currently, it accepts these values:
-  * `empty`
-  * `in-use`
-  * `invalid-value`
-  * `too-big`
-  * `missing-attribute`
-  * `bad-attribute`
-  * `unknown-attribute`
-  * `missing-element`
-  * `bad-element`
-  * `unknown-element`
-  * `unknown-namespace`
-  * `access-denied`
-  * `lock-denied`
-  * `resource-denied`
-  * `rollback-failed`
-  * `data-exists`
-  * `data-missing`
-  * `operation-not-supported`
-  * `operation-failed`
-  * `malformed-message`
+  Value of the `error-tag` element, as defined by the netconf
+  specification.
 severity::
   Value of the `error-severity` element. Defaults to `error` and it
   should be probably left at that, since usual processing in `nuci` is
