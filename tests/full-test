@@ -22,6 +22,9 @@ ENDXML
 	echo "</rpc>"
 	echo "]]>]]>"
 ) | socat STDIO EXEC:./bin/nuci,pty >"$TMP"
+echo "Raw output"
+cat "$TMP"
+echo "==============="
 ed "$TMP" <<ENDED
 %s/]]>]]>//g
 $
