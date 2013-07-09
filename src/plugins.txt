@@ -113,6 +113,16 @@ If a node in the configuration should be replaced, pair of operations
 On error, the first result (the list of operations) is `nil`, the
 second contains an error description. The error description should be
 propagated up.
++
+The third and fourth arguments are parsed XML documents (the current
+configuration and the command sent by the user).
++
+[WARNING]
+You need to keep these documents in scope for as long as you use the
+operations. If the documents are claimed by the garbage collector, the
+element nodes inside the operations are invalidated. This may change
+in future, but currently an element node needs its containing document
+and it doesn't keep it alive.
 
 Methods to be overriden by the implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
