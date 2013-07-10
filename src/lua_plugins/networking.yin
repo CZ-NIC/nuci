@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<module name='networking' xmlns='urn:ietf:params:xml:ns:yang:yin:1'>
+  <yang-version value='1'/>
+  <namespace uri='http://www.nic.cz/ns/router/networking'/>
+  <prefix value='networking'/>
+  <container name='networking'>
+    <container name='internet'>
+      <mandatory value='true'/>
+      <leaf name='interface'>
+        <type name='string'/>
+        <mandatory value='true'/>
+      </leaf>
+      <leaf-list name='address'>
+        <type name='string'/>
+        <min-elements value='1'/>
+      </leaf-list>
+      <leaf-list name='gateway'>
+        <type name='string'/>
+      </leaf-list>
+      <leaf-list name='dns'>
+        <type name='string'/>
+      </leaf-list>
+      <leaf name='nat'>
+        <type name='empty'/>
+      </leaf>
+      <leaf name='nat6'>
+        <type name='empty'/>
+      </leaf>
+    </container>
+    <container name='lan'>
+      <mandatory value='true'/>
+      <leaf-list name='interface'>
+        <type name='string'/>
+        <min-elements value='1'/>
+      </leaf-list>
+      <leaf-list name='address'>
+        <type name='string'/>
+      </leaf-list>
+      <container name='dhcp'>
+        <presence value='Enables dhcp server'/>
+        <!-- TODO -->
+      </container>
+    </container>
+    <list name='bridge'>
+      <key value='name'/>
+      <leaf name='name'>
+        <type name='string'/>
+      </leaf>
+      <!-- TODO -->
+    </list>
+    <!-- TODO RaDVD -->
+    <!-- TODO DNS server -->
+    <!-- TODO WIFI -->
+    <mandatory value='true'/>
+  </container>
+</module>
+<!-- TODO Some examples:
+     NATed connection.
+     Routed connection.
+     NATed on v4, routed on v6.
+     Transparent mode. -->
