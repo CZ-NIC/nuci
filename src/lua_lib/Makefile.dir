@@ -2,5 +2,6 @@ LUA += $(addprefix src/lua_lib/, \
 	datastore \
 	editconfig \
 	nutils \
+	views \
 	xmltree \
 	)
