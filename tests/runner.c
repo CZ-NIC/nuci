@@ -13,7 +13,7 @@ int main(int argc, const char *argv[]) {
 
 	//libxml2 init
 	xmlInitParser();
-		LIBXML_TEST_VERSION
+	LIBXML_TEST_VERSION
 
 	//lua init
 	lua = luaL_newstate();
