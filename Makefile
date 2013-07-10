@@ -25,6 +25,7 @@ check:
 	cd $(S) && ./tests/editconfig_test.lua
 	cd $(S) && ./tests/lua-test-all
 	cd $(S) && ./tests/stress2_xml.lua
+	cd $(S) && ./tests/xmltree-test.lua
 	cd $(S) && ./tests/stress_xml.lua
 
 .PHONY: check
