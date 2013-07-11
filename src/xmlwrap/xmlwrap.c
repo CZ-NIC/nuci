@@ -215,8 +215,6 @@ static const char *translate_node_type(xmlElementType type) {
 			return "XML_XINCLUDE_START";
 		case XML_XINCLUDE_END:
 			return "XML_XINCLUDE_END";
-		case XML_DOCB_DOCUMENT_NODE:
-			return "XML_DOCB_DOCUMENT_NODE";
 		default:
 			return "VALUE IS NOT ON THE LIST";
 	}
