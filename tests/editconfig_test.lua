@@ -24,6 +24,11 @@ local small_model = [[
       <type name='int32'/>
     </leaf>
   </container>
+  <container name='datall'>
+    <leaf-list name='array'>
+      <type name='int32'/>
+    </leaf-list>
+  </container>
 </module>
 ]];
 
@@ -225,6 +230,80 @@ local tests = {
 			tag="data-exists",
 			info_badelem="value",
 			info_badns="http://example.org/"
+		}
+	},
+	["Create leaf-list"]={
+		command=[[<edit><datall xmlns='http://example.org/'><array>42</array><array>24</array><array>16</array></datall></edit>]];
+		config=[[<config><datall xmlns='http://example.org/'><array>12</array><array>15</array><array>18</array></datall></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops = {
+			{
+				name='enter',
+				command_node_name='datall',
+				config_node_name='datall',
+				model_node_name='container'
+			},
+			{
+				name='add-tree',
+				command_node_name='array',
+				command_node_text='42',
+				model_node_name='leaf-list'
+			},
+			{
+				name='add-tree',
+				command_node_name='array',
+				command_node_text='24',
+				model_node_name='leaf-list'
+			},
+			{
+				name='add-tree',
+				command_node_name='array',
+				command_node_text='16',
+				model_node_name='leaf-list'
+			},
+			{
+				name='leave',
+				command_node_name='datall',
+				config_node_name='datall',
+				model_node_name='container'
+			}
+		}
+	},
+	["Remove from leaf-list"]={
+		command=[[<edit><datall xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><array xc:operation='delete'>42</array><array xc:operation='delete'>24</array></datall></edit>]];
+		config=[[<config><datall xmlns='http://example.org/'><array>42</array><array>24</array><array>16</array></datall></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops = {
+			{
+				name='enter',
+				command_node_name='datall',
+				config_node_name='datall',
+				model_node_name='container'
+			},
+			{
+				name='remove-tree',
+				command_node_name='array',
+				command_node_text='42',
+				config_node_name='array',
+				config_node_text='42',
+				model_node_name='leaf-list'
+			},
+			{
+				name='remove-tree',
+				command_node_name='array',
+				command_node_text='24',
+				config_node_name='array',
+				config_node_text='24',
+				model_node_name='leaf-list'
+			},
+			{
+				name='leave',
+				command_node_name='datall',
+				config_node_name='datall',
+				model_node_name='container'
+			}
 		}
 	}
 	--[[
