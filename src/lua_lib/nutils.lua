@@ -1,4 +1,12 @@
 require("uci");
+
+package.path = 'src/lua_lib/?.lua;' .. package.path;
+
+-- Enable StackTracePlus instead of standard Lua version
+require("stacktraceplus");
+local STP = require "stacktraceplus"
+debug.traceback = STP.stacktrace
+
 -- Find the first child node matching a predicate, or nil.
 function find_node(node, predicate)
 	for child in node:iterate() do
