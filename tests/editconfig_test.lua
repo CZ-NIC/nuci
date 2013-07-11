@@ -226,14 +226,14 @@ local tests = {
 		model=small_model,
 		ns='http://example.org/',
 		err = {
-		msg="Can't create an element, such element already exists: value",
+			msg="Can't create an element, such element already exists: value",
 			tag="data-exists",
 			info_badelem="value",
 			info_badns="http://example.org/"
 		}
 	},
-	["Create leaf-list"]={
-		command=[[<edit><datall xmlns='http://example.org/'><array>42</array><array>24</array><array>16</array></datall></edit>]];
+	["Merge leaf-list"]={
+		command=[[<edit><datall xmlns='http://example.org/'><array>42</array><array>24</array><array>18</array></datall></edit>]];
 		config=[[<config><datall xmlns='http://example.org/'><array>12</array><array>15</array><array>18</array></datall></config>]],
 		model=small_model,
 		ns='http://example.org/',
@@ -254,12 +254,6 @@ local tests = {
 				name='add-tree',
 				command_node_name='array',
 				command_node_text='24',
-				model_node_name='leaf-list'
-			},
-			{
-				name='add-tree',
-				command_node_name='array',
-				command_node_text='16',
 				model_node_name='leaf-list'
 			},
 			{
@@ -305,9 +299,33 @@ local tests = {
 				model_node_name='container'
 			}
 		}
+	},
+	["Remove non-exists value from leaf-list"]={
+		command=[[<edit><datall xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><array xc:operation='delete'>420</array></datall></edit>]];
+		config=[[<config><datall xmlns='http://example.org/'><array>42</array><array>24</array><array>16</array></datall></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Missing element in configuration: array",
+			tag="data-missing",
+			info_badelem="array",
+			info_badns="http://example.org/"
+		}
+	},
+	["Create exists value in leaf-list"]={
+		command=[[<edit><datall xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><array xc:operation='create'>42</array></datall></edit>]];
+		config=[[<config><datall xmlns='http://example.org/'><array>42</array><array>24</array><array>16</array></datall></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Can't create an element, such element already exists: array",
+			tag="data-exists",
+			info_badelem="array",
+			info_badns="http://example.org/"
+		}
 	}
 	--[[
-	TODO: We want more tests. Tests for manipulation with keys, leaf-lists, etc.
+	TODO: We want more tests. Tests for manipulation with keys, <done>leaf-lists</done>, etc.
 	Also, we want to test further operations, like <done>create</done>, none, etc.
 
 	And some error checking too.
