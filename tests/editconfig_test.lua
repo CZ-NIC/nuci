@@ -20,6 +20,9 @@ local small_model = [[
     <leaf name='value'>
       <type name='int32'/>
     </leaf>
+    <leaf name='value2'>
+      <type name='int32'/>
+    </leaf>
   </container>
 </module>
 ]];
@@ -36,6 +39,7 @@ local tests = {
 		config=[[<config><data xmlns='http://example.org'><value>13</value></data></config>]],
 		model=small_model,
 		ns='http://example.org/',
+		err = nil,
 		expected_ops={}
 	},
 	["Add command"]={
@@ -46,6 +50,7 @@ local tests = {
 		config=[[<config/>]],
 		model=small_model,
 		ns='http://example.org/',
+		err = nil,
 		expected_ops={
 			{
 				name='add-tree',
@@ -62,6 +67,7 @@ local tests = {
 		config=[[<config><data xmlns='http://example.org/'><value>13</value></data></config>]],
 		model=small_model,
 		ns='http://example.org/',
+		err = nil,
 		expected_ops={
 			{
 				name='enter',
@@ -100,6 +106,7 @@ local tests = {
 		config=[[<config><data xmlns='http://example.org/'><value>42</value></data></config>]],
 		model=small_model,
 		ns='http://example.org/',
+		err = nil,
 		expected_ops={
 			{
 				name='enter',
@@ -127,6 +134,7 @@ local tests = {
 		config=[[<config><data xmlns='http://example.org/'><value>42</value></data></config>]],
 		model=small_model,
 		ns='http://example.org/',
+		err = nil,
 		expected_ops={
 			{
 				name='remove-tree',
@@ -135,14 +143,118 @@ local tests = {
 				model_node_name='container'
 			}
 		}
+	},
+	["Delete non-exists container"]={
+		command=[[<edit><badelem xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0' xc:operation='delete'><value>13</value></badelem></edit>]];
+		config=[[<config><data xmlns='http://example.org/'><value>42</value></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Unknown element",
+			tag="unknown-element",
+			info_badelem="badelem"
+		}
+	},
+	["Delete non-exists leaf"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><badvalue xc:operation='delete'/></data></edit>]];
+		config=[[<config><data xmlns='http://example.org/'><value>42</value></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Unknown element",
+			tag="unknown-element",
+			info_badelem="badvalue"
+		}
+	},
+	["Replace non-exists (matched) leaf"]={
+		command=[[<edit><data xmlns='http://example.org/'><badvalue>42</badvalue></data></edit>]],
+		config=[[<config><data xmlns='http://example.org/'><badvalue>13</badvalue></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Unknown element",
+			tag="unknown-element",
+			info_badelem="badvalue"
+		}
+	},
+	["Delete non-exists config leaf"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><value xc:operation='delete'/></data></edit>]];
+		config=[[<config><data xmlns='http://example.org/'><badvalue>42</badvalue></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Missing element in configuration: value",
+			tag="data-missing",
+			info_badelem="value",
+			info_badns="http://example.org/"
+		}
+	},
+	["Create command (exists)"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><value xc:operation='create'>42</value></data></edit>]];
+		config=[[<config><data xmlns='http://example.org/'/></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops = {
+			{
+				name='enter',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			},
+			{
+				name='add-tree',
+				command_node_name='value',
+				command_node_text='42',
+				model_node_name='leaf'
+			},
+			{
+				name='leave',
+				command_node_name='data',
+				config_node_name='data',
+				model_node_name='container'
+			}
+		}
+	},
+	["Create command (non-exists)"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><value xc:operation='create'>42</value></data></edit>]];
+		config=[[<config><data xmlns='http://example.org/'><value>10</value></data></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+		msg="Can't create an element, such element already exists: value",
+			tag="data-exists",
+			info_badelem="value",
+			info_badns="http://example.org/"
+		}
 	}
 	--[[
 	TODO: We want more tests. Tests for manipulation with keys, leaf-lists, etc.
-	Also, we want to test further operations, like create, none, etc.
+	Also, we want to test further operations, like <done>create</done>, none, etc.
 
 	And some error checking too.
 	]]
 };
+local function err_match(err1, err2)
+	if err1.msg ~= err2.msg then return false; end;
+	if err1.tag ~= err2.tag then return false; end;
+	if err1.info_badelem ~= err2.info_badelem then return false; end;
+	if err1.info_badns ~= err2.info_badns then return false; end;
+
+	return true;
+end
+
+local function dump_operations(ops)
+	for i, tab in ipairs(ops) do
+		io.write("Operation #" .. i .. ":\n");
+		dump_table(tab);
+	end
+end
+
+local function dump_table(tab)
+	for k, v in pairs(tab) do
+		io.write(k .. ": " .. v .. "\n");
+	end
+end
 
 local function op_matches(op, expected, ns)
 	if op.op ~= expected.name then
@@ -197,21 +309,33 @@ local function perform_test(name, test)
 	io.write('XML\t');
 	local ops, err = editconfig(config_xml, command_xml, model_xml, test.ns, test.defop or 'merge', nil);
 	io.write('Run\t');
-	-- TODO: Check the error properly
-	if err then
+	if err and test.err == nil then
+		io.write("Error dump:\n");
+		dump_table(err);
 		error(err.msg);
-	end
-	if #ops ~= #test.expected_ops then
-		error("Wrong ops count: " .. #ops .. ", expected: " .. #test.expected_ops);
-	end
-	-- There doesn't seem to be really elegant way to iterate over two lists in parallel
-	local expected_index, expected_op = next(test.expected_ops)
-	for index, op in ipairs(ops) do
-		local result, reason = op_matches(op, expected_op, test.ns);
-		if not result then
-			error("Operation no. " .. index .. " differs (" .. (reason or "<unknown reason>") .. ")");
+	elseif err and test.err ~= nil then
+		if not err_match(err, test.err) then
+			io.write("Error dump:\n");
+			dump_table(err);
+			error("Unexpected error: " .. err.msg);
 		end
-		expected_index, expected_op = next(test.expected_ops, expected_index);
+	else
+		if #ops ~= #test.expected_ops then
+			io.write("Operations dump:\n");
+			dump_operations(ops);
+			error("Wrong ops count: " .. #ops .. ", expected: " .. #test.expected_ops);
+		end
+		-- There doesn't seem to be really elegant way to iterate over two lists in parallel
+		local expected_index, expected_op = next(test.expected_ops)
+		for index, op in ipairs(ops) do
+			local result, reason = op_matches(op, expected_op, test.ns);
+			if not result then
+				io.write("Operations dump:\n");
+				dump_operations(ops);
+				error("Operation no. " .. index .. " differs (" .. (reason or "<unknown reason>") .. ")");
+			end
+			expected_index, expected_op = next(test.expected_ops, expected_index);
+		end
 	end
 	io.write("OK\n");
 end
