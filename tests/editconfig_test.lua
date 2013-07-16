@@ -29,6 +29,17 @@ local small_model = [[
       <type name='int32'/>
     </leaf-list>
   </container>
+  <container name='datal'>
+    <list name='array'>
+      <key value='id'/>
+      <leaf name='id'>
+        <type name='int32'/>
+      </leaf>
+      <leaf name='name'>
+        <type name='string'/>
+      </leaf>
+    </list>
+  </container>
 </module>
 ]];
 
@@ -322,6 +333,43 @@ local tests = {
 			tag="data-exists",
 			info_badelem="array",
 			info_badns="http://example.org/"
+		}
+	},
+	["Create value with key collison"]={
+		command=[[<edit><datal xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><array xc:operation='create'><id>42</id><name>Bob</name></array></datal></edit>]];
+		config=[[<config><datal xmlns='http://example.org/'><array><id>42</id><name>Joe</name></array></datal></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		err = {
+			msg="Can't create an element, such element already exists: array",
+			tag="data-exists",
+			info_badelem="array",
+			info_badns="http://example.org/"
+		}
+	},
+	["Create value without key collison"]={
+		command=[[<edit><datal xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><array xc:operation='create'><id>42</id><name>Bob</name></array></datal></edit>]];
+		config=[[<config><datal xmlns='http://example.org/'><array><id>41</id><name>Joe</name></array></datal></config>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops = {
+			{
+				name='enter',
+				command_node_name='datal',
+				config_node_name='datal',
+				model_node_name='container'
+			},
+			{
+				name='add-tree',
+				command_node_name='array',
+				model_node_name='list',
+			},
+			{
+				name='leave',
+				command_node_name='datal',
+				config_node_name='datal',
+				model_node_name='container'
+			}
 		}
 	}
 	--[[
