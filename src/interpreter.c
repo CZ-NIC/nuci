@@ -51,6 +51,41 @@ static void explain_statuscode(char *callname, int status) {
 }
 #endif
 
+/**
+ * Our own error handler for pcall calls.
+ */
+static int lua_handle_runtime_error(lua_State *L) {
+	const char *errmsg = lua_tostring(L, -1);
+
+	//Get stacktrace; in Lua: x = require("stacktraceplus").stacktrace;
+	lua_getfield(L, LUA_GLOBALSINDEX, "require");
+	lua_pushstring(L, "stacktraceplus");
+	lua_pcall(L, 1, 1, 0); //call require
+	lua_getfield(L, -1, "stacktrace");
+	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
+
+	fprintf(stderr, "%s\n", lua_tostring(L, -1));
+
+	/* Lua print() alternative
+	lua_getfield(L, LUA_GLOBALSINDEX, "print");
+	lua_pushvalue(L, -2);
+	lua_pcall(L, 1, 0, 0); //call print
+	*/
+
+	lua_pushstring(L, errmsg); //return
+
+	return 1;
+}
+
+/**
+ * This function prepares error function for lua_pcall on the stack
+ * and returns its index for easier way to call it.
+ */
+static int prepare_errfunc(lua_State *lua) {
+	lua_getfield(lua, LUA_GLOBALSINDEX, "handle_runtime_error");
+	return lua_gettop(lua);
+}
+
 static int register_datastore_provider_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)
@@ -322,32 +357,6 @@ static int uci_list_configs_lua(lua_State *lua) {
 	return 1;
 }
 
-/**
- * Our own error handler for pcall calls.
- */
-static int lua_handle_runtime_error(lua_State *L) {
-	const char *errmsg = lua_tostring(L, -1);
-
-	//Get stacktrace; in Lua: x = require("stacktraceplus").stacktrace;
-	lua_getfield(L, LUA_GLOBALSINDEX, "require");
-	lua_pushstring(L, "stacktraceplus");
-	lua_pcall(L, 1, 1, 0); //call require
-	lua_getfield(L, -1, "stacktrace");
-	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
-
-	fprintf(stderr, "%s\n", lua_tostring(L, -1));
-
-	/* Lua print() alternative
-	lua_getfield(L, LUA_GLOBALSINDEX, "print");
-	lua_pushvalue(L, -2);
-	lua_pcall(L, 1, 0, 0); //call print
-	*/
-
-	lua_pushstring(L, errmsg); //return
-
-	return 1;
-}
-
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -434,15 +443,6 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 void interpreter_destroy(struct interpreter *interpreter) {
 	lua_close(interpreter->state);
 	free(interpreter);
-}
-
-/**
- * This function prepares error function for lua_pcall on the stack
- * and returns its index for easier way to call it.
- */
-static int prepare_errfunc(lua_State *lua) {
-	lua_getfield(lua, LUA_GLOBALSINDEX, "handle_runtime_error");
-	return lua_gettop(lua);
 }
 
 const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
