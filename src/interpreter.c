@@ -70,7 +70,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	lua_getglobal(lua, "xmlwrap"); // The package
 	lua_getfield(lua, -1, "read_file"); // The function to call
 	lua_getfield(lua, 1, "model_path"); // The file name
-	lua_call(lua, 1, 1);
+	lua_pcall(lua, 1, 1, 0);
 	lua_setfield(lua, 1, "model"); // Copy the result into the datastore
 	// Get the datastore to the top (there's more rumble on top of it by now)
 	lua_pushvalue(lua, 1);
