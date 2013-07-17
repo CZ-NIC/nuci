@@ -321,6 +321,32 @@ static int uci_list_configs_lua(lua_State *lua) {
 	return 1;
 }
 
+/**
+ * Our own error handler for pcall calls.
+ */
+static int lua_handle_runtime_error(lua_State *L) {
+	const char *errmsg = lua_tostring(L, -1);
+
+	//Get stacktrace; in Lua: x = require("stacktraceplus").stacktrace;
+	lua_getfield(L, LUA_GLOBALSINDEX, "require");
+	lua_pushstring(L, "stacktraceplus");
+	lua_pcall(L, 1, 1, 0); //call require
+	lua_getfield(L, -1, "stacktrace");
+	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
+
+	fprintf(stderr, "%s\n", lua_tostring(L, -1));
+
+	/* Lua print() alternative
+	lua_getfield(L, LUA_GLOBALSINDEX, "print");
+	lua_pushvalue(L, -2);
+	lua_pcall(L, 1, 0, 0); //call print
+	*/
+
+	lua_pushstring(L, errmsg); //return
+
+	return 1;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -341,6 +367,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "run_command", run_command_lua);
 	add_func(result, "xml_escape", xml_escape_lua);
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
+	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
 
 	xmlwrap_init(result->state);
 
