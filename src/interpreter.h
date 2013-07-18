@@ -73,7 +73,9 @@ struct nc_err;
  * Turn the error on top of stack to the libnetconf's error structure. Returns
  * NULL if there was no error. It is expected to be called sometime after
  * flag_error (though from different function probably).
+ *
+ * Merge with original if there was previous error. Original may be NULL.
  */
-struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter);
+struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter, struct nc_err *original);
 
 #endif

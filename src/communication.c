@@ -63,7 +63,7 @@ static char *get_ds_stats(const char *model, const char *running, struct nc_err 
 	assert(found); // We should not be called with namespace we don't know
 
 	const char *result = interpreter_get(global_srv_config.interpreter, datastore, "get");
-	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter))) {
+	if ((*e = nc_err_create_from_lua(global_srv_config.interpreter, *e))) {
 		return NULL;
 	} else {
 		return strdup(result);
@@ -192,7 +192,7 @@ static bool comm_send_reply(struct nc_session *session, struct rpc_communication
 static nc_reply *procedure_all(const struct srv_config *config, const char *method, nc_reply *reply) {
 	for (size_t i = 0; i < config->config_datastore_count; i ++) {
 		interpreter_procedure(config->interpreter, config->config_datastores[i].lua, method);
-		struct nc_err *err = nc_err_create_from_lua(config->interpreter);
+		struct nc_err *err = nc_err_create_from_lua(config->interpreter, NULL);
 		if (err) {
 			if (nc_reply_get_type(reply) == NC_REPLY_ERROR) {
 				nc_reply_error_add(reply, err);
@@ -288,7 +288,7 @@ void comm_start_loop(const struct srv_config *config) {
 			//Some interpreter error
 			} else if (ds_reply == NULL) { //ds_reply shoud be NULL even if datastore was found
 				//This is for all cases: If lua detect some error enterpreter is better send any status message.
-				communication.reply = nc_reply_error(nc_err_create_from_lua(config->interpreter));
+				communication.reply = nc_reply_error(nc_err_create_from_lua(config->interpreter, NULL));
 
 			//Interpreter send answer
 			} else {

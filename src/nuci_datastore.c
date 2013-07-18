@@ -229,7 +229,7 @@ static char* nuci_ds_getconfig(void *data, NC_DATASTORE target, struct nc_err** 
 	// Call out to lua
 	const char *result = interpreter_get(d->interpreter, d->datastore, "get_config");
 
-	*error = nc_err_create_from_lua(d->interpreter);
+	*error = nc_err_create_from_lua(d->interpreter, *error);
 	if (result)
 		return strdup(result);
 	else
@@ -306,7 +306,7 @@ static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *confi
 
 	interpreter_set_config(d->interpreter, d->datastore, config, op, err);
 
-	return (*error = nc_err_create_from_lua(d->interpreter)) ? EXIT_FAILURE : EXIT_SUCCESS;
+	return (*error = nc_err_create_from_lua(d->interpreter, *error)) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 const struct ncds_custom_funcs *ds_funcs = &(struct ncds_custom_funcs) {

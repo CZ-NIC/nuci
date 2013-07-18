@@ -554,7 +554,11 @@ static const struct errfield errfields[] = {
 	{ .name = NULL }
 };
 
-struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter) {
+struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter, struct nc_err *original) {
+	if (original) {
+		// TODO: Merging of the error?
+		return original;
+	}
 	if (interpreter->last_error) {
 		lua_State *lua = interpreter->state;
 		if (lua_isstring(lua, -1)) {
@@ -568,7 +572,7 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter) {
 			lua_checkstack(lua, 20);
 			if (!lua_istable(lua, -1)) {
 				lua_pushstring(lua, "Error definition must be either string or table");
-				return nc_err_create_from_lua(interpreter);
+				return nc_err_create_from_lua(interpreter, original);
 			}
 			int eindex = lua_gettop(lua);
 			const char *error = get_err_value(lua, eindex, "tag", "empty");
