@@ -1,1 +1,2 @@
 -DPLUGIN_PATH=
+-I/usr/include/libxml2
