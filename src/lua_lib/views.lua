@@ -51,7 +51,7 @@ local function merge(original, more)
 				error("Found unknown item " .. name .. " when merging results");
 			end
 			if check_this and original[name] ~= nil and original[name] ~= value then
-				error("TODO: Handle differing value on " .. name .. ": " .. original[name] .. " vs. " .. value );
+				original.differs = true;
 			end
 			original[name] = value;
 		end
