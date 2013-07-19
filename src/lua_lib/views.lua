@@ -32,7 +32,8 @@ local check = {
 	name = false,
 	namespace = false,
 	generate = false,
-	friend = false
+	friend = false,
+	parent = false
 };
 
 -- Just go through the list and pick every one that has the given name.
@@ -255,6 +256,7 @@ local function handle_differences(id, doc)
 			end
 		end
 		for _, child in pairs(node.children or {}) do
+			child.parent = node; -- For the convenience of called functions
 			if walk(child) then
 				return true; -- Propagate exit of recursion
 			end
