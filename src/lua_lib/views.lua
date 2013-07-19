@@ -209,6 +209,64 @@ local function find_generated_positions(subtree, indexes, path)
 	return pairs(result);
 end;
 
+--[[
+Find the nodes marked for differences and call hooks on them.
+
+Each hook may arbitrarily modify the document structure. For that reason,
+we restart the differences handling each time a node is found and the
+differences handled.
+]]
+local function handle_differences(id, doc)
+	local restart = false;
+	local exception;
+
+	local path = {};
+	local indexes = {};
+	local function walk(node)
+		io.stderr:write("Difference scan on " .. node.name);
+		table.insert(path, node.name);
+		table.insert(indexes, node.indexes or node.text or {});
+		if node.differs or node.children_differ then
+			local callbacks = callbacks_find(hooks_differ, id, path);
+			if next(callbacks) then
+				io.stderr:write("Difference!\n");
+				-- This difference will get handled now.
+				node.differs = nil;
+				node.children_differ = nil;
+				for _, callback in ipairs(callbacks) do
+					local err = callback(doc, node, indexes, path);
+					if err then
+						exception = err;
+						-- Exit the walk recursion
+						return true;
+					end
+				end
+				-- Do a restart, as we handled a change
+				restart = true;
+				return true;
+			else
+				error("Difference at node " .. node.name .. " not handled");
+			end
+		end
+		for _, child in pairs(node.children or {}) do
+			if walk(child) then
+				return true; -- Propagate exit of recursion
+			end
+		end
+		table.remove(path);
+		table.remove(indexes);
+	end;
+	walk(doc);
+	if exception then
+		return exception;
+	end
+	if restart then
+		io.stderr:write("Restart differences");
+		-- Return to enable tail call
+		return handle_differences(id, doc);
+	end
+end
+
 function register_view(model, id)
 	local result = datastore(model);
 
@@ -221,34 +279,46 @@ function register_view(model, id)
 
 		-- Process all the places that need to be generated.
 		while next(pending) do
-			-- Extract one (arbitrary) position
-			local index, position = next(pending);
-			pending[index] = nil;
+			while next(pending) do
+				-- Extract one (arbitrary) position
+				local index, position = next(pending);
+				pending[index] = nil;
 
-			-- get the callbacks
-			local callbacks = callbacks_find(hooks_get, id, position.path or {});
-			--[[
-			Call each of the callbacks. Store the results, don't merge them yet.
-			That could confuse the next callbacks, because it would modify the
-			parameter passed to the following callbacks.
-			]]
-			local results = {};
-			for index, callback in ipairs(callbacks) do
-				local err;
-				results[index], err = callback(position.node, position.indexes, position.path);
-				if err then
-					return nil, err;
+				-- get the callbacks
+				local callbacks = callbacks_find(hooks_get, id, position.path or {});
+				--[[
+				Call each of the callbacks. Store the results, don't merge them yet.
+				That could confuse the next callbacks, because it would modify the
+				parameter passed to the following callbacks.
+				]]
+				local results = {};
+				for index, callback in ipairs(callbacks) do
+					local err;
+					results[index], err = callback(position.node, position.indexes, position.path);
+					if err then
+						return nil, err;
+					end
+				end
+				-- Merge the things together, one by one
+				for _, data in ipairs(results) do
+					local err = merge(position.node, data);
+					if err then
+						return err;
+					end
+				end
+				-- Push the new ones into the table of pending, into the first empty position
+				for _, g in find_generated_positions(position.node, position.indexes, position.path) do
+					table.insert(pending, g);
 				end
 			end
-			-- Merge the things together, one by one
-			for _, data in ipairs(results) do
-				local err = merge(position.node, data);
-				if err then
-					return err;
-				end
+
+			-- Go through the whole document and call hooks on each place marked as it differs.
+			local err = handle_differences(id, doc);
+			if err then
+				return nil, err;
 			end
-			-- Push the new ones into the table of pending, into the first empty position
-			for _, g in find_generated_positions(position.node, position.indexes, position.path) do
+			-- Check if it generated more places to process
+			for _, g in find_generated_positions(doc) do
 				table.insert(pending, g);
 			end
 		end
@@ -281,5 +351,5 @@ function hook_get(id, path, callback)
 end
 
 function hook_differ(id, path, callback)
-	register(hooks_get, id, path, callback);
+	register(hooks_differ, id, path, callback);
 end
