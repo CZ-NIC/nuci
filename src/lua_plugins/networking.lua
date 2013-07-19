@@ -50,8 +50,12 @@ hook_get("networking", {'networking', 'internet'}, function ()
 			{
 				name = 'gateway',
 				text = '2001:db8::1'
+			},
+			{
+				name = 'address',
+				text = '192.0.2.42/24'
 			}
 		},
-		known = { 'gateway' }
+		known = { 'gateway', 'address' }
 	}
 end);

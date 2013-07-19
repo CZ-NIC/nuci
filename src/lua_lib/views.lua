@@ -23,8 +23,59 @@ local check = {
 	text = true,
 	name = false,
 	namespace = false,
-	generate = false
+	generate = false,
+	friend = false
 };
+
+-- Just go through the list and pick every one that has the given name.
+local function filter_children(list, name)
+	local result = {};
+	for _, child in ipairs(list) do
+		if child.name == name then
+			table.insert(result, child);
+		end
+	end
+	return result;
+end
+
+-- For each node, try to store an index of the friend in the other side
+-- where indexes correspond
+local function mark_friends(nodes, friends)
+	for _, node in pairs(nodes) do
+		node.friend = nil; -- Erase any possible previous mark
+		if node.indexes then
+			-- Do it by indexes
+			for i, friend in pairs(friends) do
+				local equals = true; -- Nothing differs yet
+				for _, index in pairs(node.indexes) do
+					local function extract(node)
+						local children = node.children or {};
+						local child = children[index] or {};
+						return child.text or '';
+					end
+					if extract(node) ~= extract(friend) then
+						found = false;
+						break;
+					end
+				end
+				if equals then -- We found a friend
+					node.friend = i;
+					break;
+				end
+			end
+		else
+			-- Do it by the text
+			for i, friend in pairs(friends) do
+				io.stderr:write("Compare " .. (node.text or '<nil>') .. " with " .. (friend.text or '<nil>') .. "\n");
+				if node.text == friend.text then
+					node.friend = i;
+					io.stderr:write("Match: " .. i .. "\n");
+					break;
+				end
+			end
+		end
+	end
+end
 
 --[[
 Merge one node into another. It overwrites basic values, like name and
@@ -32,7 +83,8 @@ namespace. It checks the text is the same if there was one before.
 
 With the children, it is more complex. If the children are for name
 not yet known, they are just added. If it is for known children, they
-are tried to match and check they are equal. If not, error is raised.
+are tried to match and check they are equal. If not, they are marked
+is raised.
 
 TODO: We need to run hooks there, however, if they differ.
 ]]
@@ -64,16 +116,43 @@ local function merge(original, more)
 		end
 		return result;
 	end
-	local ok, mk = genknown(original), genknown(more);
+	local ok, mk, handled = genknown(original), genknown(more), {};
 	for _, child in ipairs(more.children or {}) do
 		local name = child.name;
-		if not mk[name] then
-			error('Found a child of name ' .. name .. ' but the name is not claimed to be known');
+		if not handled[name] then -- Skip the ones already merged.
+			if not mk[name] then
+				error('Found a child of name ' .. name .. ' but the name is not claimed to be known');
+			end
+			if ok[name] then
+				handled[name] = true;
+				-- Get the children of both original and the new node
+				local original_children = filter_children(original.children, name);
+				local more_children = filter_children(more.children, name);
+				-- Try matching them together.
+				mark_friends(original_children, more_children);
+				mark_friends(more_children, original_children);
+				--[[
+				Go through them and find the matching pairs. Merge the
+				matching ones and add the non-matching ones. Also mark if it differs.
+				]]
+				for _, child in pairs(original_children) do
+					if not child.friend then
+						original.children_differ = true;
+						break;
+					end
+				end
+				for _, child in ipairs(more_children) do
+					if child.friend then
+						merge(original_children[child.friend], child);
+					else
+						table.insert(original.children, child);
+						original.children_differ = true;
+					end
+				end
+			else
+				table.insert(original.children, child);
+			end
 		end
-		if ok[name] then
-			error('Comparing children not implemented yet');
-		end
-		table.insert(original.children, child);
 	end
 	-- Merge known
 	for k in pairs(mk) do
