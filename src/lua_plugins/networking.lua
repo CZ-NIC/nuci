@@ -70,5 +70,4 @@ local function erase_internet(doc)
 end
 
 hook_differ("networking", {'networking', 'internet'}, erase_internet);
--- TODO: Make the wildcards work
 hook_differ("networking", {'networking', 'internet', '*'}, erase_internet);

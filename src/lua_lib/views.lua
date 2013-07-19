@@ -10,12 +10,20 @@ Find the list of callbacks at given set of callbacks, for the given
 view ID and path. If not found, returns empty list.
 ]]
 local function callbacks_find(where, id, path)
+	local pre_result = {};
 	local node = where[id] or { subnodes = {} };
 	for _, level in ipairs(path) do
+		table.insert((node.subnodes["*"] or { subnodes = {} }).subnodes);
 		io.stderr:write("Descend to " .. level .. "\n");
 		node = node.subnodes[level] or { subnodes = {} };
 	end
-	return node.callbacks or {};
+	local result = {};
+	for _, partial in ipairs(pre_result) do
+		for _, callback in ipairs(pre_result) do
+			table.insert(result, callback);
+		end
+	end
+	return result;
 end
 
 -- What should and should not be checked
@@ -85,8 +93,6 @@ With the children, it is more complex. If the children are for name
 not yet known, they are just added. If it is for known children, they
 are tried to match and check they are equal. If not, they are marked
 is raised.
-
-TODO: We need to run hooks there, however, if they differ.
 ]]
 local function merge(original, more)
 	-- Make sure the original has anything needed
