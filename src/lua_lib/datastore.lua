@@ -37,8 +37,8 @@ function datastore(model_file)
 	corresponding operations on the config.
 	]]
 	function result:edit_config_ops(config, defop, deferr)
-		local current = xmlwrap.read_memory('<config>' .. self:get_config() .. '</config>');
-		local operation = xmlwrap.read_memory('<edit>' .. config .. '</edit>');
+		local current = xmlwrap.read_memory('<config>' .. strip_xml_def(self:get_config()) .. '</config>');
+		local operation = xmlwrap.read_memory('<edit>' .. strip_xml_def(config) .. '</edit>');
 		return editconfig(current, operation, self.model, self.model_ns, defop, deferr);
 	end
 	--[[

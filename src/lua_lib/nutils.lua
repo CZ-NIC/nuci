@@ -54,3 +54,16 @@ function var_len(varname, var)
 		io.stderr:write(varname .. " has length " .. #var .. "\n");
 	end
 end
+
+--[[
+Drop the <?xml …?> at the beginning of string.
+]]
+function strip_xml_def(xml_string)
+	local l, r = xml_string:find('<%?xml .-%?>');
+	io.stderr:write(xml_string .. ":" .. (l or "<nil>") .. "-" .. (r or "<nil>") .. "\n");
+	if l == 1 then
+		return xml_string:sub(r + 1);
+	else
+		return xml_string;
+	end
+end
