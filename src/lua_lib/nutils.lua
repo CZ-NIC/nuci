@@ -1,4 +1,7 @@
 require("uci");
+
+local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
+
 -- Find the first child node matching a predicate, or nil.
 function find_node(node, predicate)
 	for child in node:iterate() do
@@ -24,6 +27,15 @@ end
 -- split the string into words
 function split(str)
 	return str:gmatch('%S+');
+end
+
+--[[
+Extract the list of expected keys in the model node.
+The model node should yang description of a list (specially, it should contain
+the key element).
+]]
+function list_keys(model_node)
+	return split(find_node_name_ns(model_node, 'key', yang_ns):attribute('value'));
 end
 
 -- Dump the table, for debug purposes.
@@ -53,6 +65,21 @@ function var_len(varname, var)
 	if var then
 		io.stderr:write(varname .. " has length " .. #var .. "\n");
 	end
+end
+
+function list2map(list)
+	local result = {};
+	for _, value in pairs(list) do
+		result[value] = true;
+	end
+end
+
+function iter2list(iter)
+	local result = {};
+	for i in iter do
+		table.insert(result, i);
+	end
+	return result;
 end
 
 --[[

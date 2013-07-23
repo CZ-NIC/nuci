@@ -15,15 +15,6 @@ local function cmp_name_content(command_node, config_node)
 	return cmp_elemname(command_node, config_node, ns, model) and command_node:text() == config_node:text();
 end
 
---[[
-Extract the list of expected keys in the model node.
-The model node should yang description of a list (specially, it should contain
-the key element).
-]]
-local function list_keys(model_node)
-	return split(find_node_name_ns(model_node, 'key', yang_ns):attribute('value'));
-end
-
 -- Find a leaf of the given name and extract its content.
 -- Convert to the canonical notation according to its type (described in model).
 -- Both the node and the model are for the supernode of what we want.
@@ -300,19 +291,9 @@ function applyops(ops, description)
 		local function recurse(name, node, operation)
 			io.stderr:write("Recurse " .. name .. "\n")
 			-- Prepare list of skipped children
-			local skip_ar = current_desc[name .. '_recurse_skip'] or {};
-			local skip = {};
-			for _, s in ipairs(skip_ar) do
-				io.stderr:write("Skip " .. s .. "\n");
-				skip[s] = true;
-			end
+			local skip = list2map(current_desc[name .. '_recurse_skip'] or {});
 			-- Have a list of mandatory sub nodes (and remove them if we see them)
-			local mandatory_ar = current_desc[name .. '_recurse_mandatory'] or {};
-			local mandatory = {};
-			for _, m in ipairs(mandatory_ar) do
-				io.stderr:write("Preparing mandatory " .. m .. "\n");
-				mandatory[m] = true;
-			end
+			local mandatory = list2map(current_desc[name .. '_recurse_mandatory'] or {});
 			-- Go through children and apply their operations on them.
 			for child in node:iterate() do
 				local nname, nns = child:name();
