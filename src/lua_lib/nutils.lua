@@ -72,6 +72,7 @@ function list2map(list)
 	for _, value in pairs(list) do
 		result[value] = true;
 	end
+	return result;
 end
 
 function iter2list(iter)
