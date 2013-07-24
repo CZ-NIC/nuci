@@ -53,6 +53,10 @@ hook_get("networking", {'networking', 'internet'}, function ()
 			},
 			{
 				name = 'address',
+				text = '2001:db8::42/64'
+			},
+			{
+				name = 'address',
 				text = '192.0.2.42/24'
 			}
 		},
@@ -71,3 +75,7 @@ end
 
 hook_differ("networking", {'networking', 'internet'}, erase_internet);
 hook_differ("networking", {'networking', 'internet', '*'}, erase_internet);
+
+hook_set("networking", {'*'}, function(mode, text, index_path, path)
+	io.stderr:write("Set: " .. mode .. " " .. (text or "<nil>") .. "\n");
+end);

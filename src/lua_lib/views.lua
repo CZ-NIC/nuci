@@ -13,13 +13,13 @@ local function callbacks_find(where, id, path)
 	local pre_result = {};
 	local node = where[id] or { subnodes = {} };
 	for _, level in ipairs(path) do
-		table.insert((node.subnodes["*"] or { subnodes = {} }).subnodes);
-		io.stderr:write("Descend to " .. level .. "\n");
+		table.insert(pre_result, (node.subnodes["*"] or {}).callbacks or {});
 		node = node.subnodes[level] or { subnodes = {} };
 	end
+	table.insert(pre_result, node.callbacks or {});
 	local result = {};
 	for _, partial in ipairs(pre_result) do
-		for _, callback in ipairs(pre_result) do
+		for _, callback in ipairs(partial) do
 			table.insert(result, callback);
 		end
 	end
@@ -75,10 +75,8 @@ local function mark_friends(nodes, friends)
 		else
 			-- Do it by the text
 			for i, friend in pairs(friends) do
-				io.stderr:write("Compare " .. (node.text or '<nil>') .. " with " .. (friend.text or '<nil>') .. "\n");
 				if node.text == friend.text then
 					node.friend = i;
-					io.stderr:write("Match: " .. i .. "\n");
 					break;
 				end
 			end
@@ -194,7 +192,6 @@ local function find_generated_positions(subtree, indexes, path)
 		indexes = {subtree.indexes or subtree.text or {}};
 	end
 	local function walk(node)
-		io.stderr:write("Scanning " .. node.name .. "\n");
 		-- Should this one be generated?
 		if node.generate then
 			table.insert(result, {
@@ -230,13 +227,11 @@ local function handle_differences(id, doc)
 	local path = {};
 	local indexes = {};
 	local function walk(node)
-		io.stderr:write("Difference scan on " .. node.name);
 		table.insert(path, node.name);
 		table.insert(indexes, node.indexes or node.text or {});
 		if node.differs or node.children_differ then
 			local callbacks = callbacks_find(hooks_differ, id, path);
 			if next(callbacks) then
-				io.stderr:write("Difference!\n");
 				-- This difference will get handled now.
 				node.differs = nil;
 				node.children_differ = nil;
@@ -269,10 +264,118 @@ local function handle_differences(id, doc)
 		return exception;
 	end
 	if restart then
-		io.stderr:write("Restart differences");
 		-- Return to enable tail call
 		return handle_differences(id, doc);
 	end
+end
+
+-- TODO: Unify place for these namespaces and similar
+local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
+
+--[[
+Convert the XML model to a description for the applyops function.
+Directly calls the callbacks registered for the given ID.
+]]
+local function model2desc(model, id)
+	local handlers = {
+		container = {
+			children = true
+		},
+		list = {
+			children = true,
+			indexes = true
+		},
+		['leaf-list'] = {},
+		leaf = {}
+	};
+	local result = {
+		children = {},
+		enter = function()
+			path = {};
+			index_path = {};
+		end
+	};
+	--[[
+	Variables used during the traversal to keep the path and list
+	of indexes passed to the callbacks.
+	]]
+	local path, index_path = {}, {};
+	-- Function to call the callbacks on some node, provided path and index_path is correctly set.
+	-- TODO: We probably want to have a complete applied tree of configuration now, for examination of the callbacks.
+	local function update(node, mode)
+		local text = node:text();
+		io.stderr:write("Apply " .. mode .. " with " .. (text or '<nil>') .. "\n");
+		for _, callback in ipairs(callbacks_find(hooks_set, id, path)) do
+			local err = callback(mode, text, index_path, path);
+			if err then return err; end
+		end
+	end
+	local function process_node(node, handler)
+		local node_name = node:attribute("name");
+		local result = {
+			dbg=node_name
+		};
+		-- If we have indexes, extract the list of them.
+		local indexes, indexes_map = {}, {};
+		if handler.indexes then
+			indexes = iter2list(list_keys(node));
+			indexes_map = list2map(indexes);
+		end
+		-- If children are allowed, go through them and handle.
+		if handler.children then
+			for child in node:iterate() do
+				local name, ns = child:name();
+				local handler = handlers[name];
+				if handler and ns == yang_ns then
+					local desc = process_node(child, handler);
+					local child_name = child:attribute("name");
+					if not result.children then
+						result.children = {};
+					end
+					result.children[child_name] = desc;
+				end
+			end
+			result.replace_recurse_before='remove';
+			result.replace_recurse_after='create';
+			result.create_recurse_after='create';
+			result.remove_recurse_before='remove';
+		end
+		-- Keep track of the path and indexes to the local node
+		result.leave = function()
+			table.remove(path);
+			table.remove(index_path);
+		end
+		result.enter = function(operation)
+			table.insert(path, node_name);
+			local entered_node = operation.command_node;
+			local _, ns = entered_node:name();
+			local index_values = {};
+			for index in pairs(indexes_map) do
+				local index_node = find_node_name_ns(entered_node, index, ns);
+				-- TODO: Check if the node exists?
+				index_values[index] = index_node:text();
+			end
+			if not next(index_values) then
+				index_values = entered_node:text() or {};
+			end
+			table.insert(index_path, index_values);
+		end
+		-- Run callbacks in the nodes that are created or removed
+		for _, name in ipairs({'create', 'remove', 'replace'}) do
+			result[name] = function(node) return update(node, name); end
+		end
+		return result;
+	end
+	for node in model:root():iterate() do
+		local name, ns = node:name();
+		local handler = handlers[name];
+		if handler and ns == yang_ns then
+			local cname = node:attribute('name');
+			result.children[cname] = process_node(node, handler);
+		end
+	end
+	assert(result);
+	return result;
 end
 
 function register_view(model, id)
@@ -332,10 +435,25 @@ function register_view(model, id)
 		end
 
 		local xml = xmltree_dump(doc);
+		io.stderr:write(xml:strdump() .. "\n");
 		return xml:strdump();
 	end
 
 	register_datastore_provider(result);
+
+	-- We need to register first, to have the model.
+	local description = model2desc(result.model, id);
+	description.namespace = result.model_ns;
+	function result:set_config(config, defop, deferr)
+		local ops, err = self:edit_config_ops(config, defop, deferr);
+		if err then
+			return err;
+		end
+		err = applyops(ops, description);
+		if err then
+			return err;
+		end
+	end
 	return result;
 end
 
