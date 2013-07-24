@@ -356,7 +356,21 @@ local function model2desc(model, id)
 				index_values[index] = index_node:text();
 			end
 			if not next(index_values) then
-				index_values = entered_node:text() or {};
+				local has_children;
+				for child in entered_node:iterate() do
+					local name, ns = child:name();
+					-- We take only children with namespace. The ones without are usually the special ones (comments, text, etc).
+					if ns then
+						has_children = true;
+						break;
+					end
+				end
+				if has_children then
+					index_values = {};
+				else
+					-- Take the text if there are no subitems. Otherwise, we would take the text recursively. We don't allow text AND children in the same element.
+					index_values = entered_node:text() or {};
+				end
 			end
 			table.insert(index_path, index_values);
 		end
