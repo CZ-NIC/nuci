@@ -4,4 +4,5 @@ LUA += $(addprefix src/lua_lib/, \
 	nutils \
 	views \
 	xmltree \
+	stacktraceplus \
 	)
