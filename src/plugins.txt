@@ -113,6 +113,16 @@ If a node in the configuration should be replaced, pair of operations
 On error, the first result (the list of operations) is `nil`, the
 second contains an error description. The error description should be
 propagated up.
++
+The third and fourth arguments are parsed XML documents (the current
+configuration and the command sent by the user).
++
+[WARNING]
+You need to keep these documents in scope for as long as you use the
+operations. If the documents are claimed by the garbage collector, the
+element nodes inside the operations are invalidated. This may change
+in future, but currently an element node needs its containing document
+and it doesn't keep it alive.
 
 Methods to be overriden by the implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -318,28 +328,8 @@ msg::
 type::
   Value of the `error-type` element. Defaults to `application`.
 tag::
-  Value of the `error-tag` element. It is expected to be mapped
-  directly in future, but currently, it accepts these values:
-  * `empty`
-  * `in-use`
-  * `invalid-value`
-  * `too-big`
-  * `missing-attribute`
-  * `bad-attribute`
-  * `unknown-attribute`
-  * `missing-element`
-  * `bad-element`
-  * `unknown-element`
-  * `unknown-namespace`
-  * `access-denied`
-  * `lock-denied`
-  * `resource-denied`
-  * `rollback-failed`
-  * `data-exists`
-  * `data-missing`
-  * `operation-not-supported`
-  * `operation-failed`
-  * `malformed-message`
+  Value of the `error-tag` element, as defined by the netconf
+  specification.
 severity::
   Value of the `error-severity` element. Defaults to `error` and it
   should be probably left at that, since usual processing in `nuci` is
@@ -403,21 +393,26 @@ node:text()::
   subnodes.
 node:set_text(text)::
   Replace the text with some other. Function erases all text and
-  CDATA nodes. Then create new text node with requested content.
+  CDATA nodes. Then creates new text node with requested content.
 node:add_child(node_name, namespace_href)::
   Create new child of `node` named `node_name`. Optionally declares
-  `namespace_href` and use it for created node.
+  `namespace_href` and uses it for created node.
 node:register_ns(namespace_href, namespace_prefix)::
-  In node's tag declares new `namespace_href` namespace with
-  `namespace_prefix`.
+  Declares new namespace `namespace_href` with given
+  `namespace_prefix`. Places the declaration onto the `node`.
 node:set_attribute(name, value, namespace_href)::
-  Add to node's tag new attribute or change the value of existing one.
-  If attribute should be set in some namespace call function with
-  `namespace_href` parameter. This namespace has to be registered with
-  `register_ns`   method.
+  Adds a new attribute or replaces an existing one. It may optionally
+  live in a namespace (set `namespace_href` then). The namespace must
+  be registered with `register_ns` on the `node` or any of its direct
+  or indirect parents.
 node:rm_attribute(name, namespace_href)::
-  Remove node's attribute. If attribute is in namespace call function
-  with `namespace_href` parameter. This namespace has to be registered
-  with `register_ns` method.
+  Remove node's attribute. If attribute is in namespace, call function
+  with `namespace_href` parameter.
 node:delete()::
-  Delete itself and all children.
+  Delete the node and all children. Note that this invalidates the
+  node and can't be used any more. If the node is used for iteration,
+  then the iteration must be restarted. This is *broken*:
++
+  for node in parent:iterate() do
+    node:delete();
+  end

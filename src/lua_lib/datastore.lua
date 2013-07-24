@@ -39,7 +39,8 @@ function datastore(model_file)
 	function result:edit_config_ops(config, defop, deferr)
 		local current = xmlwrap.read_memory('<config>' .. strip_xml_def(self:get_config()) .. '</config>');
 		local operation = xmlwrap.read_memory('<edit>' .. strip_xml_def(config) .. '</edit>');
-		return editconfig(current, operation, self.model, self.model_ns, defop, deferr);
+		local ops, err = editconfig(current, operation, self.model, self.model_ns, defop, deferr);
+		return ops, err, current, operation;
 	end
 	--[[
 	A commit function. It is called after all the data stores

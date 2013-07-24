@@ -54,11 +54,20 @@ function del_from_leaves(node)
 
 	if child == nil then
 		node:delete();
-		return;
+		return true;
 	end
 
-	for child in node:iterate() do
-		del_from_leaves(child);
+	function try_delete()
+		for child in node:iterate() do
+			if del_from_leaves(child) then
+				-- Try again. We deleted a node, which invalidated the current iterator.
+				return true;
+			end
+		end
+	end
+
+	while try_delete() do
+		-- Retry as long as it deletes something
 	end
 end
 

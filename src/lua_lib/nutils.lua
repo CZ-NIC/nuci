@@ -2,6 +2,10 @@ require("uci");
 
 local yang_ns = 'urn:ietf:params:xml:ns:yang:yin:1'
 
+-- Enable StackTracePlus instead of standard Lua version
+debug.traceback = require("stacktraceplus").stacktrace;
+-- And now just call: print(debug.traceback());
+
 -- Find the first child node matching a predicate, or nil.
 function find_node(node, predicate)
 	for child in node:iterate() do

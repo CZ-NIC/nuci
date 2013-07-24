@@ -115,7 +115,7 @@ function uci_datastore:set_empty_delayed_list(cursor, path)
 end
 
 function uci_datastore:set_config(config, defop, deferr)
-	local ops, err = self:edit_config_ops(config, defop, deferr);
+	local ops, err, current, operation = self:edit_config_ops(config, defop, deferr);
 	if err then
 		return err;
 	else

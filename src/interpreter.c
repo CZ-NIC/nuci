@@ -51,10 +51,46 @@ static void explain_statuscode(char *callname, int status) {
 }
 #endif
 
+/**
+ * Our own error handler for pcall calls.
+ */
+static int lua_handle_runtime_error(lua_State *L) {
+	const char *errmsg = lua_tostring(L, -1);
+
+	//Get stacktrace; in Lua: x = require("stacktraceplus").stacktrace;
+	lua_getfield(L, LUA_GLOBALSINDEX, "require");
+	lua_pushstring(L, "stacktraceplus");
+	lua_pcall(L, 1, 1, 0); //call require
+	lua_getfield(L, -1, "stacktrace");
+	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
+
+	fprintf(stderr, "%s\n", lua_tostring(L, -1));
+
+	/* Lua print() alternative
+	lua_getfield(L, LUA_GLOBALSINDEX, "print");
+	lua_pushvalue(L, -2);
+	lua_pcall(L, 1, 0, 0); //call print
+	*/
+
+	lua_pushstring(L, errmsg); //return
+
+	return 1;
+}
+
+/**
+ * This function prepares error function for lua_pcall on the stack
+ * and returns its index for easier way to call it.
+ */
+static int prepare_errfunc(lua_State *lua) {
+	lua_getfield(lua, LUA_GLOBALSINDEX, "handle_runtime_error");
+	return lua_gettop(lua);
+}
+
 static int register_datastore_provider_lua(lua_State *lua) {
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)
 		luaL_error(lua, "register_datastore_provider expects 1 parameter - the data store, %d given", param_count);
+	int errfunc_index = prepare_errfunc(lua);
 	lua_getfield(lua, 1, "model_file");
 	const char *model_file = lua_tostring(lua, -1);
 	// Fill in some values into the provider
@@ -70,7 +106,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	lua_getglobal(lua, "xmlwrap"); // The package
 	lua_getfield(lua, -1, "read_file"); // The function to call
 	lua_getfield(lua, 1, "model_path"); // The file name
-	lua_call(lua, 1, 1);
+	lua_pcall(lua, 1, 1, errfunc_index);
 	lua_setfield(lua, 1, "model"); // Copy the result into the datastore
 	// Get the datastore to the top (there's more rumble on top of it by now)
 	lua_pushvalue(lua, 1);
@@ -341,6 +377,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "run_command", run_command_lua);
 	add_func(result, "xml_escape", xml_escape_lua);
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
+	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
 
 	xmlwrap_init(result->state);
 
@@ -411,13 +448,15 @@ void interpreter_destroy(struct interpreter *interpreter) {
 const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
+	//First of all: prepare error function on the stack
+	int errfunc_index = prepare_errfunc(lua);
 	// Pick up the data store
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore);
 	lua_getfield(lua, -1, method); // The function
 	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.
-	if (lua_pcall(lua, 1, 2, 0) != 0) {
+	if (lua_pcall(lua, 1, 2, errfunc_index) != 0) {
 		flag_error(interpreter, true, -1);
 		return NULL;
 	}
@@ -436,10 +475,11 @@ const char *interpreter_get(struct interpreter *interpreter, lua_datastore datas
 void interpreter_procedure(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works when called many times from C
+	int errfunc_index = prepare_errfunc(lua);
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore); // Get the datastore object
 	lua_getfield(lua, -1, method); // Copy the function from the table
 	lua_pushvalue(lua, -2); // Copy the object so it's the first parameter of the function
-	lua_pcall(lua, 1, 1, 0);
+	lua_pcall(lua, 1, 1, errfunc_index);
 	// If it returns anything but nil, it's error (even if it's automatic because error()).
 	bool error = !lua_isnil(lua, -1);
 	flag_error(interpreter, error, - error);
@@ -448,6 +488,7 @@ void interpreter_procedure(struct interpreter *interpreter, lua_datastore datast
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
+	int errfunc_index = prepare_errfunc(lua);
 	// Pick up the data store
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore);
 	lua_getfield(lua, -1, "set_config"); // The function
@@ -459,7 +500,7 @@ void interpreter_set_config(struct interpreter *interpreter, lua_datastore datas
 	// One result - the error. In case pcall fails, it sets the last parameter,
 	// which is the same as what the lua function should do. No need to
 	// distinguish.
-	lua_pcall(lua, 4, 1, 0);
+	lua_pcall(lua, 4, 1, errfunc_index);
 	bool error = !lua_isnil(lua, -1);
 	flag_error(interpreter, error, - error);
 }
@@ -475,6 +516,7 @@ char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastor
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK);
 
+	int errfunc_index = prepare_errfunc(lua);
 	lua_rawgeti(lua, LUA_REGISTRYINDEX, ds);
 	lua_getfield(lua, -1, "user_rpc");
 	lua_pushvalue(lua, -2);
@@ -485,7 +527,7 @@ char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastor
 	 * 1st return parameter is string with reply
 	 * 2nd return parameter is error (nil - OK; string - errmsg
 	 */
-	int status = lua_pcall(lua, 3, 2, 0);
+	int status = lua_pcall(lua, 3, 2, errfunc_index);
 
 	if (status != 0) { //Runtime error and error message is on the top of stack
 		flag_error(interpreter, true, -1); //only one result, i.e. on the top
