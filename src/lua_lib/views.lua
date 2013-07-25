@@ -459,7 +459,7 @@ function register_view(model, id)
 	local description = model2desc(result.model, id);
 	description.namespace = result.model_ns;
 	function result:set_config(config, defop, deferr)
-		local ops, err = self:edit_config_ops(config, defop, deferr);
+		local ops, err, current, operation = self:edit_config_ops(config, defop, deferr);
 		if err then
 			return err;
 		end
