@@ -1,5 +1,6 @@
 require("datastore")
 require("nutils")
+require("commits")
 
 local uci_datastore = datastore("uci-raw.yin")
 
@@ -121,7 +122,6 @@ function uci_datastore:set_config(config, defop, deferr)
 	else
 		local cursor = get_uci_cursor();
 		-- Prepare data structures.
-		self.changed = {};
 		self.delayed_lists = {}
 		-- The description of operations.
 		local function mandatory_node(name)
@@ -311,7 +311,7 @@ function uci_datastore:set_config(config, defop, deferr)
 			-- When we enter a config, we're going to change stuff inside, so schedule it for commit.
 			enter = function(operation)
 				local _, path = self:node_path(operation.command_node);
-				self.changed[path.config_name] = true;
+				commit_mark_dirty(path.config_name);
 			end,
 			children = {
 				name = name_desc,
@@ -364,15 +364,7 @@ function uci_datastore:set_config(config, defop, deferr)
 				end
 			end
 		end
-		local changed = self.changed;
-		self.changed = nil;
 		self.delayed_lists = nil;
-		self:schedule_commit(function ()
-			-- TODO: Restart the daemons there
-			for config in pairs(changed) do
-				cursor:commit(config)
-			end
-		end);
 	end
 end
 
