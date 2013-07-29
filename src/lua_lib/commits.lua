@@ -57,7 +57,7 @@ local function restart_daemons()
 		if file_executable(file) then
 			local result, stdout, stderr = run_command(nil, file, 'reload');
 			if result ~= 0 then
-				error("Daemon " .. daemon " failed to restart: " .. stderr);
+				error("Daemon " .. daemon .. " failed to restart: " .. stderr);
 			end
 		end
 	end
