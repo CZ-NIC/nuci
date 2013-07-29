@@ -27,8 +27,40 @@ local function store_uci()
 	end
 end
 
-local function restart_daemons()
+-- TODO: Function to set up these from plugins
+--[[
+Override the default mapping config file name => daemon to restart.
+It can contain either nil (disable restart for that config) or name
+of the daemon to restart.
+]]
+local restart_overrides = {};
 
+local function restart_daemons()
+	if os.getenv("NUCI_DONT_RESTART") == 1 then
+		return; -- Disable restarting stuff in tests and such
+	end
+	-- Which ones should be restarted?
+	local to_restart = {};
+	for config in pairs(uci_dirty) do
+		local override = restart_overrides[config];
+		if override ~= nil then
+			if override then
+				to_restart[override] = true;
+			end
+		else
+			to_restart[config] = true;
+		end
+	end
+	-- Go through them and restart them one by one, if they exist.
+	for daemon in pairs(to_restart) do
+		local file = "/etc/init.d/" .. daemon;
+		if file_executable(file) then
+			local result, stdout, stderr = run_command(nil, file, 'reload');
+			if result ~= 0 then
+				error("Daemon " .. daemon " failed to restart: " .. stderr);
+			end
+		end
+	end
 end
 
 local function rollback_uci()
