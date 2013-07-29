@@ -36,7 +36,7 @@ of the daemon to restart.
 local restart_overrides = {};
 
 local function restart_daemons()
-	if os.getenv("NUCI_DONT_RESTART") == 1 then
+	if os.getenv("NUCI_DONT_RESTART") == "1" then
 		return; -- Disable restarting stuff in tests and such
 	end
 	-- Which ones should be restarted?

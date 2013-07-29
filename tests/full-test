@@ -7,6 +7,7 @@ DIR="$1"
 CFG="$TMP.d"
 cp -r "$DIR/config" "$CFG"
 export NUCI_TEST_CONFIG_DIR="$CFG"
+export NUCI_DONT_RESTART=1
 (
 	cat <<ENDXML
 <?xml version="1.0" encoding="UTF-8"?>
