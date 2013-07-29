@@ -58,14 +58,22 @@ model::
 Utility methods
 ~~~~~~~~~~~~~~~
 
-schedule_commit(func)::
-  Schedules the function `func` to be called once all the changes are
-  prepared by all the plugins, to commit them to configuration. The
-  function may be discarded by the datastore without being called, if
-  some of the plugins report an error. In such case the changes are
-  not to be applied. The function must not raise errors or return
-  anything but `nil`. This is specially designed for the `set_config`
-  method and makes no sense to be called elsewhere.
+commit_hook_success(func, priority)::
+  Register a function that'll be run after processing all the data
+  sources for the editconfig command. This is run in case none of them
+  produces an error. The priority specifies relative order of the
+  registered functions, higher gets sooner. The default priority is 0.
+  You should not use negative numbers unless you know what you're
+  doing (negative numbers are used for internal stuff). The function
+  will abort all further processing in case it reports an error by its
+  return value.
+commit_hook_failure(func, priority)::
+  The same as with `commit_hook_success`, but for the case there was
+  an error. It may happen there was an error in one of the success
+  hooks. Then all the failure hooks are run.
+commit_mark_dirty(uci_config)::
+  Mark the given config in uci as dirty. It'll be committed on success
+  and daemons will get restarted.
 edit_config_ops(config, defop, deferr)::
   This function takes the config parameter of the `<edit-config/>`
   method and converts the description to sequence of operations on the
