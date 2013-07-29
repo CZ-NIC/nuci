@@ -49,6 +49,10 @@ function get_uci_cursor()
 	return uci_cursor;
 end
 
+function reset_uci_cursor()
+	uci_cursor = nil;
+end
+
 -- For debug
 function var_test(varname, var)
 	local str;

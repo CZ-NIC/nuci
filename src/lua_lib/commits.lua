@@ -1,4 +1,4 @@
-require ("uci")
+require ("nutils");
 
 local hooks_success, hooks_failure, uci_dirty;
 
@@ -21,7 +21,10 @@ function commit_hook_failure(action, priority)
 end
 
 local function store_uci()
-
+	local cursor = get_uci_cursor();
+	for config in pairs(uci_dirty) do
+		cursor:commit(config);
+	end
 end
 
 local function restart_daemons()
@@ -29,7 +32,8 @@ local function restart_daemons()
 end
 
 local function rollback_uci()
-
+	-- By resetting the UCI cursor, we effectively forget all the changes.
+	reset_uci_cursor();
 end
 
 local function cleanup()
