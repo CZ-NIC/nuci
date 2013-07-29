@@ -472,19 +472,6 @@ const char *interpreter_get(struct interpreter *interpreter, lua_datastore datas
 		return lua_tostring(lua, -2);
 }
 
-void interpreter_procedure(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
-	lua_State *lua = interpreter->state;
-	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works when called many times from C
-	int errfunc_index = prepare_errfunc(lua);
-	lua_rawgeti(lua, LUA_REGISTRYINDEX, datastore); // Get the datastore object
-	lua_getfield(lua, -1, method); // Copy the function from the table
-	lua_pushvalue(lua, -2); // Copy the object so it's the first parameter of the function
-	lua_pcall(lua, 1, 1, errfunc_index);
-	// If it returns anything but nil, it's error (even if it's automatic because error()).
-	bool error = !lua_isnil(lua, -1);
-	flag_error(interpreter, error, - error);
-}
-
 void interpreter_set_config(struct interpreter *interpreter, lua_datastore datastore, const char *config, const char *default_op, const char *error_opt) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
@@ -635,5 +622,17 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter) {
 		}
 	} else {
 		return NULL;
+	}
+}
+
+void interpreter_commit(struct interpreter *interpreter, bool success) {
+	lua_State *lua = interpreter->state;
+	lua_getfield(lua, LUA_GLOBALSINDEX, "commit_execute");
+	lua_pushboolean(lua, success);
+	lua_call(lua, 1, 1);
+	if (!lua_isnil(lua, -1)) {
+		const char *error = lua_tostring(lua, -1);
+		fprintf(stderr, "Error during commit/rollback: %s\n", error);
+		abort();
 	}
 }
