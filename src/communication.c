@@ -189,27 +189,6 @@ static bool comm_send_reply(struct nc_session *session, struct rpc_communication
 	return true;
 }
 
-static nc_reply *procedure_all(const struct srv_config *config, const char *method, nc_reply *reply) {
-	for (size_t i = 0; i < config->config_datastore_count; i ++) {
-		interpreter_procedure(config->interpreter, config->config_datastores[i].lua, method);
-		struct nc_err *err = nc_err_create_from_lua(config->interpreter, NULL);
-		if (err) {
-			if (nc_reply_get_type(reply) == NC_REPLY_ERROR) {
-				nc_reply_error_add(reply, err);
-			} else {
-				nc_reply_free(reply);
-				reply = nc_reply_error(err);
-			}
-			/*
-			 * Keep going even on error. We want to revert all or commit what we can if
-			 * we already started. If commit fails, we have problems anyway and we may
-			 * have commited something before already.
-			 */
-		}
-	}
-	return reply;
-}
-
 void comm_start_loop(const struct srv_config *config) {
 	bool loop = true; //Break is not enough for handling close-session request
 
@@ -313,11 +292,8 @@ void comm_start_loop(const struct srv_config *config) {
 				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
 			}
 			if (req_type == NC_RPC_DATASTORE_WRITE) { // Something might have gotten modified, store it
-				if (nc_reply_get_type(communication.reply) == NC_REPLY_ERROR) {
-					communication.reply = procedure_all(config, "rollback", communication.reply);
-				} else {
-					communication.reply = procedure_all(config, "commit", communication.reply);
-				}
+				bool error = nc_reply_get_type(communication.reply) == NC_REPLY_ERROR;
+				interpreter_commit(config->interpreter, !error);
 			}
 		}
 
