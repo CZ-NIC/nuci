@@ -381,12 +381,10 @@ static int stat_lua(lua_State *lua) {
 	lua_pushinteger(lua, buffer.st_uid);
 	lua_pushinteger(lua, buffer.st_gid);
 	lua_pushinteger(lua, buffer.st_size);
-	lua_pushinteger(lua, buffer.st_blksize);
-	lua_pushinteger(lua, buffer.st_blocks);
 	lua_pushinteger(lua, buffer.st_atime);
 	lua_pushinteger(lua, buffer.st_mtime);
 	lua_pushinteger(lua, buffer.st_ctime);
-	return 12;
+	return 10;
 }
 
 struct interpreter {
