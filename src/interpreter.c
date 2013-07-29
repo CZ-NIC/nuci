@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -357,6 +358,37 @@ static int uci_list_configs_lua(lua_State *lua) {
 	return 1;
 }
 
+static int stat_lua(lua_State *lua) {
+	// Extract params
+	int param_count = lua_gettop(lua);
+	if (param_count != 1)
+		luaL_error(lua, "stat expects 1 parameter, %d given", param_count);
+	const char *path = lua_tostring(lua, -1);
+	struct stat buffer;
+	// Run stat
+	int result = stat(path, &buffer);
+	if (result == -1) {
+		if (errno == ENOENT)
+			return 0;
+		else
+			return luaL_error(lua, strerror(errno));
+	}
+	// Convert some parameters
+	lua_pushinteger(lua, buffer.st_dev);
+	lua_pushinteger(lua, buffer.st_ino);
+	lua_pushinteger(lua, buffer.st_mode);
+	lua_pushinteger(lua, buffer.st_nlink);
+	lua_pushinteger(lua, buffer.st_uid);
+	lua_pushinteger(lua, buffer.st_gid);
+	lua_pushinteger(lua, buffer.st_size);
+	lua_pushinteger(lua, buffer.st_blksize);
+	lua_pushinteger(lua, buffer.st_blocks);
+	lua_pushinteger(lua, buffer.st_atime);
+	lua_pushinteger(lua, buffer.st_mtime);
+	lua_pushinteger(lua, buffer.st_ctime);
+	return 12;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -378,6 +410,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "xml_escape", xml_escape_lua);
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
 	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
+	add_func(result, "stat", stat_lua);
 
 	xmlwrap_init(result->state);
 
