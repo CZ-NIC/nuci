@@ -358,7 +358,7 @@ static int uci_list_configs_lua(lua_State *lua) {
 	return 1;
 }
 
-static int stat_lua(lua_State *lua) {
+static int file_executable_lua(lua_State *lua) {
 	// Extract params
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)
@@ -373,18 +373,8 @@ static int stat_lua(lua_State *lua) {
 		else
 			return luaL_error(lua, strerror(errno));
 	}
-	// Convert some parameters
-	lua_pushinteger(lua, buffer.st_dev);
-	lua_pushinteger(lua, buffer.st_ino);
-	lua_pushinteger(lua, buffer.st_mode);
-	lua_pushinteger(lua, buffer.st_nlink);
-	lua_pushinteger(lua, buffer.st_uid);
-	lua_pushinteger(lua, buffer.st_gid);
-	lua_pushinteger(lua, buffer.st_size);
-	lua_pushinteger(lua, buffer.st_atime);
-	lua_pushinteger(lua, buffer.st_mtime);
-	lua_pushinteger(lua, buffer.st_ctime);
-	return 10;
+	lua_pushboolean(lua, S_ISREG(buffer.st_mode) && (buffer.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)));
+	return 1;
 }
 
 struct interpreter {
@@ -408,7 +398,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "xml_escape", xml_escape_lua);
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
 	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
-	add_func(result, "stat", stat_lua);
+	add_func(result, "file_executable", file_executable_lua);
 
 	xmlwrap_init(result->state);
 
