@@ -57,18 +57,21 @@ local commands = {
 			local position = 1;
 			local interface_node;
 			local x = 1;
+			local mac = nil; --temporaly solution
 			local s, e = out:find('\n\n', position, true);
 			while s do
 				local interface = out:sub(position, s - 1);
+				--local name, mac = interface:gmatch('(%S+)%s+[^:]*:%S+%s+%S+%s+(%S+)')();
 				local name = interface:gmatch('([^:]*):')();
 				local addresses = interfaces[name] or {}
+				--for kind, addr in interface:gmatch('%s+(%S+)%s+[^:]*:(%S+)') do
 				for kind, addr in interface:gmatch('        (%S+)%s+(%S+)') do
 					if kind == 'HWaddr' then
 						kind = 'ether';
 					end
 					if kind == 'inet' or kind == 'inet6' or kind == 'ether' then
 						addr = addr:gsub('addr:', '');
-						addresses[x] = { kind, addr };
+						addresses[x] = { kind, addr, mac };
 						x = x + 1;
 					end
 				end
@@ -82,6 +85,9 @@ local commands = {
 				interface_node:add_child('name'):set_text(name);
 				for _,addr in pairs(addresses) do
 					interface_node:add_child('address'):set_attribute('type', addr[1]):set_text(addr[2]);
+					if addr[3] and #addr[3] == 17 then
+						interface_node:add_child('mac-address'):set_text(addr[3]);
+					end
 				end
 			end
 		end
@@ -99,6 +105,15 @@ local commands = {
 		postprocess = function (node, out)
 			for name, value in out:gmatch('(%w+):%s+(%d+)[^\n]*\n') do
 				node:add_child(name):set_text(xml_escape(value));
+			end
+		end
+	},
+	{
+		element = "bridges",
+		shell = "brctl show | tail -n +2",
+		postprocess = function (node, out)
+			for line in split(out, "\n") do
+				node:add_child('bridge'):set_text(line);
 			end
 		end
 	}
