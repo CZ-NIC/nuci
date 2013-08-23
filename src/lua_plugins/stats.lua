@@ -8,77 +8,120 @@ end
 
 -- Define the commands and their mapping to XML elements.
 local commands = {
-	{ cmd = "dmesg | grep -i machine | sed 's/is /|/g' | cut -d '|' -f 2", shell = true, element = "boardName" },
-	{ uci = "system", selector = { { tp = "system" }, { name = "hostname" } }, element = "hostname" },
-	{ cmd = "uname", params = {'-r'}, element = "kernelVersion" },
-	--{ cmd = "cat /etc/openwrt_release  | grep DISTRIB_DESCRIPTION | cut -d '\"' -f 2", shell = true, element = "firmwareVersion" },
-	{ cmd = "date", params = {'+%s'}, element = "localTime" },
-	{ file = "/proc/loadavg", element = "loadAverage", postprocess = function (out)
-		local times = { 1, 5, 15 };
-		local index, time = next(times);
-		local result = '';
-		for l in out:gmatch('([^ ]+)') do
-			result = result .. '<avg' .. time .. '>' .. xml_escape(l) .. '</avg' .. time .. '>';
-			index, time = next(times, index);
-			if not index then
-				break;
+	{
+		element = "board-name",
+		shell = "dmesg | grep -i machine | sed 's/is /|/g' | cut -d '|' -f 2"
+	},
+	{
+		element = "hostname",
+		uci = "system",
+		selector = { { tp = "system" }, { name = "hostname" } }
+	},
+	{
+		element = "kernel-version",
+		cmd = "uname",
+		params = {'-r'}
+	},
+	--[[{
+		element = "firmware-version",
+		shell = "cat /etc/openwrt_release  | grep DISTRIB_DESCRIPTION | cut -d '\"' -f 2"
+	},]]
+	{
+		element = "local-time",
+		cmd = "date",
+		params = {'+%s'}
+	},
+	{
+		element = "load-average",
+		file = "/proc/loadavg",
+		postprocess = function (node, out)
+			local times = { 1, 5, 15 };
+			local index, time = next(times);
+			for l in out:gmatch('([^ ]+)') do
+				node:add_child('avg-'..time):set_text(xml_escape(l));
+				index, time = next(times, index);
+				if not index then
+					break;
+				end
 			end
 		end
-		return result
-	end},
-	{ cmd = 'ifconfig', params = {'-a'}, element = 'interfaces', postprocess = function (out)
-		-- First put everything to a table. There might be multiple interfaces with the same name
-		-- (because of sub-interfaces).
-		local interfaces = {}
-		local position = 1;
-		local s, e = out:find('\n\n', position, true);
-		while s do
-			local interface = out:sub(position, s - 1);
-			local name = interface:gmatch('([^:]*):')();
-			local addresses = interfaces[name] or ''
-			for kind, addr in interface:gmatch('        (%S+)%s+(%S+)') do
-				if kind == 'HWaddr' then
-					kind = 'ether';
+	},
+	{
+		element = 'interfaces',
+		cmd = 'ifconfig',
+		params = {'-a'},
+		postprocess = function (node, out)
+			-- First put everything to a table. There might be multiple interfaces with the same name
+			-- (because of sub-interfaces).
+			local interfaces = {}
+			local position = 1;
+			local interface_node;
+			local x = 1;
+			local s, e = out:find('\n\n', position, true);
+			while s do
+				local interface = out:sub(position, s - 1);
+				local name = interface:gmatch('([^:]*):')();
+				local addresses = interfaces[name] or {}
+				for kind, addr in interface:gmatch('        (%S+)%s+(%S+)') do
+					if kind == 'HWaddr' then
+						kind = 'ether';
+					end
+					if kind == 'inet' or kind == 'inet6' or kind == 'ether' then
+						addr = addr:gsub('addr:', '');
+						addresses[x] = { kind, addr };
+						x = x + 1;
+					end
 				end
-				if kind == 'inet' or kind == 'inet6' or kind == 'ether' then
-					addr = addr:gsub('addr:', '');
-					addresses = addresses .. '<address type="' .. kind .. '">' .. xml_escape(addr) .. '</address>';
+				-- TODO: Check if it is bridge or wireless and get the throughput
+				interfaces[name] = addresses;
+				position = e + 1;
+				s, e = out:find('\n\n', position, true);
+			end
+			for name, addresses in pairs(interfaces) do
+				interface_node = node:add_child('interface');
+				interface_node:add_child('name'):set_text(name);
+				for _,addr in pairs(addresses) do
+					interface_node:add_child('address'):set_attribute('type', addr[1]):set_text(addr[2]);
 				end
 			end
-			-- TODO: Check if it is bridge or wireless and get the throughput
-			interfaces[name] = addresses
-			position = e + 1;
-			s, e = out:find('\n\n', position, true);
 		end
-		local result = '';
-		for name, addresses in pairs(interfaces) do
-			result = result .. '<interface><name>' .. xml_escape(name) .. '</name>' .. addresses .. '</interface>';
+	},
+	{
+		element = "uptime",
+		file = "/proc/uptime",
+		postprocess = function (node, out)
+			node:set_text(xml_escape((string.gsub(out, ' .*', ''))));
 		end
-		return result;
-	end},
-	{ file = "/proc/uptime", element = "uptime", postprocess = function (out)
-		return out:gsub(' .*', '')
-	end},
-	{ file = "/proc/meminfo", element = "memInfo", postprocess = function (out)
-		local result = '';
-		for name, value in out:gmatch('(%w+):%s+(%d+)[^\n]*\n') do
-			result = result .. "<" .. name .. ">" .. xml_escape(value) .. "</" .. name .. ">"
+	},
+	{
+		element = "meminfo",
+		file = "/proc/meminfo",
+		postprocess = function (node, out)
+			for name, value in out:gmatch('(%w+):%s+(%d+)[^\n]*\n') do
+				node:add_child(name):set_text(xml_escape(value));
+			end
 		end
-		return result
-	end}
+	}
 	-- TODO: Other commands too
 };
 
 local function get_output(command)
+	if command.shell then
+		local ecode, out, err;
+		-- Run it as a command in shell
+		ecode, out, err = run_command(nil, 'sh', '-c', command.shell);
+
+		if ecode ~= 0 then
+			return nil, "Command to get " .. command.element .. " failed with code " .. ecode .. " and stderr " .. err;
+		end
+		return out;
+	end
 	if command.cmd then
 		local ecode, out, err;
 		local params = command.params or {};
 		-- Run it as a command
-		if command.shell then
-			ecode, out, err = run_command(nil, 'sh', '-c', command.cmd, unpack(params));
-		else
-			ecode, out, err = run_command(nil, command.cmd, unpack(params));
-		end
+		ecode, out, err = run_command(nil, command.cmd, unpack(params));
+
 		if ecode ~= 0 then
 			return nil, "Command to get " .. command.element .. " failed with code " .. ecode .. " and stderr " .. err;
 		end
@@ -127,20 +170,32 @@ end
 local datastore = datastore('stats.yin')
 
 function datastore:get()
-	output = "<stats xmlns='http://www.nic.cz/ns/router/stats'>";
+	local doc, root, node;
+
+	--prepare XML subtree
+	doc = xmlwrap.new_xml_doc("stats", "http://www.nic.cz/ns/router/stats");
+	root = doc:root();
+
+	--run single commands
 	for i, command in ipairs(commands) do
+		node = root:add_child(command.element);
+		--run
 		local out, err = get_output(command);
+		--test errors
 		if not out then
 			return nil, err
 		end
-		out = trimr(out)
-		local postprocess = command.postprocess or xml_escape
+		--run postproccess function
+		if command.postprocess then
+			command.postprocess(node, out);
+		else
+			--clean output
+			out = trimr(out);
+			node:set_text(xml_escape(out));
+		end
+	end
 
-		out = postprocess(out)
-		output = output .. "<" .. command.element .. ">" .. out .. "</" .. command.element .. ">";
-	end;
-	output = output .. "</stats>";
-	return output;
+	return doc:strdump();
 end
 
 register_datastore_provider(datastore)
