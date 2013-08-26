@@ -48,47 +48,52 @@ local commands = {
 	},
 	{
 		element = 'interfaces',
-		cmd = 'ifconfig',
-		params = {'-a'},
+		cmd = 'ip',
+		params = {'addr', 'show'},
 		postprocess = function (node, out)
-			-- First put everything to a table. There might be multiple interfaces with the same name
-			-- (because of sub-interfaces).
-			local interfaces = {}
-			local position = 1;
-			local interface_node;
-			local x = 1;
-			local mac = nil; --temporaly solution
-			local s, e = out:find('\n\n', position, true);
-			while s do
-				local interface = out:sub(position, s - 1);
-				--local name, mac = interface:gmatch('(%S+)%s+[^:]*:%S+%s+%S+%s+(%S+)')();
-				local name = interface:gmatch('([^:]*):')();
-				local addresses = interfaces[name] or {}
-				--for kind, addr in interface:gmatch('%s+(%S+)%s+[^:]*:(%S+)') do
-				for kind, addr in interface:gmatch('        (%S+)%s+(%S+)') do
-					if kind == 'HWaddr' then
-						kind = 'ether';
-					end
-					if kind == 'inet' or kind == 'inet6' or kind == 'ether' then
-						addr = addr:gsub('addr:', '');
-						addresses[x] = { kind, addr, mac };
-						x = x + 1;
-					end
+			local get_next_line = function(content, position)
+				local s, e = out:find('\n', position, true);
+				if not s then
+					return nil, nil;
 				end
-				-- TODO: Check if it is bridge or wireless and get the throughput
-				interfaces[name] = addresses;
-				position = e + 1;
-				s, e = out:find('\n\n', position, true);
+				local line, position_out;
+				line = content:sub(position, s - 1);
+				position_out = e + 1;
+
+				return line, position_out;
 			end
-			for name, addresses in pairs(interfaces) do
-				interface_node = node:add_child('interface');
-				interface_node:add_child('name'):set_text(name);
-				for _,addr in pairs(addresses) do
-					interface_node:add_child('address'):set_attribute('type', addr[1]):set_text(addr[2]);
-					if addr[3] and #addr[3] == 17 then
-						interface_node:add_child('mac-address'):set_text(addr[3]);
-					end
+			local is_address = function(s)
+				local ret = s:gmatch('')();
+				if ret then
+					return true;
+				else
+					return false;
 				end
+			end
+
+			local iface_node; --node for new interface and its address list
+			local line;
+			local position = 1;
+			line, position = get_next_line(out, position);
+			while line do
+				-- Check if it is first line defining new interface
+				local num, name = line:gmatch('(%d*):%s+([^:]*):')();
+				if num and name then
+					iface_node = node:add_child('interface');
+					iface_node:add_child('name'):set_text(name);
+				else
+					-- OK, it isn't first line of new interface
+					-- Try to get address
+					local addr_type, addr = line:gmatch('%s+(%S+)%s+(%S+)')();
+						if addr_type and addr then
+							if is_address(addr) then
+								iface_node:add_child('address'):set_attribute('type', addr_type):set_text(addr);
+							end
+						end
+						-- else: do nothing, it's some uninteresting garbage
+				end
+				-------------------------------------------------------
+				line, position = get_next_line(out, position);
 			end
 		end
 	},
