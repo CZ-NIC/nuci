@@ -402,6 +402,7 @@ node:text()::
 node:set_text(text)::
   Replace the text with some other. Function erases all text and
   CDATA nodes. Then creates new text node with requested content.
+  Return node, so you can use node:add_child:set_attribude("attr", "value"):set_text("Some content");
 node:add_child(node_name, namespace_href)::
   Create new child of `node` named `node_name`. Optionally declares
   `namespace_href` and uses it for created node.
@@ -413,6 +414,7 @@ node:set_attribute(name, value, namespace_href)::
   live in a namespace (set `namespace_href` then). The namespace must
   be registered with `register_ns` on the `node` or any of its direct
   or indirect parents.
+  Return node, so you can use node:add_child:set_attribude("attr", "value"):set_text("Some content");
 node:rm_attribute(name, namespace_href)::
   Remove node's attribute. If attribute is in namespace, call function
   with `namespace_href` parameter.
