@@ -6,6 +6,218 @@ local function trimr(s)
 	return s:find'^%s*$' and '' or s:match'^(.*%S)'
 end
 
+-- Implementations of "procedure" command-type
+local function cmd_interfaces(node)
+	local get_next_line = function(content, position)
+		local s, e = content:find('\n', position, true);
+		if not s then
+			return nil, nil;
+		end
+		local line, position_out;
+		line = content:sub(position, s - 1);
+		position_out = e + 1;
+
+		return line, position_out;
+	end
+	local is_address = function(s)
+		local available_types = { "inet", "inet6", "link" };
+		for _,t in pairs(available_types) do
+			if s:gmatch(t)() then
+				return true;
+			end
+		end
+		return false;
+	end
+	-- Return? True = is bridge; False = is not bridge; nil = error
+	local process_bridge = function (node, iface)
+		local file, errstr = io.open("/sys/devices/virtual/net/" .. iface .. "/bridge/bridge_id");
+		local bridge_id = nil;
+		if file then
+			for line in file:lines() do
+				bridge_id = line;
+				break; --get only one line
+			end
+			file:close();
+		end
+
+		if bridge_id then
+			local stp_state;
+			-- OK, this device id bridge, get more info
+			file, errstr = io.open("/sys/devices/virtual/net/" .. iface .. "/bridge/stp_state");
+			if file then
+				for line in file:lines() do
+					stp_state = line;
+					break; --get only one line
+				end
+				file:close();
+			else
+				return nil, "Cannot open file stp_state."
+			end
+
+			local interfaces;
+			ecode, stdout, stderr = run_command(nil, "ls", "/sys/devices/virtual/net/" .. iface .. "/brif");
+			if ecode ~= 0 then
+				return nil, "Cannot list interfaces";
+			end
+			interfaces = stdout;
+
+			node:add_child('id'):set_text(bridge_id);
+			node:add_child('stp-state'):set_text(stp_state);
+			node:add_child('associated-interfaces'):set_text(interfaces);
+
+		else
+			node:delete();
+			return false;
+		end
+
+		return true;
+	end
+
+	-- Return? True = is wireless; False = is not wireless; nil = error
+	local process_wireless = function (node, iface)
+		local ecode, stdout, stderr = run_command(nil, "iw", "dev", iface, "info");
+		if ecode ~= 0 then
+			node:delete();
+			return false;
+		end
+
+		-- For debug purposes
+		--stdout =
+				--[[Interface wan0
+					ifindex 7
+					wdev 0x2
+					addr d4:ca:6d:92:bd:d7
+					type AP
+					wiphy 0
+					channel 11 (2462 MHz) HT20]];
+		local mode = stdout:gmatch("type%s+(%S+)")();
+		local channel, frequency = stdout:gmatch("channel%s+(%S+)%s+%((%S+).*%)")();
+
+		node:add_child('mode'):set_text(mode);
+		node:add_child('channel'):set_text(channel);
+		node:add_child('frequency'):set_text(frequency);
+
+		ecode, stdout, stderr = run_command(nil, "iw", "dev", iface, "station", "dump");
+		if ecode ~= 0 then
+			return nil, "Cannot get clients info";
+		end
+
+		-- For debug purposes
+		--stdout =
+			--[[Station 40:b0:fa:82:f5:ed (on wlan0)
+				inactive time:	2900 ms
+				rx bytes:	27907
+				rx packets:	247
+				tx bytes:	12323
+				tx packets:	77
+				tx retries:	1
+				tx failed:	0
+				signal:  	-23 [-29, -24] dBm
+				signal avg:	-24 [-32, -25] dBm
+				tx bitrate:	58.5 MBit/s MCS 6
+				rx bitrate:	6.0 MBit/s
+				authorized:	yes
+				authenticated:	yes
+				preamble:	short
+				WMM/WME:	yes
+				MFP:		no
+				TDLS peer:	no
+		Station 00:27:10:e8:22:3c (on wlan0)
+				inactive time:	23890 ms
+				rx bytes:	82219
+				rx packets:	2680
+				tx bytes:	36339
+				tx packets:	217
+				tx retries:	9
+				tx failed:	0
+				signal:  	-27 [-27, -35] dBm
+				signal avg:	-30 [-30, -39] dBm
+				tx bitrate:	6.5 MBit/s MCS 0
+				rx bitrate:	19.5 MBit/s MCS 2
+				authorized:	yes
+				authenticated:	yes
+				preamble:	short
+				WMM/WME:	yes
+				MFP:		no
+				TDLS peer:	no]];
+
+		local clients_node = node:add_child('clients'); -- node for new clients
+		local client_node; -- node for current client
+		local line;
+		local position = 1;
+		line, position = get_next_line(stdout, position);
+		while line do
+			local station = line:gmatch("Station%s+(%S+)")();
+			if station then -- new client start
+				client_node = clients_node:add_child('client');
+				client_node:add_child('mac'):set_text(station);
+			else -- client's data
+				local data;
+				data = line:gmatch("signal:%s+(%S+)")();
+				if data then client_node:add_child('signal'):set_text(data); end
+
+				data = line:gmatch("tx bitrate:%s+(%S+)")();
+				if data then client_node:add_child('tx-bitrate'):set_text(data); end
+
+				data = line:gmatch("rx bitrate:%s+(%S+)")();
+				if data then client_node:add_child('rx-bitrate'):set_text(data); end
+			end
+
+			line, position = get_next_line(stdout, position);
+		end
+
+		return true;
+	end
+
+	-- Run first command
+	local ecode, stdout, stderr = run_command(nil, 'ip', 'addr', 'show');
+	if ecode ~= 0 then
+		return nil, "Command to get interfaces failed with code " .. ecode .. " and stderr " .. stderr;
+	end
+
+	--Parse ip output
+	local iface_node; --node for new interface and its address list
+	local line;
+	local position = 1;
+	line, position = get_next_line(stdout, position);
+	while line do
+		-- Check if it is first line defining new interface
+		local num, name = line:gmatch('(%d*):%s+([^:]*):')();
+		if num and name then
+			iface_node = node:add_child('interface');
+			iface_node:add_child('name'):set_text(name);
+			-- Try bridge
+			local brstatus, err = process_bridge(iface_node:add_child('bridge'), name);
+			if brstatus == nil then
+				return nil, err;
+			--elseif brstatus == true then
+				--iface_node:set_attribute('type', 'bridge');
+			end
+			-- Try wireless
+			local wrstatus, err = process_wireless(iface_node:add_child('wireless'), name);
+			if wrstatus == nil then
+				return nil, err;
+			--elseif wrstatus == true then
+				--iface_node:set_attribute('type', 'wireless');
+			end
+		else
+			-- OK, it isn't first line of new interface
+			-- Try to get address
+			local addr_type, addr = line:gmatch('%s+(%S+)%s+(%S+)')();
+				if addr_type and addr then
+					if is_address(addr_type) then
+						iface_node:add_child('address'):set_attribute('type', addr_type):set_text(addr);
+					end
+				end
+				-- else: do nothing, it's some uninteresting garbage
+		end
+		-------------------------------------------------------
+		line, position = get_next_line(stdout, position);
+	end
+
+	return true;
+end
+
 -- Define the commands and their mapping to XML elements.
 local commands = {
 	{
@@ -22,10 +234,10 @@ local commands = {
 		cmd = "uname",
 		params = {'-r'}
 	},
-	--[[{
+	{
 		element = "firmware-version",
 		shell = "cat /etc/openwrt_release  | grep DISTRIB_DESCRIPTION | cut -d '\"' -f 2"
-	},]]
+	},
 	{
 		element = "local-time",
 		cmd = "date",
@@ -48,54 +260,7 @@ local commands = {
 	},
 	{
 		element = 'interfaces',
-		cmd = 'ip',
-		params = {'addr', 'show'},
-		postprocess = function (node, out)
-			local get_next_line = function(content, position)
-				local s, e = out:find('\n', position, true);
-				if not s then
-					return nil, nil;
-				end
-				local line, position_out;
-				line = content:sub(position, s - 1);
-				position_out = e + 1;
-
-				return line, position_out;
-			end
-			local is_address = function(s)
-				local ret = s:gmatch('')();
-				if ret then
-					return true;
-				else
-					return false;
-				end
-			end
-
-			local iface_node; --node for new interface and its address list
-			local line;
-			local position = 1;
-			line, position = get_next_line(out, position);
-			while line do
-				-- Check if it is first line defining new interface
-				local num, name = line:gmatch('(%d*):%s+([^:]*):')();
-				if num and name then
-					iface_node = node:add_child('interface');
-					iface_node:add_child('name'):set_text(name);
-				else
-					-- OK, it isn't first line of new interface
-					-- Try to get address
-					local addr_type, addr = line:gmatch('%s+(%S+)%s+(%S+)')();
-						if addr_type and addr then
-							if is_address(addr) then
-								iface_node:add_child('address'):set_attribute('type', addr_type):set_text(addr);
-							end
-						end
-						-- else: do nothing, it's some uninteresting garbage
-				end
-				-------------------------------------------------------
-				line, position = get_next_line(out, position);
-			end
-		end
+		procedure = cmd_interfaces
 	},
 	{
 		element = "uptime",
@@ -200,18 +365,25 @@ function datastore:get()
 	for i, command in ipairs(commands) do
 		node = root:add_child(command.element);
 		--run
-		local out, err = get_output(command);
-		--test errors
-		if not out then
-			return nil, err
-		end
-		--run postproccess function
-		if command.postprocess then
-			command.postprocess(node, out);
+		if command.procedure then
+			local out, err = command.procedure(node);
+			if not out then
+				return nil, err;
+			end
 		else
-			--clean output
-			out = trimr(out);
-			node:set_text(xml_escape(out));
+			local out, err = get_output(command);
+			--test errors
+			if not out then
+				return nil, err;
+			end
+			--run postproccess function
+			if command.postprocess then
+				command.postprocess(node, out);
+			else
+				--clean output
+				out = trimr(out);
+				node:set_text(xml_escape(out));
+			end
 		end
 	end
 
