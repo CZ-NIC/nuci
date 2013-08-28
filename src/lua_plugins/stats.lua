@@ -54,16 +54,22 @@ local function cmd_interfaces(node)
 				return nil, "Cannot open file stp_state."
 			end
 
-			local interfaces;
 			ecode, stdout, stderr = run_command(nil, "ls", "/sys/devices/virtual/net/" .. iface .. "/brif");
 			if ecode ~= 0 then
 				return nil, "Cannot list interfaces";
 			end
-			interfaces = stdout;
 
 			node:add_child('id'):set_text(bridge_id);
 			node:add_child('stp-state'):set_text(stp_state);
-			node:add_child('associated-interfaces'):set_text(interfaces);
+			local asc_ifaces_node = node:add_child('associated-interfaces');
+			local ifline;
+			local ifposition = 1;
+			ifline, ifposition = get_next_line(stdout, ifposition);
+			while ifline do
+				asc_ifaces_node:add_child('interface'):set_text(ifline);
+				ifline, ifposition = get_next_line(stdout, ifposition);
+			end
+
 
 		else
 			node:delete();
@@ -182,7 +188,7 @@ local function cmd_interfaces(node)
 	line, position = get_next_line(stdout, position);
 	while line do
 		-- Check if it is first line defining new interface
-		local num, name = line:gmatch('(%d*):%s+([^:]*):')();
+		local num, name = line:gmatch('(%d*):%s+([^:@]*)[:@]')();
 		if num and name then
 			iface_node = node:add_child('interface');
 			iface_node:add_child('name'):set_text(name);
@@ -277,17 +283,7 @@ local commands = {
 				node:add_child(name):set_text(xml_escape(value));
 			end
 		end
-	},
-	{
-		element = "bridges",
-		shell = "brctl show | tail -n +2",
-		postprocess = function (node, out)
-			for line in split(out, "\n") do
-				node:add_child('bridge'):set_text(line);
-			end
-		end
 	}
-	-- TODO: Other commands too
 };
 
 local function get_output(command)
