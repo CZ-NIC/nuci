@@ -99,9 +99,9 @@ local function cmd_interfaces(node)
 		local mode = stdout:gmatch("type%s+(%S+)")();
 		local channel, frequency = stdout:gmatch("channel%s+(%S+)%s+%((%S+).*%)")();
 
-		node:add_child('mode'):set_text(mode);
-		node:add_child('channel'):set_text(channel);
-		node:add_child('frequency'):set_text(frequency);
+		if mode then node:add_child('mode'):set_text(mode); end
+		if channel then node:add_child('channel'):set_text(channel); end
+		if frequency then node:add_child('frequency'):set_text(frequency); end
 
 		ecode, stdout, stderr = run_command(nil, "iw", "dev", iface, "station", "dump");
 		if ecode ~= 0 then
