@@ -1,0 +1,2 @@
+#!/bin/sh
+socat -t120 STDIO EXEC:nuci,pty
