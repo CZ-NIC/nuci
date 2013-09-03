@@ -53,7 +53,9 @@
           <list name='value'>
             <key value='index'/>
             <leaf name='index'>
-              <type name='decimal64'/> <!-- So we support insertion in the middle. The numbers from server are always integers. -->
+              <type name='decimal64'> <!-- So we support insertion in the middle. The numbers from server are always integers. -->
+                <fraction-digits value="2"/>
+              </type>
             </leaf>
             <leaf name='content'>
               <type name='string'/>
