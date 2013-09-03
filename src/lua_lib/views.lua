@@ -91,7 +91,7 @@ namespace. It checks the text is the same if there was one before.
 With the children, it is more complex. If the children are for name
 not yet known, they are just added. If it is for known children, they
 are tried to match and check they are equal. If not, they are marked
-is raised.
+and callback is called for differing them.
 ]]
 local function merge(original, more)
 	-- Make sure the original has anything needed
