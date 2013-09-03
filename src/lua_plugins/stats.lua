@@ -196,15 +196,11 @@ local function cmd_interfaces(node)
 			local brstatus, err = process_bridge(iface_node:add_child('bridge'), name);
 			if brstatus == nil then
 				return nil, err;
-			--elseif brstatus == true then
-				--iface_node:set_attribute('type', 'bridge');
 			end
 			-- Try wireless
 			local wrstatus, err = process_wireless(iface_node:add_child('wireless'), name);
 			if wrstatus == nil then
 				return nil, err;
-			--elseif wrstatus == true then
-				--iface_node:set_attribute('type', 'wireless');
 			end
 		else
 			-- OK, it isn't first line of new interface
@@ -212,7 +208,9 @@ local function cmd_interfaces(node)
 			local addr_type, addr = line:gmatch('%s+(%S+)%s+(%S+)')();
 				if addr_type and addr then
 					if is_address(addr_type) then
-						iface_node:add_child('address'):set_attribute('type', addr_type):set_text(addr);
+						local addr_node = iface_node:add_child('address');
+						addr_node:add_child('type'):set_text(addr_type);
+						addr_node:add_child('address'):set_text(addr);
 					end
 				end
 				-- else: do nothing, it's some uninteresting garbage
