@@ -147,7 +147,8 @@ static bool test_access_status(struct nuci_lock_info *lock_info) {
 	return false;
 }
 
-static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) {
+static int nuci_ds_lock(void *data, NC_DATASTORE target, const char* session_id, struct nc_err** error) {
+	(void) session_id;
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
@@ -184,7 +185,8 @@ static int nuci_ds_lock(void *data, NC_DATASTORE target, struct nc_err** error) 
 	return EXIT_SUCCESS;
 }
 
-static int nuci_ds_unlock(void *data, NC_DATASTORE target, struct nc_err** error) {
+static int nuci_ds_unlock(void *data, NC_DATASTORE target, const char* session_id, struct nc_err** error) {
+	(void) session_id;
 	struct nuci_ds_data *d = data;
 	*error = NULL;
 
@@ -255,7 +257,8 @@ static int nuci_ds_deleteconfig(void *data, NC_DATASTORE target, struct nc_err**
 }
 
 //Documentation for parameters defop and errop: http://libnetconf.googlecode.com/git/doc/doxygen/html/d3/d7a/netconf_8h.html#a5852fd110198481afb37cc8dcf0bf454
-static int nuci_ds_editconfig(void *data, NC_DATASTORE target, const char *config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
+static int nuci_ds_editconfig(void *data, const nc_rpc* rpc, NC_DATASTORE target, const char *config, NC_EDIT_DEFOP_TYPE defop, NC_EDIT_ERROPT_TYPE errop, struct nc_err** error) {
+	(void) rpc;
 	struct nuci_ds_data *d = data;
 
 	//only running source for now
