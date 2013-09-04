@@ -1,1 +1,1 @@
-LUA_PLUGINS += $(addprefix src/lua_plugins/, stats uci-raw networking)
+LUA_PLUGINS += $(addprefix src/lua_plugins/, stats uci-raw nethist networking)

@@ -215,8 +215,6 @@ static const char *translate_node_type(xmlElementType type) {
 			return "XML_XINCLUDE_START";
 		case XML_XINCLUDE_END:
 			return "XML_XINCLUDE_END";
-		case XML_DOCB_DOCUMENT_NODE:
-			return "XML_DOCB_DOCUMENT_NODE";
 		default:
 			return "VALUE IS NOT ON THE LIST";
 	}
@@ -350,7 +348,10 @@ static int node_set_attr(lua_State *L) {
 		xmlSetNsProp(node, ns, BAD_CAST name, BAD_CAST value);
 	}
 
-	return 0;
+	lua_pushlightuserdata(L, node);
+	luaL_setmetatable(L, WRAP_XMLNODE);
+
+	return 1;
 }
 
 static int node_rm_attr(lua_State *L) {
@@ -638,7 +639,10 @@ static int node_set_text(lua_State *L) {
 	xmlNodePtr text_node = xmlNewText(BAD_CAST text);
 	xmlAddChild(node, text_node);
 
-	return 0;
+	lua_pushlightuserdata(L, node);
+	luaL_setmetatable(L, WRAP_XMLNODE);
+
+	return 1;
 }
 
 static int node_register_ns(lua_State *L) {
