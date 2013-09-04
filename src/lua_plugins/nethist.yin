@@ -1,54 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module name="nethist"
-        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
-        xmlns:stats="http://www.nic.cz/ns/router/nethist">
-  <yang-version value="1"/>
-  <namespace uri="http://www.nic.cz/ns/router/nethist"/>
-  <prefix value="nethist"/>
-  <container name="nethist">
-    <description>
-      <text>Top-level container for nethist plugin.</text>
-    </description>
-	<list name="snapshot">
-		<key value="time"/>
-		<leaf name="time">
-			<type name="int64"/>
-		</leaf>
-		<container name="network">
-			<list name="interface">
-				<key value="name"/>
-				<leaf name="name">
-					<type name="string"/>
+		xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+		xmlns:stats="http://www.nic.cz/ns/router/nethist">
+	<yang-version value="1"/>
+	<namespace uri="http://www.nic.cz/ns/router/nethist"/>
+	<prefix value="nethist"/>
+	<container name="nethist">
+		<description>
+			<text>Top-level container for nethist plugin.</text>
+		</description>
+		<config value="false"/>
+		<container name="snapshots">
+			<list name="snapshot">
+				<key value="time"/>
+				<leaf name="time">
+					<type name="uint64"/>
 				</leaf>
-				<leaf name="rx">
-					<type name="int64"/>
-				</leaf>
-				<leaf name="tx">
-					<type name="int64"/>
-				</leaf>
+				<container name="network">
+					<list name="interface">
+						<key value="name"/>
+						<leaf name="name">
+							<type name="string"/>
+						</leaf>
+						<leaf name="rx">
+							<type name="uint64"/>
+						</leaf>
+						<leaf name="tx">
+							<type name="uint64"/>
+						</leaf>
+					</list>
+				</container>
+				<container name="cpu">
+					<leaf name="load">
+						<type name="decimal64">
+							<fraction-digits value="16"/>
+						</type>
+					</leaf>
+				</container>
+				<container name="memory">
+					<leaf name="memtotal">
+						<type name="uint64"/>
+					</leaf>
+					<leaf name="memfree">
+						<type name="uint64"/>
+					</leaf>
+					<leaf name="buffers">
+						<type name="uint64"/>
+					</leaf>
+					<leaf name="cached">
+						<type name="uint64"/>
+					</leaf>
+				</container>
 			</list>
 		</container>
-		<container name="cpu">
-			<leaf name="load">
-				<type name="decimal64">
-					<fraction-digits value="16"/>
-				</type>
-			</leaf>
-		</container>
-		<container name="memory">
-			<leaf name="memtotal">
-				<type name="int64"/>
-			</leaf>
-			<leaf name="memfree">
-				<type name="int64"/>
-			</leaf>
-			<leaf name="buffers">
-				<type name="int64"/>
-			</leaf>
-			<leaf name="cached">
-				<type name="int64"/>
-			</leaf>
-		</container>
-	</list>
-  </container>
+	</container>
 </module>
