@@ -32,30 +32,32 @@ local function parse_file(file, node)
 		for _,item in pairs(items) do
 			snap_node:add_child('item'):set_text(item);
 		end]]
-		if prev_time ~= items[1] then
-			snap_node = node:add_child('snapshot');
-			snap_node:add_child('time'):set_text(items[1]);
-		end
-
-		if items[2] == "cpu" then
-			prev_item = items[2];
-			snap_node:add_child('cpu'):add_child('load'):set_text(items[3]);
-		elseif items[2] == "memory" then
-			prev_item = items[2];
-			local mem_node = snap_node:add_child('memory');
-			mem_node:add_child('memtotal'):set_text(items[3]);
-			mem_node:add_child('memfree'):set_text(items[4]);
-			mem_node:add_child('buffers'):set_text(items[5]);
-			mem_node:add_child('cached'):set_text(items[6]);
-		elseif items[2] == "network" then
-			if prev_item ~= items[2] then
-				net_node = snap_node:add_child('network');
+		if items[1] ~= '0' then
+			if prev_time ~= items[1] then
+				snap_node = node:add_child('snapshot');
+				snap_node:add_child('time'):set_text(items[1]);
 			end
-			prev_item = items[2];
-			local iface_node = net_node:add_child('interface');
-			iface_node:add_child('name'):set_text(items[3]);
-			iface_node:add_child('rx'):set_text(items[4]);
-			iface_node:add_child('tx'):set_text(items[5]);
+
+			if items[2] == "cpu" then
+				prev_item = items[2];
+				snap_node:add_child('cpu'):add_child('load'):set_text(items[3]);
+			elseif items[2] == "memory" then
+				prev_item = items[2];
+				local mem_node = snap_node:add_child('memory');
+				mem_node:add_child('memtotal'):set_text(items[3]);
+				mem_node:add_child('memfree'):set_text(items[4]);
+				mem_node:add_child('buffers'):set_text(items[5]);
+				mem_node:add_child('cached'):set_text(items[6]);
+			elseif items[2] == "network" then
+				if prev_item ~= items[2] then
+					net_node = snap_node:add_child('network');
+				end
+				prev_item = items[2];
+				local iface_node = net_node:add_child('interface');
+				iface_node:add_child('name'):set_text(items[3]);
+				iface_node:add_child('rx'):set_text(items[4]);
+				iface_node:add_child('tx'):set_text(items[5]);
+			end
 		end
 
 		prev_time = items[1];
