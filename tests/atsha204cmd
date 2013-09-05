@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Just a mock of the real atsha204cmd, that returns the same every time.
+
+if [ "$1" = "serial-number" ] ; then
+	echo "1234567890123456"
+elif [ "$1" = "challenge-response" ] ; then
+	read challenge
+	echo "1234567890123456789012345678901234567890123456789012345678901234"
+else
+	echo "Unknown command" >&2
+fi

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export PATH=./tests:"$PATH"
+
 cat <<ENDXML | socat STDIO EXEC:./bin/nuci,pty
 <?xml version="1.0" encoding="UTF-8"?>
 <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
