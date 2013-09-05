@@ -68,7 +68,7 @@ function datastore:get()
 	local doc, root, node;
 
 	--prepare XML subtree
-	doc = xmlwrap.new_xml_doc("nethist", "http://www.nic.cz/ns/router/nethist");
+	doc = xmlwrap.new_xml_doc("nethist", self.model_ns);
 	root = doc:root();
 
 	local file = io.open(HIST_FILE);
