@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="registration" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/registration"/>
+  <prefix value="registration"/>
+  <container name="registration">
+    <description>
+      <text>Information related to registration of the device on CZ.NIC web.</text>
+    </description>
+    <leaf name="serial">
+      <type name='string'/>
+      <description>
+        <text>The extended serial number that is copy-pasted to the website.</text>
+      </description>
+      <mandatory value='true'/>
+    </leaf>
+    <config value='false'/>
+  </container>
+</module>

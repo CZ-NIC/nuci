@@ -61,8 +61,8 @@
               <type name='string'/>
               <mandatory value='true'/>
             </leaf>
+            <min-elements value='1'/>
           </list>
-          <min-elements value='1'/>
         </list>
       </list>
     </list>
