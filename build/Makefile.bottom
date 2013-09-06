@@ -3,7 +3,6 @@
 $(eval $(foreach BINARY,$(BINARIES),$(call REGISTER_BIN,$(BINARY))))
 $(eval $(foreach LIB,$(LIBRARIES),$(call REGISTER_LIB,$(LIB))))
 $(eval $(foreach LUA_FILE,$(LUA),$(call REGISTER_LUA,$(LUA_FILE))))
-$(eval $(foreach LUA_FILE,$(LUA_PLUGINS),$(call REGISTER_LUA_PLUGIN,$(LUA_FILE))))
 ifndef NO_DOC
 $(eval $(foreach DOC,$(DOCS),$(call REGISTER_DOC,$(DOC))))
 endif
