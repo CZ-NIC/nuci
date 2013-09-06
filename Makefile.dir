@@ -29,5 +29,5 @@ include $(S)/tests/Makefile.dir
 # This one for documentation for the build system
 include $(S)/build/Makefile.dir
 
-include $(S)/build/Makefile.bottom
 $(eval $(foreach LUA_FILE,$(LUA_PLUGINS),$(call REGISTER_LUA_PLUGIN,$(LUA_FILE))))
+include $(S)/build/Makefile.bottom
