@@ -40,23 +40,45 @@ local self = abstraction_plugin('ap_testing1');
 </networking>
 ]]
 
+-- Some dummy testing stuff
 self.watch = {
-	{'networking', 'internet', 'interface', 'address'},
-	{'networking', 'internet', 'interface', 'gateway'},
-	{'networking', 'internet', 'interface', 'dns'},
-	{'networking', 'internet', 'interface', 'nat'},
-	{'networking', 'internet', 'interface', 'nat6'},
-
-	{'networking', 'lan', 'interface', 'address'},
-	{'networking', 'lan', 'interface', 'dhcp'},
-	{'networking', 'lan', 'interface', 'bridge'}
-
-	--{nil, {name = 'eth0', jiny = 'dalsi' }, nil}
+	{
+		path = {'networking', 'internet', 'interface', 'address'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'gateway'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'dns'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'nat'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'nat6'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'lan', 'interface', 'address'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'lan', 'interface', 'dhcp'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'lan', 'interface', 'bridge'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	}
 }
 
 function self:register_values()
 	for _,item in pairs(self.watch) do
-		supervisor:register_value(self, item);
+		supervisor:register_value(self, item.path, item.key);
 	end
 
 	return true;
