@@ -8,14 +8,6 @@ supervisor = {
 
 dbg = "";
 
--- Test if table is empty or not
-local function is_empty(table)
-	if next(table) == nil then
-		return true;
-	end
-
-	return false;
-end
 
 local function tree_try_add_key(keys, keyset)
 	if keyset ~= nil then

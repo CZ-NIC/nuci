@@ -1,6 +1,14 @@
+-- Test if table is empty or not
+function table.is_empty(table)
+	if next(table) == nil then
+		return true;
+	end
+
+	return false;
+end
+
 -- Not sure with license
 -- Code is from http://lua-users.org/wiki/TableUtils
-
 function table.val_to_str ( v )
   if "string" == type( v ) then
     v = string.gsub( v, "\n", "\\n" )
