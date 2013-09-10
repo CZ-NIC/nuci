@@ -3,7 +3,9 @@ require("tableutils");
 -- Global state varables
 supervisor = {
 	plugins = {},
-	tree = {}
+	tree = {},
+	cached = false,
+	doc= nil
 };
 
 dbg = "";
@@ -24,7 +26,7 @@ local function tree_rec_add(node, level, plugin, path, key)
 	end
 
 	-- Create if node is empty
-	if is_empty(node) then
+	if table.is_empty(node) then
 		node.name = path[level];
 		node.keys = {};
 		node.childs = {};
@@ -70,9 +72,22 @@ function supervisor:register_all_values()
 	return true;
 end
 
+function supervisor:init(init_doc)
+	if supervisor.doc == nil then
+		supervisor.doc = init_doc;
+	end
+end
+
+function supervisor:invalidate_cache()
+	supervisor.cached = false;
+end
+
 function supervisor:get()
-	local ret, err;
-	local doc = xmlwrap.new_xml_doc('root');
+	-- Exists some data?
+	if supervisor.cached == true then
+		return supervisor.doc;
+	end
+	-- Data doesn't exists
 
 	-- First of all - let plugins to register all values of tree
 	ret, err = supervisor:register_all_values();
@@ -80,8 +95,12 @@ function supervisor:get()
 		return ret, err;
 	end
 
+	-- Development and debug
 	dbg = dbg .. table.tostring(supervisor.tree);
-	doc:root():add_child("dbg"):set_text(dbg);
+	supervisor.doc:root():add_child("dbg"):set_text(dbg);
 
-	return doc:strdump();
+	-- Build new tree
+	supervisor.cached = true;
+
+	return supervisor.doc;
 end

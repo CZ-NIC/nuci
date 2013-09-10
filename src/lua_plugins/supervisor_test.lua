@@ -12,17 +12,12 @@ require("ap_testing1");
 local datastore = datastore('supervisor_test.yin')
 
 function datastore:get()
-	local doc, root, node;
+	supervisor:init(xmlwrap.new_xml_doc("supervisor-test", "http://www.nic.cz/ns/router/supervisor-test"));
 
-	--prepare XML subtree
-	doc = xmlwrap.new_xml_doc("supervisor-test", "http://www.nic.cz/ns/router/supervisor-test");
-	root = doc:root();
-
-	local supervisor_output, err = supervisor:get();
-	if not supervisor_output then
-		root.set_text("FAILED: " .. err);
+	local doc, err = supervisor:get();
+	if not doc then
+		return doc, err;
 	end
-	root:set_text(supervisor_output);
 
 	return doc:strdump();
 end
