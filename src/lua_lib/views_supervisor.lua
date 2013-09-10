@@ -101,21 +101,17 @@ local function build_rec(node, onode, keyset)
 		return
 	end
 
-	local act_key = next(node.keys);
-	if act_key == nil then
-		dbg = dbg .. "Jsem tu - if\n";
+	if table.is_empty(node.keys) then
 		local new_node = onode:add_child(node.name);
 		for _, child in pairs(node.childs) do
 			build_rec(child, new_node, nil);
 		end
 	else
-		dbg = dbg .. "Jsem tu - else\n";
-		while act_key do
+		for _, key in pairs(node.keys) do
 			local new_node = onode:add_child(node.name);
 			for _, child in pairs(node.childs) do
 				build_rec(child, new_node, act_key);
 			end
-			act_key = next(node.keys);
 		end
 	end
 
