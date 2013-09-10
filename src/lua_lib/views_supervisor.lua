@@ -17,15 +17,6 @@ local function is_empty(table)
 	return false;
 end
 
-local function tree_create_node()
-
-
-end
-
-local function tree_create_leaf()
-
-end
-
 local function tree_try_add_key(keys, keyset)
 	if keyset ~= nil then
 		for k, v in pairs(keyset) do
