@@ -44,35 +44,68 @@ local self = abstraction_plugin('ap_testing1');
 self.watch = {
 	{
 		path = {'networking', 'internet', 'interface', 'address'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth0"}, nil},
+		devvals = "10.11.12.13"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'gateway'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth0"}, nil},
+		devvals = "10.11.12.1"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'dns'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth0"}, nil},
+		devvals = "10.11.12.2"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth0"}, nil},
+		devvals = "true"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat6'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth0"}, nil},
+		devvals = "false"
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'address'},
+		key = {nil, nil, {["name"] = "eth1"}, nil},
+		devvals = "10.11.12.13"
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'gateway'},
+		key = {nil, nil, {["name"] = "eth1"}, nil},
+		devvals = "10.11.12.1"
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'dns'},
+		key = {nil, nil, {["name"] = "eth1"}, nil},
+		devvals = "10.11.12.2"
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'nat'},
+		key = {nil, nil, {["name"] = "eth1"}, nil},
+		devvals = "true"
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'nat6'},
+		key = {nil, nil, {["name"] = "eth1"}, nil},
+		devvals = "false"
 	},
 	{
 		path = {'networking', 'lan', 'interface', 'address'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth3"}, nil},
+		devvals = "192.168.1.1"
 	},
 	{
 		path = {'networking', 'lan', 'interface', 'dhcp'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		key = {nil, nil, {["name"] = "eth3"}, nil},
+		devvals = "192.168.1.0"
 	},
 	{
-		path = {'networking', 'lan', 'interface', 'bridge'},
-		key = {nil, nil, {["name"] = "eth0"}, nil}
+		path = {'networking', 'lan', 'interface', 'address'},
+		key = {nil, nil, {["name"] = "eth4"}, nil},
+		devvals = "192.168.1.1"
 	}
 }
 
