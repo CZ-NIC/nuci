@@ -1,8 +1,12 @@
+require("tableutils");
+
 -- Global state varables
 supervisor = {
 	plugins = {},
-	tree = {};
+	tree = {}
 };
+
+dbg = "";
 
 -- Test if table is empty or not
 local function is_empty(table)
@@ -46,19 +50,20 @@ local function tree_rec_add(node, level, plugin, path, key)
 	-- Add keys
 	tree_try_add_key(node.keys, key[level]);
 
+	-- Recurse or create node
 	if path[level+1] == nil then
 		-- I'm leaf
 		if node.plugins == nil then
 			node.plugins = {};
 		end
-
 		table.insert(node.plugins, plugin);
 
 	else
 		if node.childs[path[level+1]] == nil then
 			node.childs[path[level+1]] = {};
 		end
-		return tree_rec_add(node.childs[path[level+1]], level+1, path, key);
+
+		tree_rec_add(node.childs[path[level+1]], level+1, plugin, path, key);
 	end
 end
 
@@ -67,13 +72,13 @@ function supervisor:register_ap(plugin, name)
 end
 
 function supervisor:register_value(plugin, path, key)
-	supervisor:rec_add_to_tree(supervisor.tree, 1, plugin, path, key);
+	tree_rec_add(supervisor.tree, 1, plugin, path, key);
 end
 
 function supervisor:register_all_values()
 	local ret, err;
 	for _, plugin in pairs(supervisor.plugins) do
-		supervisor.plugin:register_values();
+		ret, err = plugin:register_values();
 		if not ret then
 			return ret, err;
 		end
@@ -82,27 +87,18 @@ function supervisor:register_all_values()
 	return true;
 end
 
-local function debug_tree(root, xmlnode)
-	if not root then
-		return;
-	end
-
-	local n = xmlnode:add_child(root.name);
-	for key, child in pairs(root.childs) do
-		debug_tree(root[key], n);
-	end
-end
-
 function supervisor:get()
 	local ret, err;
 	local doc = xmlwrap.new_xml_doc('root');
-	-- First of all - register all values of tree
+
+	-- First of all - let plugins to register all values of tree
 	ret, err = supervisor:register_all_values();
 	if not ret then
 		return ret, err;
 	end
-	debug_tree(supervisor.tree, doc:root());
 
-	--return "Yes, I'm here!";
+	dbg = dbg .. table.tostring(supervisor.tree);
+	doc:root():add_child("dbg"):set_text(dbg);
+
 	return doc:strdump();
 end
