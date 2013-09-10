@@ -96,6 +96,56 @@ function supervisor:invalidate_cache()
 	supervisor.cached = false;
 end
 
+local function build_rec(node, onode, keyset)
+	if node == nil then
+		return
+	end
+
+	local act_key = next(node.keys);
+	if act_key == nil then
+		dbg = dbg .. "Jsem tu - if\n";
+		local new_node = onode:add_child(node.name);
+		for _, child in pairs(node.childs) do
+			build_rec(child, new_node, nil);
+		end
+	else
+		dbg = dbg .. "Jsem tu - else\n";
+		while act_key do
+			local new_node = onode:add_child(node.name);
+			for _, child in pairs(node.childs) do
+				build_rec(child, new_node, act_key);
+			end
+			act_key = next(node.keys);
+		end
+	end
+
+--[[
+
+	local new_node = onode:add_child(node.name);
+	if keyset ~= nil then
+		for n, v in pairs(keyset) do
+			new_node:add_child(n):set_text(v);
+		end
+	end
+
+	if node.keys ~= nil then
+		for _, key in ipairs(node.keys) do
+			for _, child in pairs(node.childs) do
+				build_rec(child, new_node, key);
+			end
+		end
+	end
+
+	for _, child in pairs(node.childs) do
+		build_rec(child, new_node, nil);
+	end
+	]]
+end
+
+function supervisor:build_tree(onode)
+	build_rec(supervisor.tree, onode, nil);
+end
+
 function supervisor:get()
 	-- Exists some data?
 	if supervisor.cached == true then
@@ -109,12 +159,14 @@ function supervisor:get()
 		return ret, err;
 	end
 
+	-- Build new tree
+	supervisor.cached = true;
+	supervisor:build_tree(supervisor.doc:root());
+
 	-- Development and debug
 	dbg = dbg .. table.tostring(supervisor.tree);
 	supervisor.doc:root():add_child("dbg"):set_text(dbg);
 
-	-- Build new tree
-	supervisor.cached = true;
 
 	return supervisor.doc;
 end
