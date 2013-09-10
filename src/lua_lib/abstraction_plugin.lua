@@ -1,4 +1,4 @@
-require("editconfig")
+require("editconfig");
 --[[
 Crete skeleton of the abstraction plugin
 ]]

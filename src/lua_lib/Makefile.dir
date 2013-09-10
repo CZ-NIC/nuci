@@ -8,4 +8,6 @@ LUA += $(addprefix src/lua_lib/, \
 	stacktraceplus \
 	tableutils \
 	views_supervisor \
+	abstraction_plugin \
+	ap_testing1 \
 	)

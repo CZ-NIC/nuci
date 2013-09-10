@@ -84,4 +84,4 @@ function self:register_values()
 	return true;
 end;
 
-supervisor:register_ap(self, testing1.id);
+supervisor:register_ap(self, self.id);
