@@ -12,9 +12,23 @@ dbg = "";
 
 
 local function tree_try_add_key(keys, keyset)
+	local exists_keyset = function(keys, keyset)
+		local candidate = false;
+		for _, key in pairs(keys) do
+			for k, v in pairs(key) do
+				if keyset[k] == v then
+					candidate = true;
+				else
+					candidate = false;
+				end
+			end
+		end
+		return candidate;
+	end
+
 	if keyset ~= nil then
-		for k, v in pairs(keyset) do
-			keys[k] = v;
+		if not exists_keyset(keys, keyset) then
+			table.insert(keys, keyset);
 		end
 	end
 end
