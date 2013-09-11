@@ -9,7 +9,9 @@ supervisor = {
 };
 
 dbg = "";
-
+local function dbg_add(str)
+	dbg = dbg .. str .. "\n";
+end
 
 local function tree_try_add_key(keys, keyset)
 	local exists_keyset = function(keys, keyset)
@@ -53,13 +55,15 @@ local function tree_rec_add(node, level, plugin, path, key)
 	if path[level+1] == nil then
 		-- I'm leaf
 		if node.plugins == nil then
-			node.plugins = {};
+			node.plugins = {}; -- Table of plugin doesn't exists yet - create it
 		end
+		-- Leaf needs infromation about registered plugins
 		table.insert(node.plugins, plugin);
 
 	else
+		-- I'm inner node
 		if node.childs[path[level+1]] == nil then
-			node.childs[path[level+1]] = {};
+			node.childs[path[level+1]] = {}; -- Table of child doesn't exists yet - create it
 		end
 
 		tree_rec_add(node.childs[path[level+1]], level+1, plugin, path, key);
@@ -101,41 +105,32 @@ local function build_rec(node, onode, keyset)
 		return
 	end
 
+	local new_node;
 	if table.is_empty(node.keys) then
-		local new_node = onode:add_child(node.name);
+		-- Create this node in XML
+		new_node = onode:add_child(node.name);
+		-- Generate leaf's value
+		if table.is_empty(node.childs) then
+			new_node:set_text("child");
+		end
+		-- Recurse to childs
 		for _, child in pairs(node.childs) do
-			build_rec(child, new_node, nil);
+			build_rec(child, new_node, keyset);
 		end
 	else
 		for _, key in pairs(node.keys) do
-			local new_node = onode:add_child(node.name);
+			-- Create copy of this node with this keyset in XML
+			new_node = onode:add_child(node.name);
+			-- Add keyset recodr into XML node
+			for key_name, key_val in pairs(key) do
+				new_node:add_child(key_name):set_text(key_val);
+			end
+			-- Recurse to childs of this copy
 			for _, child in pairs(node.childs) do
 				build_rec(child, new_node, act_key);
 			end
 		end
 	end
-
---[[
-
-	local new_node = onode:add_child(node.name);
-	if keyset ~= nil then
-		for n, v in pairs(keyset) do
-			new_node:add_child(n):set_text(v);
-		end
-	end
-
-	if node.keys ~= nil then
-		for _, key in ipairs(node.keys) do
-			for _, child in pairs(node.childs) do
-				build_rec(child, new_node, key);
-			end
-		end
-	end
-
-	for _, child in pairs(node.childs) do
-		build_rec(child, new_node, nil);
-	end
-	]]
 end
 
 function supervisor:build_tree(onode)
@@ -160,7 +155,7 @@ function supervisor:get()
 	supervisor:build_tree(supervisor.doc:root());
 
 	-- Development and debug
-	dbg = dbg .. table.tostring(supervisor.tree);
+	--dbg_add(table.tostring(supervisor.tree)); -- This output is very long - uncomment it if you need it
 	supervisor.doc:root():add_child("dbg"):set_text(dbg);
 
 
