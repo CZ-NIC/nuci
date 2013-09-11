@@ -44,7 +44,7 @@ local self = abstraction_plugin('ap_testing1');
 self.watch = {
 	{
 		path = {'networking', 'internet', 'interface', 'address'},
-		key = {nil, nil, {["name"] = "eth0"}, nil},
+		key = {nil, nil, {["name"] = "eth0", ["xyz"] = "abcd"}, nil},
 		devvals = "10.11.12.13"
 	},
 	{
@@ -70,17 +70,17 @@ self.watch = {
 	{
 		path = {'networking', 'internet', 'interface', 'address'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "10.11.12.13"
+		devvals = "10.11.22.13"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'gateway'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "10.11.12.1"
+		devvals = "10.11.22.1"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'dns'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "10.11.12.2"
+		devvals = "10.11.22.2"
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat'},
