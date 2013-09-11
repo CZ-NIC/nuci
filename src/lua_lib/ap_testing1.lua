@@ -117,4 +117,49 @@ function self:register_values()
 	return true;
 end;
 
+function self:get(path, level, keyset)
+	local match_keyset = function(keys, keyset)
+		local candidate = false;
+		local bigger;
+		local smaller;
+		if (#keys) > (#keyset) then
+			bigger = keys;
+			smaller = keyset;
+		else
+			bigger = keyset;
+			smaller = keys;
+		end
+
+		for k, v in pairs(bigger) do
+			if smaller[k] == v then
+				candidate = true;
+			else
+				candidate = false;
+			end
+		end
+		return candidate;
+	end
+	local match;
+	for _, item in pairs(self.watch) do
+		match = true;
+		for i, node in ipairs(item.path) do
+			if node ~= path[i] then
+				match = false
+				break;
+			end
+		end
+		if match == true then
+			for _, key in pairs(item.key) do
+				if key ~= nil then
+					if match_keyset(key, keyset) then
+						return item.devvals;
+					end
+				end
+			end
+		end
+	end
+
+	return nil;
+end
+
 supervisor:register_ap(self, self.id);

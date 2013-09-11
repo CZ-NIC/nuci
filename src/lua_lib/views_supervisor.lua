@@ -100,10 +100,24 @@ function supervisor:invalidate_cache()
 	supervisor.cached = false;
 end
 
-local function build_rec(node, onode, keyset)
+local function build_get_value(plugins, path, level, keyset)
+	-- Return first valied answer is temporaly solution
+	for _, plugin in pairs(plugins) do
+		local res = plugin:get(path, level, keyset);
+		if res ~= nil then
+			return res;
+		end
+	end
+
+	return "";
+end
+
+local function build_rec(node, onode, keyset, path, level)
 	if node == nil then
 		return
 	end
+
+	path[level] = node.name;
 
 	local new_node;
 	if table.is_empty(node.keys) then
@@ -111,30 +125,30 @@ local function build_rec(node, onode, keyset)
 		new_node = onode:add_child(node.name);
 		-- Generate leaf's value
 		if table.is_empty(node.childs) then
-			new_node:set_text("child");
+			new_node:set_text(build_get_value(node.plugins, path, level, keyset));
 		end
 		-- Recurse to childs
 		for _, child in pairs(node.childs) do
-			build_rec(child, new_node, keyset);
+			build_rec(child, new_node, keyset, path, level+1);
 		end
 	else
 		for _, key in pairs(node.keys) do
 			-- Create copy of this node with this keyset in XML
 			new_node = onode:add_child(node.name);
-			-- Add keyset recodr into XML node
+			-- Add keyset record into XML node
 			for key_name, key_val in pairs(key) do
 				new_node:add_child(key_name):set_text(key_val);
 			end
 			-- Recurse to childs of this copy
 			for _, child in pairs(node.childs) do
-				build_rec(child, new_node, act_key);
+				build_rec(child, new_node, key, path, level+1);
 			end
 		end
 	end
 end
 
 function supervisor:build_tree(onode)
-	build_rec(supervisor.tree, onode, nil);
+	build_rec(supervisor.tree, onode, nil, {}, 1);
 end
 
 function supervisor:get()

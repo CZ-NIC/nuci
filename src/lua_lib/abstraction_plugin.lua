@@ -7,7 +7,14 @@ function abstraction_plugin(plugin_name)
 		id = plugin_name;
 	};
 
-	function result:get(value)
+	--[[
+		path - path of requested value
+		level - number of valid items in path
+		keyset - keyset of requested node
+
+		returns value or nil (I nod't know about this value - does not necessarily mean an error)
+	]]
+	function result:get(path, level, keyset)
 		return nil, "Not implemented";
 	end;
 
