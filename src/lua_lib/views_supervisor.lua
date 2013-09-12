@@ -121,20 +121,13 @@ local function build_rec(node, onode, keyset, path, level)
 
 	local new_node;
 	if table.is_empty(node.keys) then
-		--new_node = onode:add_child(node.name);
 		-- Generate leaf's value
 		if table.is_empty(node.childs) then
-			--new_node = onode:add_child("jednoducha-odpoved-"..node.name);
 			local res = build_get_value(node.plugins, path, level, keyset);
 			if res ~= nil then
-				if #res == 1 then
+				for _, val in ipairs(res) do
 					new_node = onode:add_child(node.name);
-					new_node:set_text(res[1]);
-				else
-					for _, val in ipairs(res) do
-						new_node = onode:add_child(node.name);
-						new_node:set_text(val);
-					end
+					new_node:set_text(val);
 				end
 			end
 		else
