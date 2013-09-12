@@ -45,67 +45,67 @@ self.watch = {
 	{
 		path = {'networking', 'internet', 'interface', 'address'},
 		key = {nil, nil, {["name"] = "eth0", ["xyz"] = "abcd"}, nil},
-		devvals = "10.11.12.13"
+		devvals = {"10.11.12.13", "10.11.12.14", "10.11.12.15"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'gateway'},
 		key = {nil, nil, {["name"] = "eth0"}, nil},
-		devvals = "10.11.12.1"
+		devvals = {"10.11.12.1"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'dns'},
 		key = {nil, nil, {["name"] = "eth0"}, nil},
-		devvals = "10.11.12.2"
+		devvals = {"10.11.12.2"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat'},
 		key = {nil, nil, {["name"] = "eth0"}, nil},
-		devvals = "true"
+		devvals = {"true"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat6'},
 		key = {nil, nil, {["name"] = "eth0"}, nil},
-		devvals = "false"
+		devvals = {"false"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'address'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "10.11.22.13"
+		devvals = {"10.11.22.13"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'gateway'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "10.11.22.1"
+		devvals = {"10.11.22.1"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'dns'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "10.11.22.2"
+		devvals = {"10.11.22.2"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "true"
+		devvals = {"true"}
 	},
 	{
 		path = {'networking', 'internet', 'interface', 'nat6'},
 		key = {nil, nil, {["name"] = "eth1"}, nil},
-		devvals = "false"
+		devvals = {"false"}
 	},
 	{
 		path = {'networking', 'lan', 'interface', 'address'},
 		key = {nil, nil, {["name"] = "eth3"}, nil},
-		devvals = "192.168.1.1"
+		devvals = {"192.168.1.1"}
 	},
 	{
 		path = {'networking', 'lan', 'interface', 'dhcp'},
 		key = {nil, nil, {["name"] = "eth3"}, nil},
-		devvals = "192.168.1.0"
+		devvals = {"192.168.1.0"}
 	},
 	{
 		path = {'networking', 'lan', 'interface', 'address'},
 		key = {nil, nil, {["name"] = "eth4"}, nil},
-		devvals = "192.168.1.1"
+		devvals = {"192.168.1.1"}
 	}
 }
 

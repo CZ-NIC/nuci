@@ -109,7 +109,7 @@ local function build_get_value(plugins, path, level, keyset)
 		end
 	end
 
-	return "";
+	return nil;
 end
 
 local function build_rec(node, onode, keyset, path, level)
@@ -121,15 +121,28 @@ local function build_rec(node, onode, keyset, path, level)
 
 	local new_node;
 	if table.is_empty(node.keys) then
-		-- Create this node in XML
-		new_node = onode:add_child(node.name);
+		--new_node = onode:add_child(node.name);
 		-- Generate leaf's value
 		if table.is_empty(node.childs) then
-			new_node:set_text(build_get_value(node.plugins, path, level, keyset));
-		end
-		-- Recurse to childs
-		for _, child in pairs(node.childs) do
-			build_rec(child, new_node, keyset, path, level+1);
+			--new_node = onode:add_child("jednoducha-odpoved-"..node.name);
+			local res = build_get_value(node.plugins, path, level, keyset);
+			if res ~= nil then
+				if #res == 1 then
+					new_node = onode:add_child(node.name);
+					new_node:set_text(res[1]);
+				else
+					for _, val in ipairs(res) do
+						new_node = onode:add_child(node.name);
+						new_node:set_text(val);
+					end
+				end
+			end
+		else
+			-- Recurse to childs
+			for _, child in pairs(node.childs) do
+				new_node = onode:add_child(node.name);
+				build_rec(child, new_node, keyset, path, level+1);
+			end
 		end
 	else
 		for _, key in pairs(node.keys) do
