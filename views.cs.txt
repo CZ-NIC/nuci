@@ -1,0 +1,29 @@
+Struktura pluginu
+=================
+self.watch = {
+	{
+		path = {'networking', 'internet', 'interface', 'address'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	},
+	{
+		path = {'networking', 'internet', 'interface', 'gateway'},
+		key = {nil, nil, {["name"] = "eth0"}, nil}
+	}
+}
+
+Každý plugin se registruje k nějaké cestě, která představuje list stromu, tj. položku, kterou je schopen obsloužit a zároveň při SETu se potřebuje dozvědět o změně této hodnoty.
+
+Cesta představuje pouze strom v jednoduché podobě - např. tak jak je definován YINem. Pojem klíčů se zavádí v kontextu leaf-list v YINu, kde je potřeba definovat klíč, který zajišťuje unikátnost záznamu.
+
+Každý uzel ve stromě má svoje jméno, seznam klíčů, seznam potomků a pokud se jedná o list, tak seznam registrovaných pluginů. Vše je realizováno jako Luovské tabulky.
+
+
+Workflow
+=================
+Pluginy by se měli spustit automaticky. Po spuštění se zaregistrují supervizorovi ( supervisor:register_ap(self, self.id) ).
+
+V momentě kdy supervizor dostane příkaz GET, tak nejdřív všem pluginům zavolá metodu register_all_values(), čímž zajistí, že pluginy začnou registrovat hodnoty, které znají a zároveň se začnou registrovat k hodnotám, o které mají zájem - jedná se o jednu operaci, systemově se to nerozlišuje. Pluginy k tomu používají supervisor:register_value(plugin, path, key), kde path je cesta hodnoty, plugin odkaz na sama sebe a key představuje definici klíčů po cestě.
+
+Dalším krokem operace GET je stavba výstupu. Prozatím bylo za výstup zvoleno XML. Supervizor začně XML výstup vytvářet a ve chvíli kdy je potřeba vytvořit list, zavolá metodu get() všem pluginům registrovaným k dané položce. Plugin buď hodnotu vrátí, nebo odpoví nil, což znaméná "nemám se k této položce jak vyjádřit", nikoliv nutně chybu. V podstatě se jedná o mechanismus registrace pro naslouchání.
+
+Chybí dodělat nějaký mechanismus spojování dat získaných z jednotlivých pluginů a řešení kolizí. Prozatím se použije první vrácená hodnota, která není nil.
