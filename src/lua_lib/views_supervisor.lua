@@ -147,6 +147,7 @@ local function build_rec(node, onode, keyset, path, level)
 			end
 			-- Recurse to childs of this copy
 			for _, child in pairs(node.childs) do
+				--table.insert(key, keyset);
 				build_rec(child, new_node, key, path, level+1);
 			end
 		end
@@ -180,4 +181,45 @@ function supervisor:get()
 
 
 	return supervisor.doc;
+end
+
+local function get_plugins_rec(node, path, level)
+	if node == nil then
+		return nil;
+	end
+
+	if node.name == path[level] then
+		if path[level+1] == nil then
+			return node.plugins;
+		end
+		if not table.is_empty(node.childs) then
+			return get_plugins_rec(node.childs[path[level+1]], path, level+1);
+		end
+	end
+
+	return nil;
+end
+
+function supervisor:get_plugins(path)
+	return get_plugins_rec(supervisor.tree, path, 1);
+end
+
+-- Get value calculated by more plugins
+function supervisor:get_value(path, keyset)
+	local plugins = supervisor:get_plugins(path);
+	if plugins == nil then
+		return nil;
+	end
+
+	return build_get_value(plugins, path, #path, keyset);
+end
+
+-- Get value from single plugin
+function supervisor:get_raw_value(id, path, keyset)
+	local plugin = supervisor.plugins[id];
+	if plugin == nil then
+		return nil;
+	end
+
+	return plugin:get(path, #path, keyset);
 end
