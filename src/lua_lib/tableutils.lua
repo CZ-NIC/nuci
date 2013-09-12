@@ -1,5 +1,8 @@
 -- Test if table is empty or not
 function table.is_empty(table)
+	if not table then
+		return true;
+	end
 	if next(table) == nil then
 		return true;
 	end
