@@ -121,8 +121,8 @@ local function build_rec(node, onode, keyset, path, level)
 
 	local new_node;
 	if table.is_empty(node.keys) then
-		-- Generate leaf's value
 		if table.is_empty(node.childs) then
+			-- Generate leaf's value
 			local res = build_get_value(node.plugins, path, level, keyset);
 			if res ~= nil then
 				for _, val in ipairs(res) do
@@ -132,8 +132,8 @@ local function build_rec(node, onode, keyset, path, level)
 			end
 		else
 			-- Recurse to childs
+			new_node = onode:add_child(node.name);
 			for _, child in pairs(node.childs) do
-				new_node = onode:add_child(node.name);
 				build_rec(child, new_node, keyset, path, level+1);
 			end
 		end
