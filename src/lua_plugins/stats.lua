@@ -1,10 +1,6 @@
 require("uci");
 require("datastore");
-
--- trim whitespace from right end of string
-local function trimr(s)
-	return s:find'^%s*$' and '' or s:match'^(.*%S)'
-end
+require("nutils");
 
 -- Implementations of "procedure" command-type
 local function cmd_interfaces(node)

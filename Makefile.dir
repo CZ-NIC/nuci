@@ -1,5 +1,24 @@
 include $(S)/build/Makefile.top
 
+define REGISTER_LUA_PLUGIN
+
+ifneq (,$(findstring ^$(RESTRICT),^$(1)))
+TARGETS_LUA += $(O)/lua_plugins/$(notdir $(1)).luac $(O)/lua_plugins/$$(notdir $(1)).yin
+endif
+$(O)/lua_plugins/$$(notdir $(1)).luac: $(S)/$$(addsuffix .lua,$(1))
+$(O)/lua_plugins/$$(notdir $(1)).yin: $(S)/$$(addsuffix .yin,$(1))
+endef
+
+$(O)/lua_plugins/%.luac:
+	$(M) LUAC $@
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(LUAC) -o $@ $<
+
+$(O)/lua_plugins/%.yin:
+	$(M) CP $@
+	$(Q)mkdir -p $(dir $@)
+	$(Q)cp $< $@
+
 LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $$lua ; break ; fi ; done)
 
 # List of all makefiles in direct subdirectories. If a new subdirectory is
@@ -10,4 +29,5 @@ include $(S)/tests/Makefile.dir
 # This one for documentation for the build system
 include $(S)/build/Makefile.dir
 
+$(eval $(foreach LUA_FILE,$(LUA_PLUGINS),$(call REGISTER_LUA_PLUGIN,$(LUA_FILE))))
 include $(S)/build/Makefile.bottom
