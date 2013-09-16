@@ -6,3 +6,6 @@ NUCI_PLUGINS := \
 	supervisor_test \
 	registration
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
+
+NUCI_PLUGINS_BARE :=
+LUA_PLUGINS_BARE += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS_BARE))

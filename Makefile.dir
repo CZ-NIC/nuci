@@ -9,6 +9,14 @@ $(O)/lua_plugins/$$(notdir $(1)).luac: $(S)/$$(addsuffix .lua,$(1))
 $(O)/lua_plugins/$$(notdir $(1)).yin: $(S)/$$(addsuffix .yin,$(1))
 endef
 
+define REGISTER_LUA_PLUGIN_BARE
+
+ifneq (,$(findstring ^$(RESTRICT),^$(1)))
+TARGETS_LUA += $(O)/lua_plugins/$(notdir $(1)).luac
+endif
+$(O)/lua_plugins/$$(notdir $(1)).luac: $(S)/$$(addsuffix .lua,$(1))
+endef
+
 $(O)/lua_plugins/%.luac:
 	$(M) LUAC $@
 	$(Q)mkdir -p $(dir $@)
@@ -30,4 +38,5 @@ include $(S)/tests/Makefile.dir
 include $(S)/build/Makefile.dir
 
 $(eval $(foreach LUA_FILE,$(LUA_PLUGINS),$(call REGISTER_LUA_PLUGIN,$(LUA_FILE))))
+$(eval $(foreach LUA_FILE,$(LUA_PLUGINS_BARE),$(call REGISTER_LUA_PLUGIN_BARE,$(LUA_FILE))))
 include $(S)/build/Makefile.bottom
