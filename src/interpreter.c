@@ -101,6 +101,9 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	char *ns = extract_model_uri_file(path);
 	lua_pushstring(lua, ns);
 	lua_setfield(lua, 1, "model_ns");
+	char *name = extract_model_name_file(path);
+	lua_pushstring(lua, name);
+	lua_setfield(lua, 1, "model_name");
 	free(path);
 	free(ns);
 	// We fill the model by running the lua XML parser

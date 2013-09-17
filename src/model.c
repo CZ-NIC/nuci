@@ -34,10 +34,25 @@ static char *extract_model_uri(xmlDoc *doc) {
 			// Get a proper string, not some xml* beast.
 			model_uri = strdup((const char *) uri);
 			xmlFree(uri);
+			break;
 		}
 	}
 	xmlFreeDoc(doc);
 	return model_uri;
+}
+
+/*
+ * Take the model spec (yin) and extract the name of the model.
+ * Pass the ownership to the caller.
+ */
+static char *extract_model_name(xmlDoc *doc) {
+	assert(doc);
+	xmlNode *node = xmlDocGetRootElement(doc);
+	assert(node);
+	xmlChar *name = xmlGetNoNsProp(node, (const xmlChar *) "name");
+	char *result = strdup((const char *) name);
+	xmlFree(name);
+	return result;
 }
 
 char *extract_model_uri_string(const char *model) {
@@ -46,4 +61,8 @@ char *extract_model_uri_string(const char *model) {
 
 char *extract_model_uri_file(const char *file) {
 	return extract_model_uri(xmlParseFile(file));
+}
+
+char *extract_model_name_file(const char *file) {
+	return extract_model_name(xmlParseFile(file));
 }

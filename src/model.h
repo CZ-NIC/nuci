@@ -14,5 +14,7 @@ char *model_path(const char *model_file);
  */
 char *extract_model_uri_string(const char *model);
 char *extract_model_uri_file(const char *file);
+// Similar, but extract the name
+char *extract_model_name_file(const char *file);
 
 #endif

@@ -83,6 +83,7 @@ function datastore(model_file)
 	- model_path -- full path to the model file.
 	- model -- parsed xmlwrap object of the model.
 	- model_ns -- namespace of the model.
+	- model_name -- The name of the model.
 	]]
 	return result;
 end
