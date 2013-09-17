@@ -110,7 +110,7 @@ self.watch = {
 }
 
 function self:register_values()
-	for _,item in pairs(self.watch) do
+	for _, item in pairs(self.watch) do
 		supervisor:register_value(self, item.path, item.key);
 	end
 

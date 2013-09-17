@@ -22,16 +22,12 @@ end
 
 local function parse_file(file, node)
 	local prev_time = -1; -- 0 is possible value; not 1. 1. 1970 but unsnapped slot
-	local prev_item = "thisitemisrealyunique";
+	local prev_item = "thisitemisreallyunique";
 
 	local snap_node;
 	local net_node;
 	for line in file:lines() do
 		items = parse_line(line);
-		--[[snap_node = node:add_child('items');
-		for _,item in pairs(items) do
-			snap_node:add_child('item'):set_text(item);
-		end]]
 		if items[1] ~= '0' then
 			if prev_time ~= items[1] then
 				snap_node = node:add_child('snapshot');

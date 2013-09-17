@@ -5,7 +5,7 @@ supervisor = {
 	plugins = {},
 	tree = {},
 	cached = false,
-	doc= nil
+	doc = nil
 };
 
 dbg = "";
@@ -45,7 +45,7 @@ local function tree_rec_add(node, level, plugin, path, key)
 	if table.is_empty(node) then
 		node.name = path[level];
 		node.keys = {};
-		node.childs = {};
+		node.children = {};
 	end
 
 	-- Add keys
@@ -62,11 +62,11 @@ local function tree_rec_add(node, level, plugin, path, key)
 
 	else
 		-- I'm inner node
-		if node.childs[path[level+1]] == nil then
-			node.childs[path[level+1]] = {}; -- Table of child doesn't exists yet - create it
+		if node.children[path[level+1]] == nil then
+			node.children[path[level+1]] = {}; -- Table of child doesn't exists yet - create it
 		end
 
-		tree_rec_add(node.childs[path[level+1]], level+1, plugin, path, key);
+		tree_rec_add(node.children[path[level+1]], level+1, plugin, path, key);
 	end
 end
 
@@ -101,7 +101,7 @@ function supervisor:invalidate_cache()
 end
 
 local function build_get_value(plugins, path, level, keyset)
-	-- Return first valied answer is temporaly solution
+	-- FIXME: Returning first valid answer is temporaly solution
 	for _, plugin in pairs(plugins) do
 		local res = plugin:get(path, level, keyset);
 		if res ~= nil then
@@ -121,7 +121,7 @@ local function build_rec(node, onode, keyset, path, level)
 
 	local new_node;
 	if table.is_empty(node.keys) then
-		if table.is_empty(node.childs) then
+		if table.is_empty(node.children) then
 			-- Generate leaf's value
 			local res = build_get_value(node.plugins, path, level, keyset);
 			if res ~= nil then
@@ -131,9 +131,9 @@ local function build_rec(node, onode, keyset, path, level)
 				end
 			end
 		else
-			-- Recurse to childs
+			-- Recurse to children
 			new_node = onode:add_child(node.name);
-			for _, child in pairs(node.childs) do
+			for _, child in pairs(node.children) do
 				build_rec(child, new_node, keyset, path, level+1);
 			end
 		end
@@ -145,8 +145,8 @@ local function build_rec(node, onode, keyset, path, level)
 			for key_name, key_val in pairs(key) do
 				new_node:add_child(key_name):set_text(key_val);
 			end
-			-- Recurse to childs of this copy
-			for _, child in pairs(node.childs) do
+			-- Recurse to children of this copy
+			for _, child in pairs(node.children) do
 				--table.insert(key, keyset);
 				build_rec(child, new_node, key, path, level+1);
 			end
@@ -159,7 +159,7 @@ function supervisor:build_tree(onode)
 end
 
 function supervisor:get()
-	-- Exists some data?
+	-- Does some data exist?
 	if supervisor.cached == true then
 		return supervisor.doc;
 	end
@@ -192,8 +192,8 @@ local function get_plugins_rec(node, path, level)
 		if path[level+1] == nil then
 			return node.plugins;
 		end
-		if not table.is_empty(node.childs) then
-			return get_plugins_rec(node.childs[path[level+1]], path, level+1);
+		if not table.is_empty(node.children) then
+			return get_plugins_rec(node.children[path[level+1]], path, level+1);
 		end
 	end
 
