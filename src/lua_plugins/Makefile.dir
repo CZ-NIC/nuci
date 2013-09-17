@@ -7,5 +7,6 @@ NUCI_PLUGINS := \
 	registration
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 
-NUCI_PLUGINS_BARE :=
+NUCI_PLUGINS_BARE := \
+	ap_testing1
 LUA_PLUGINS_BARE += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS_BARE))

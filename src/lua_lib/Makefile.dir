@@ -1,4 +1,4 @@
-LUA += $(addprefix src/lua_lib/, \
+NUCI_LIBRARIES := \
 	datastore \
 	editconfig \
 	nutils \
@@ -8,6 +8,5 @@ LUA += $(addprefix src/lua_lib/, \
 	stacktraceplus \
 	tableutils \
 	views_supervisor \
-	abstraction_plugin \
-	ap_testing1 \
-	)
+	abstraction_plugin
+LUA += $(addprefix src/lua_lib/, $(NUCI_LIBRARIES))
