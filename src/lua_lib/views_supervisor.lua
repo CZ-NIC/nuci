@@ -67,8 +67,8 @@ local function tree_rec_add(node, level, plugin, path, key)
 	end
 end
 
-function supervisor:register_ap(plugin, name)
-	supervisor.plugins[name] = plugin;
+function supervisor:register_ap(plugin)
+	supervisor.plugins[plugin.id] = plugin;
 end
 
 function supervisor:register_value(plugin, path, key)

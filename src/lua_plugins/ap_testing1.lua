@@ -141,4 +141,4 @@ function self:get(path, level, keyset)
 	return nil;
 end
 
-supervisor:register_ap(self, self.id);
+supervisor:register_ap(self);
