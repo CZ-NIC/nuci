@@ -1,5 +1,6 @@
 require("tableutils");
 require("nutils");
+require("datastore");
 
 -- Global state varables
 supervisor = {
@@ -87,6 +88,7 @@ function supervisor:register_all_values()
 	return true;
 end
 
+-- FIXME: This probably doesn't work with multiple datastore providers. Or does it?
 function supervisor:init(init_doc)
 	if supervisor.doc == nil then
 		supervisor.doc = init_doc;
@@ -219,4 +221,27 @@ function supervisor:get_raw_value(id, path, keyset)
 	end
 
 	return plugin:get(path, #path, keyset);
+end
+
+--[[
+Generate a usual datasource provider based on the supervisor and views.
+Pass the yin file, the rest is extracted from it.
+]]
+
+function supervisor:generate_datasource_provider(yin_name)
+	local datastore = datastore(yin_name);
+
+	function datastore:get()
+		supervisor:init(xmlwrap.new_xml_doc(self.model_name, self.model_ns));
+
+		local doc, err = supervisor:get();
+
+		if doc then
+			return doc:strdump();
+		else
+			return nil, err;
+		end
+	end
+
+	return datastore;
 end
