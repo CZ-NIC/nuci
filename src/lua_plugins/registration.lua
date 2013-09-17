@@ -20,7 +20,7 @@ function datastore:get()
 
 	-- Encode it as XML
 	local doc, root, node;
-	doc = xmlwrap.new_xml_doc("registration", self.model_ns);
+	doc = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
 	root = doc:root();
 	root:add_child("serial"):set_text(serial);
 	return doc:strdump();

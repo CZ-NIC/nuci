@@ -22,7 +22,7 @@ end
 
 local function parse_file(file, node)
 	local prev_time = -1; -- 0 is possible value; not 1. 1. 1970 but unsnapped slot
-	local prev_item = "thisitemisreallyunique";
+	local prev_item = nil;
 
 	local snap_node;
 	local net_node;
@@ -66,7 +66,7 @@ function datastore:get()
 	local doc, root, node;
 
 	--prepare XML subtree
-	doc = xmlwrap.new_xml_doc("nethist", self.model_ns);
+	doc = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
 	root = doc:root();
 
 	local file = io.open(HIST_FILE);

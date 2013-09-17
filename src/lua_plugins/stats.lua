@@ -348,7 +348,7 @@ function datastore:get()
 	local doc, root, node;
 
 	--prepare XML subtree
-	doc = xmlwrap.new_xml_doc("stats", "http://www.nic.cz/ns/router/stats");
+	doc = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
 	root = doc:root();
 
 	--run single commands
