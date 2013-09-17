@@ -7,6 +7,5 @@ NUCI_LIBRARIES := \
 	xmltree \
 	stacktraceplus \
 	tableutils \
-	views_supervisor \
-	abstraction_plugin
+	views_supervisor
 LUA += $(addprefix src/lua_lib/, $(NUCI_LIBRARIES))

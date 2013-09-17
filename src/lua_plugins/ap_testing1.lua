@@ -1,8 +1,7 @@
-require("abstraction_plugin");
 require("views_supervisor");
 require("nutils");
 
-local self = abstraction_plugin('ap_testing1');
+local self = { id = "ap_testing1" };
 -- Consider this example
 --[[
 <networking xmlns="http://www.nic.cz/ns/router/networking">
