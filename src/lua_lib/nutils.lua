@@ -108,3 +108,26 @@ end
 function trimr(s)
 	return s:find'^%s*$' and '' or s:match'^(.*%S)'
 end
+
+--[[
+Chceck if two key sets are the same (effectively checks two tables for equality by
+performing the comparison on each item. No recursion is done.
+]]
+function match_keysets(keys1, keys2)
+	local function check(k1, k2)
+		for k, v in pairs(k1) do
+			if k2[k] ~= v then
+				return false;
+			end
+		end
+		return true;
+	end
+	--[[
+	Check if everything in keys1 is in keys2 and vice versa.
+
+	We could check the size first, but there's no function to check size of
+	table in lua ‒ using # doesn't work, it works only on „ordered“ tables,
+	not on string-key based one.
+	]]
+	return check(keys1, keys2) and check(keys2, keys1);
+end

@@ -1,4 +1,5 @@
 require("tableutils");
+require("nutils");
 
 -- Global state varables
 supervisor = {
@@ -14,18 +15,14 @@ local function dbg_add(str)
 end
 
 local function tree_try_add_key(keys, keyset)
-	local exists_keyset = function(keys, keyset)
-		local candidate = false;
-		for _, key in pairs(keys) do
-			for k, v in pairs(key) do
-				if keyset[k] == v then
-					candidate = true;
-				else
-					candidate = false;
-				end
+	local function exists_keyset(keys, keyset)
+		for _, keys_internal in pairs(keys) do
+			if match_keysets(keys_internal, keyset) then
+				-- Found one that matches
+				return true;
 			end
 		end
-		return candidate;
+		return false;
 	end
 
 	if keyset ~= nil then
