@@ -23,35 +23,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-/*
- * For debug purposes
- */
-#if 0
-static void explain_statuscode(char *callname, int status) {
-	const char *result;
-
-	switch (status) {
-		case 0:
-			result = "OK";
-			break;
-		case LUA_ERRRUN:
-			result = "LUA_ERRRUN: a runtime error";
-			break;
-		case LUA_ERRMEM:
-			result = "LUA_ERRMEM: memory allocation error. For such errors, Lua does not call the error handler function.";
-			break;
-		case LUA_ERRERR:
-			result = "LUA_ERRERR: error while running the error handler function.";
-			break;
-		default:
-			result = "Unrecognized ERROR code";
-			break;
-		}
-
-		fprintf(stderr, "Called %s: %s\n", callname, result);
-}
-#endif
-
 /**
  * Our own error handler for pcall calls.
  */
@@ -66,12 +37,6 @@ static int lua_handle_runtime_error(lua_State *L) {
 	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
 
 	fprintf(stderr, "%s\n", lua_tostring(L, -1));
-
-	/* Lua print() alternative
-	lua_getfield(L, LUA_GLOBALSINDEX, "print");
-	lua_pushvalue(L, -2);
-	lua_pcall(L, 1, 0, 0); //call print
-	*/
 
 	lua_pushstring(L, errmsg); //return
 
@@ -122,7 +87,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 // Check the result is not -1, cause abort and error message if it is
 static void check(int result, const char *operation) {
 	if (result == -1) {
-		fprintf(stderr, "Error during %s: %s", operation, strerror(errno));
+		fprintf(stderr, "Error during %s: %s\n", operation, strerror(errno));
 		abort();
 	}
 }
