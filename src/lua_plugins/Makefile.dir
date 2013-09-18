@@ -2,7 +2,6 @@ NUCI_PLUGINS := \
 	stats \
 	uci-raw \
 	nethist \
-	networking \
 	supervisor_test \
 	registration
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))

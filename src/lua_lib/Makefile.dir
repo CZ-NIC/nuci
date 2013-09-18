@@ -3,7 +3,6 @@ NUCI_LIBRARIES := \
 	editconfig \
 	nutils \
 	commits \
-	views \
 	xmltree \
 	stacktraceplus \
 	tableutils \
