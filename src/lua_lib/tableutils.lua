@@ -1,3 +1,29 @@
+--[[
+Take only the first occurrence of each value in the list. Preserve the order
+of the first occurrences.
+]]
+function table.uniq(list)
+	local result = {};
+	local seen = {};
+	for _, value in ipairs(list) do
+		if not seen[value] then
+			seen[value] = true;
+			table.insert(result, value);
+		end
+	end
+	return result;
+end
+
+--[[
+Add items from one list into the target list.
+]]
+function table.extend(target, items)
+	-- TODO: This could be optimised (compute the index and then just copy the rest)
+	for _, item in ipairs(items) do
+		table.insert(target, item);
+	end
+end
+
 -- Test if table is empty or not
 function table.is_empty(table)
 	if not table then
