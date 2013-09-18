@@ -110,10 +110,12 @@ function trimr(s)
 end
 
 --[[
-Chceck if two key sets are the same (effectively checks two tables for equality by
+Check if two key sets are the same (effectively checks two tables for equality by
 performing the comparison on each item. No recursion is done.
 ]]
 function match_keysets(keys1, keys2)
+	if not keys1 and not keys2 then return true end;
+	if not keys1 or not keys2 then return false end;
 	local function check(k1, k2)
 		for k, v in pairs(k1) do
 			if k2[k] ~= v then
