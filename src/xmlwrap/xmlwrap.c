@@ -607,9 +607,9 @@ static int node_delete_node(lua_State *L) {
 /**
  * New API expected new behavior of this function
  * Example: node:set_text("text");
- * 	- node is regular node, not the text one
- * 	- text will be set as new child of node
- * 	- if node has some text as it's child, it will be replaced
+ *	- node is regular node, not the text one
+ *	- text will be set as new child of node
+ *	- if node has some text as it's child, it will be replaced
  *	- replacing text mean delete all text and CDATA nodes and crete new text one
  */
 static int node_set_text(lua_State *L) {
@@ -618,7 +618,7 @@ static int node_set_text(lua_State *L) {
 
 	if (node == NULL) return luaL_error(L, "set_text: Invalid parent node");
 	if (node->type != XML_ELEMENT_NODE) return luaL_error(L, "set_text: Invalid parent node type (not element node)");
-	if (text == NULL) return luaL_error(L, "I can't create node without its name");
+	if (text == NULL) return luaL_error(L, "Got NULL text");
 
 	//First, delete all CDATA and text nodes
 	//It is not good idea to use for loop...
