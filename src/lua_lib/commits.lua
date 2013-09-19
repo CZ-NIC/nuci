@@ -6,6 +6,13 @@ function commit_mark_dirty(uci_name)
 	uci_dirty[uci_name] = true;
 end
 
+--[[
+Schedule a function to be called as part of the success
+commit chain. Higher priority sooner. The commit chain
+is called after each successful operation. Returning error
+from the hook may abort the chain and cause returning an
+error to the client. In such case, the failure hook is started.
+]]
 function commit_hook_success(action, priority)
 	table.insert(hooks_success, {
 		action = action,
@@ -13,6 +20,11 @@ function commit_hook_success(action, priority)
 	});
 end
 
+--[[
+Schedule a function to be called as part of the rollback
+chain. Higher priority sooner. Note that the chain may be
+called even after part of the success commit chain was called.
+]]
 function commit_hook_failure(action, priority)
 	table.insert(hooks_failure, {
 		action = action,

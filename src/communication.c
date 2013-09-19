@@ -291,11 +291,9 @@ void comm_start_loop(const struct srv_config *config) {
 				//NC_ERR_UNKNOWN_ELEM sounds good for now
 				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
 			}
-			if (req_type == NC_RPC_DATASTORE_WRITE) { // Something might have gotten modified, store it
-				bool error = nc_reply_get_type(communication.reply) == NC_REPLY_ERROR;
-				interpreter_commit(config->interpreter, !error);
-				// TODO: Check for errors reported by interpreter_commit (#2698)
-			}
+			bool error = nc_reply_get_type(communication.reply) == NC_REPLY_ERROR;
+			interpreter_commit(config->interpreter, !error);
+			// TODO: Check for errors reported by interpreter_commit (#2698)
 		}
 
 		//send reply
