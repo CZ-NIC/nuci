@@ -211,7 +211,10 @@ build_children = function(name, values, level)
 	return result;
 end
 
-function supervisor:get(name, ns)
+--[[
+Check that the tree with data from the plugins is built. If not, build it.
+]]
+function supervisor:check_tree_built()
 	if not self.cached then
 		-- Nothing ready yet. Build the complete tree and store it.
 
@@ -242,6 +245,10 @@ function supervisor:get(name, ns)
 		]]
 		self.cached = true;
 	end
+end
+
+function supervisor:get(name, ns)
+	self:check_tree_built();
 	--[[
 	Extract the appropriate part of tree and convert to XML.
 
