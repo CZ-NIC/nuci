@@ -26,5 +26,6 @@ check:
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/xmltree-test.lua
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/stress2_xml.lua
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/stress_xml.lua
+	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/supervisor_test.lua
 
 .PHONY: check
