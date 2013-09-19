@@ -24,6 +24,9 @@ end
 Schedule a function to be called as part of the rollback
 chain. Higher priority sooner. Note that the chain may be
 called even after part of the success commit chain was called.
+
+Returning error from within a failure hook will likely abort the
+program.
 ]]
 function commit_hook_failure(action, priority)
 	table.insert(hooks_failure, {

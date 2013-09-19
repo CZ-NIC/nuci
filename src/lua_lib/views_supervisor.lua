@@ -2,6 +2,7 @@ require("tableutils");
 require("nutils");
 require("datastore");
 require("xmltree");
+require("commits");
 
 -- Global state varables
 supervisor = {
@@ -218,6 +219,15 @@ function supervisor:check_tree_built()
 	if not self.cached then
 		-- Nothing ready yet. Build the complete tree and store it.
 
+		--[[
+		Make sure the data is wiped out after the current operation.
+		Both after success and failure.
+
+		Let it happen after we (possibly) push changes to the UCI system,
+		but before we commit UCI.
+		]]
+		commit_hook_success(function() self:invalidate_cache() end, 0);
+		commit_hook_failure(function() self:invalidate_cache() end, 0);
 		-- First, let each plugin dump everything and store it for now.
 		local values = {};
 		for _, plugin in ipairs(self.plugins) do
