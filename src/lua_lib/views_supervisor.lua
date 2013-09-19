@@ -182,8 +182,8 @@ build_children = function(name, values, level)
 		local keyset = (values[1].keys or { [level] = {} })[level];
 		local picked, rest = {}, {};
 		local key_list = {};
-		-- FIXME: Check the key sets are for the same indexes
-		-- FIXME: Choose order of the keys
+		-- FIXME: Check the key sets are for the same indexes (#2697)
+		-- FIXME: Choose order of the keys (#2696)
 		for name, value in pairs(keyset) do
 			table.insert(key_list, { name = name, text = value });
 		end
@@ -238,7 +238,7 @@ function supervisor:get(name, ns)
 		end
 		--[[
 		TODO: Collision and error checking ‒ walk the tree and call relevant plugins
-		on the places where something happens.
+		on the places where something happens. (#2680)
 		]]
 		self.cached = true;
 	end
