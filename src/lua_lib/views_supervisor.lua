@@ -193,17 +193,17 @@ build_children = function(name, values, level)
 			else
 				table.insert(rest, value);
 			end
-			values = rest;
-			local generated = merge_data(picked, level + 1);
-			for _, child in pairs(generated) do
-				local children = {};
-				-- The keys must go first
-				table.extend(children, key_list);
-				table.extend(children, child.children or {});
-				child.children = children;
-			end
-			table.extend(result, generated);
 		end
+		values = rest;
+		local generated = merge_data(picked, level + 1);
+		for _, child in pairs(generated) do
+			local children = {};
+			-- The keys must go first
+			table.extend(children, key_list);
+			table.extend(children, child.children or {});
+			child.children = children;
+		end
+		table.extend(result, generated);
 	end
 	for _, child in pairs(result) do
 		child.name = name;
