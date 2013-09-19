@@ -624,6 +624,7 @@ void interpreter_commit(struct interpreter *interpreter, bool success) {
 	lua_pushboolean(lua, success);
 	lua_call(lua, 1, 1);
 	if (!lua_isnil(lua, -1)) {
+		// FIXME: Change to reporting the error, not aborting (#2698)
 		const char *error = lua_tostring(lua, -1);
 		fprintf(stderr, "Error during commit/rollback: %s\n", error);
 		abort();

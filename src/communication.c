@@ -294,6 +294,7 @@ void comm_start_loop(const struct srv_config *config) {
 			if (req_type == NC_RPC_DATASTORE_WRITE) { // Something might have gotten modified, store it
 				bool error = nc_reply_get_type(communication.reply) == NC_REPLY_ERROR;
 				interpreter_commit(config->interpreter, !error);
+				// TODO: Check for errors reported by interpreter_commit (#2698)
 			}
 		}
 
