@@ -157,7 +157,10 @@ local function merge_data(values, level)
 	end
 	-- Build the nodes
 	local function build_result(value)
-		local result = { children = children, text = value };
+		local result = { text = value };
+		if next(children) then
+			result.children = children;
+		end
 		local errors = {};
 		if child_error then
 			table.insert(errors, 'children');
@@ -185,7 +188,7 @@ end
 build_children = function(name, values, level)
 	local result = {};
 	while next(values) do -- Pick a keyset, filter it out and process
-		local keyset = (values[1].keys or { [level] = {} })[level];
+		local keyset = (values[1].keys or { [level] = {} })[level] or {};
 		local picked, rest = {}, {};
 		local key_list = {};
 		-- FIXME: Check the key sets are for the same indexes (#2697)
@@ -207,7 +210,9 @@ build_children = function(name, values, level)
 			-- The keys must go first
 			table.extend(children, key_list);
 			table.extend(children, child.children or {});
-			child.children = children;
+			if next(children) then
+				child.children = children;
+			end
 		end
 		table.extend(result, generated);
 	end
