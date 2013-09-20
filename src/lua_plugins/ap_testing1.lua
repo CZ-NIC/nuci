@@ -97,6 +97,8 @@ Return paths in which I'm interested.
 FIXME:
 This is a bit broken, since we return a path multiple times. The supervisor can handle that, but it is
 not nice. Probably OK for test plugin.
+
+Fix by removal of the the file, in #2706.
 ]]
 function self:positions()
 	local result = {};
