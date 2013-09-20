@@ -705,7 +705,6 @@ static const luaL_Reg xmlwrap_node[] = {
 	{ "add_child", node_add_child },
 	{ "register_ns", node_register_ns },
 	{ "delete", node_delete_node },
-	// { "__gc", node_gc }, # FIXME Anything to free here?
 	{ "__tostring", node_tostring },
 	{ NULL, NULL }
 };

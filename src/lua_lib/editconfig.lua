@@ -59,8 +59,7 @@ local model_names = {
 					};
 				end
 				local config_key = extract_leaf_subvalue(config_node, model, key_name);
-				if not command_key or not config_key or config_key ~= command_key then
-					-- FIXME: Properly handle missing keys
+				if not config_key or config_key ~= command_key then
 					return false;
 				end
 			end
