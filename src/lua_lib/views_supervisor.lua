@@ -19,6 +19,7 @@ local function register_to_tree(tree, path, plugin)
 		node = sub;
 	end
 	table.insert(node.plugins, plugin);
+	node.plugins = table.uniq(node.plugins);
 end
 
 --[[
