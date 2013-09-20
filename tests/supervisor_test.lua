@@ -253,6 +253,38 @@ local tests = {
 			-- The namespace in the 'b' is preserved ‒ it did not get regenerated
 			test_equal(supervisor.index.b.namespace, 'http://example.org/b');
 		end
+	},
+	{
+		--[[
+		Check the implicit nodes are created and are created exactly once.
+		]]
+		name = 'generate implicit',
+		provider_plugins = { test_provider({
+			{ path = {'a', 'b'}, val = 42 },
+			{ path = {'a', 'c'}, val = 24 }
+		}) };
+		body = function()
+			supervisor:check_tree_built();
+			test_equal({
+				children = {
+					{
+						name = 'a',
+						children = {
+							--[[
+							TODO (#2702):
+							The order depends on internal order in tables indexed
+							by names. This is unreliable and will likely break :-(.
+
+							Either detect the order or make sure the supervisor preserves
+							it.
+							]]
+							{ name = 'c', text = 24 },
+							{ name = 'b', text = 42 }
+						}
+					}
+				}
+			}, supervisor.data);
+		end
 	}
 }
 
