@@ -74,6 +74,84 @@ local tests = {
 		]]
 		name = 'startup',
 		body = function() end
+	},
+	{
+		--[[
+		Test we can register to some places in the supervisor. Check the registration
+		results in correct data structures in the supervisor.
+		]]
+		name = 'register values',
+		provider_plugins = {
+			test_provider({
+				-- The following path is there twice. Check it is only once in the result.
+				{ path = {'x', 'y', 'z'} },
+				{ path = {'x', 'y', 'z'} },
+				-- A wildcard
+				{ path = {'x', 'y', '*'} },
+				-- Another path
+				{ path = {'a', 'b', 'c'} }
+			}),
+			test_provider({
+				{ path = {'a', 'b', 'c' } },
+				{ path = {'a', 'b', 'd' } },
+				{ path = { 'x', '*' } }
+			})
+		},
+		body = function(test)
+			-- Check the things are registered properly, by examining the data structures
+			test_equal(test.provider_plugins, supervisor.plugins, 'Plugins are wrong');
+			test_equal({
+				plugins = {},
+				subnodes = {
+					a = {
+						plugins = {},
+						subnodes = {
+							b = {
+								plugins = {},
+								subnodes = {
+									c = {
+										plugins = test.provider_plugins,
+										subnodes = {}
+									},
+									d = {
+										plugins = {test.provider_plugins[2]},
+										subnodes = {}
+									}
+								}
+							}
+						}
+					},
+					x = {
+						plugins = {},
+						subnodes = {
+							y = {
+								plugins = {},
+								subnodes = {
+									z = {
+										plugins = {test.provider_plugins[1]},
+										subnodes = {}
+									},
+									['*'] = {
+										plugins = {test.provider_plugins[1]},
+										subnodes = {}
+									}
+								}
+							},
+							['*'] = {
+								plugins = {test.provider_plugins[2]},
+								subnodes = {}
+							}
+						}
+					}
+				}
+			}, supervisor.tree, 'Registration trees are different');
+			-- Test by calling the finding method
+			test_equal({test.provider_plugins[2], test.provider_plugins[1]}, supervisor:get_plugins({'x', 'y', 'z'}), 'Get plugins 1');
+			test_equal({test.provider_plugins[2]}, supervisor:get_plugins({'a', 'b', 'd'}), 'Get plugins 2');
+			test_equal({}, supervisor:get_plugins({'c'}), 'Get plugins 3');
+			test_equal({}, supervisor:get_plugins({}), 'Get plugins 4');
+			test_equal(test.provider_plugins, supervisor:get_plugins(), 'Get plugins noparam');
+		end
 	}
 }
 
