@@ -67,7 +67,7 @@ local model_names = {
 		end,
 		children=true
 	}
-	-- TODO: AnyXML. What to do with that?
+	-- TODO: AnyXML. What to do with that? (#2709)
 }
 
 -- Find a model node corresponding to the node_name here.
