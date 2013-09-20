@@ -246,7 +246,7 @@ static int run_command_lua(lua_State *lua) {
 }
 
 static void error(const char *format, ...) {
-	// TODO: Unify logging
+	// TODO: Unify logging (#2707)
 	va_list args;
 	va_start(args, format);
 	vfprintf(stderr, format, args);
