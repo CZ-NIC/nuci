@@ -25,6 +25,9 @@ local function test_provider(value_definitions)
 		end
 		return result;
 	end
+	function provider:get()
+		return value_definitions;
+	end
 	return provider;
 end
 
