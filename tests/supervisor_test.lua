@@ -31,6 +31,23 @@ local function test_provider(value_definitions)
 	return provider;
 end
 
+local generate_simple_values = {
+	{
+		path = {'a', 'b'},
+		multival = {'something', 'nothing'}
+	},
+	{
+		path = {'b', 'c', 'value'},
+		keys = {{}, {key = 'hello'}},
+		val = 42
+	},
+	{
+		path = {'b', 'c', 'value'},
+		keys = {{}, {key = 'greetings'}},
+		val = 24
+	}
+};
+
 --[[
 Check the value1 and value2 are the same. Recurses through table structures,
 to check them for deep equality.
@@ -154,6 +171,54 @@ local tests = {
 			test_equal({}, supervisor:get_plugins({'c'}), 'Get plugins 3');
 			test_equal({}, supervisor:get_plugins({}), 'Get plugins 4');
 			test_equal(test.provider_plugins, supervisor:get_plugins(), 'Get plugins noparam');
+		end
+	},
+	{
+		--[[
+		Let the supervisor generate some data and examine the tree directly.
+		]]
+		name = 'generate single (tree)',
+		provider_plugins = { test_provider(generate_simple_values) },
+		body = function()
+			-- Build the tree
+			supervisor:check_tree_built();
+			-- Check it is cached and the values are proper
+			test_equal(true, supervisor.cached, 'Cached');
+			local tree = {
+				children = {
+					{
+						name = 'a',
+						children = {
+							{ name = 'b', text = 'something' },
+							{ name = 'b', text = 'nothing' }
+						}
+					},
+					{
+						name = 'b',
+						children = {
+							{
+								name = 'c',
+								children = {
+									{ name = 'key', text = 'hello' },
+									{ name = 'value', text = 42 }
+								}
+							},
+							{
+								name = 'c',
+								children = {
+									{ name = 'key', text = 'greetings' },
+									{ name = 'value', text = 24 }
+								}
+							}
+						}
+					}
+				}
+			};
+			test_equal(tree, supervisor.data, 'Data tree differs');
+			test_equal({
+				a = tree.children[1],
+				b = tree.children[2]
+			}, supervisor.index, 'Data index differs');
 		end
 	}
 }
