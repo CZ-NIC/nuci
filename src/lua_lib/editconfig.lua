@@ -22,7 +22,7 @@ local function extract_leaf_subvalue(node, model, name)
 	local _, ns = node:name();
 	local subnode = find_node_name_ns(node, name, ns);
 	if subnode then
-		-- TODO: Do the canonization
+		-- TODO: Do the canonization (#2708)
 		return subnode:text();
 	end
 end
