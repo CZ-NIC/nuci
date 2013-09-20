@@ -48,6 +48,22 @@ local generate_simple_values = {
 	}
 };
 
+local generate_duplicate = {
+	{
+		path = {'a'},
+		val = 42
+	},
+	{
+		path = {'b'},
+		multival = {'something', 'nothing'}
+	},
+	{
+		path = {'c', 'value'},
+		keys = { {key = 'key'} },
+		val = 'value'
+	}
+};
+
 --[[
 Check the value1 and value2 are the same. Recurses through table structures,
 to check them for deep equality.
@@ -91,6 +107,10 @@ tree inside the supervisor looks correct.
 local function test_tree_simple(namespace)
 	-- Check it is cached and the values are proper
 	test_equal(true, supervisor.cached, 'Cached');
+	--[[
+	TODO: This order is internal-data-representation dependant :-(.
+	See #2702.
+	]]
 	local tree = {
 		children = {
 			{
@@ -283,7 +303,44 @@ local tests = {
 						}
 					}
 				}
-			}, supervisor.data);
+			}, supervisor.data, 'Data');
+		end
+	},
+	{
+		--[[
+		Check that if we specify the same node from two different
+		plugins (without collision), only one instance created.
+		]]
+		name = 'generate dupliccate (no collision)',
+		provider_plugins = {
+			test_provider(generate_duplicate),
+			test_provider(generate_duplicate)
+		},
+		body = function(test)
+			-- Check that both plugins are preserved in there
+			test_equal(test.provider_plugins, supervisor:get_plugins(), 'Global plugins')
+			test_equal(test.provider_plugins, supervisor:get_plugins({'a'}), 'Local plugins');
+			-- Build the tree
+			supervisor:check_tree_built();
+			-- Check each of the desired nodes is generated exactly once
+			--[[
+			TODO: The order of data is internal-data-representation dependant.
+			See #2702.
+			]]
+			test_equal({
+				children = {
+					{ name = 'a', text = 42 },
+					{
+						name = 'c',
+						children = {
+							{ name = 'key', text = 'key' },
+							{ name = 'value', text = 'value' }
+						}
+					},
+					{ name = 'b', text = 'something' },
+					{ name = 'b', text = 'nothing' }
+				}
+			}, supervisor.data, 'Data');
 		end
 	}
 }
