@@ -235,7 +235,7 @@ function supervisor:check_tree_built()
 		commit_hook_failure(function() self:invalidate_cache() end, 0);
 		-- First, let each plugin dump everything and store it for now.
 		local values = {};
-		for _, plugin in ipairs(self:get_plugins) do
+		for _, plugin in ipairs(self:get_plugins()) do
 			local pvalues, errors = plugin:get();
 			if errors then
 				return nil, errors;
