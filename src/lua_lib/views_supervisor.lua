@@ -197,7 +197,7 @@ build_children = function(name, values, level)
 			table.insert(key_list, { name = name, text = value });
 		end
 		for _, value in ipairs(values) do
-			if match_keysets(keyset, (value.keys or { [level] = {} })[level]) then
+			if match_keysets(keyset, (value.keys or { [level] = {} })[level] or {}) then
 				table.insert(picked, value);
 			else
 				table.insert(rest, value);
