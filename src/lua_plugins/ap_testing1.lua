@@ -111,7 +111,7 @@ Return values. Parameters are ignored here and we return everything all the time
 This is legal, the parameters are optimisation only and the caller would filter
 it anyway.
 ]]
-function self:get(path, level, keyset)
+function self:get(path, keyset)
 	return self.watch;
 end
 
