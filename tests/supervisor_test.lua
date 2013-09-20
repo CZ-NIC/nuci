@@ -84,6 +84,51 @@ local function test_equal(expected, real, message)
 	end
 end
 
+--[[
+Common part of the generate single tests. This checks the
+tree inside the supervisor looks correct.
+]]
+local function test_tree_simple(namespace)
+	-- Check it is cached and the values are proper
+	test_equal(true, supervisor.cached, 'Cached');
+	local tree = {
+		children = {
+			{
+				name = 'a',
+				children = {
+					{ name = 'b', text = 'something' },
+					{ name = 'b', text = 'nothing' }
+				}
+			},
+			{
+				name = 'b',
+				namespace = namespace,
+				children = {
+					{
+						name = 'c',
+						children = {
+							{ name = 'key', text = 'hello' },
+							{ name = 'value', text = 42 }
+						}
+					},
+					{
+						name = 'c',
+						children = {
+							{ name = 'key', text = 'greetings' },
+							{ name = 'value', text = 24 }
+						}
+					}
+				}
+			}
+		}
+	};
+	test_equal(tree, supervisor.data, 'Data tree differs');
+	test_equal({
+		a = tree.children[1],
+		b = tree.children[2]
+	}, supervisor.index, 'Data index differs');
+end
+
 local tests = {
 	{
 		--[[
@@ -182,43 +227,31 @@ local tests = {
 		body = function()
 			-- Build the tree
 			supervisor:check_tree_built();
-			-- Check it is cached and the values are proper
-			test_equal(true, supervisor.cached, 'Cached');
-			local tree = {
-				children = {
-					{
-						name = 'a',
-						children = {
-							{ name = 'b', text = 'something' },
-							{ name = 'b', text = 'nothing' }
-						}
-					},
-					{
-						name = 'b',
-						children = {
-							{
-								name = 'c',
-								children = {
-									{ name = 'key', text = 'hello' },
-									{ name = 'value', text = 42 }
-								}
-							},
-							{
-								name = 'c',
-								children = {
-									{ name = 'key', text = 'greetings' },
-									{ name = 'value', text = 24 }
-								}
-							}
-						}
-					}
-				}
-			};
-			test_equal(tree, supervisor.data, 'Data tree differs');
-			test_equal({
-				a = tree.children[1],
-				b = tree.children[2]
-			}, supervisor.index, 'Data index differs');
+			test_tree_simple();
+		end
+	},
+	{
+		--[[
+		Let the supervisor generate some data and the returned XML.
+
+		Also check the tree inside is generated when we call get.
+		]]
+		name = 'generate single (XML)',
+		provider_plugins = { test_provider(generate_simple_values) },
+		body = function()
+			local xml = supervisor:get('b', 'http://example.org/b');
+			-- The tree is built by that
+			test_tree_simple('http://example.org/b');
+			-- The XML looks sane
+			test_equal([[<?xml version="1.0"?>
+<b xmlns="http://example.org/b"><c><key>hello</key><value>42</value></c><c><key>greetings</key><value>24</value></c></b>
+]], xml:strdump());
+			-- Get the other part too
+			test_equal([[<?xml version="1.0"?>
+<a xmlns="http://example.org/a"><b>something</b><b>nothing</b></a>
+]], supervisor:get('a', 'http://example.org/a'):strdump());
+			-- The namespace in the 'b' is preserved ‒ it did not get regenerated
+			test_equal(supervisor.index.b.namespace, 'http://example.org/b');
 		end
 	}
 }
