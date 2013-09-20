@@ -76,6 +76,8 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter, struct nc
  * This aborts the program in case of any error.
  * TODO: Make it report the error somehow, needed for other things than
  * just restarting daemons.
+ *
+ * #2698.
  */
 void interpreter_commit(struct interpreter *interpreter, bool success);
 
