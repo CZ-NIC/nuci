@@ -63,7 +63,11 @@ end
 Get list of plugins that are valid for given path.
 ]]
 function supervisor:get_plugins(path)
-	return callbacks_find(self.tree, path);
+	if not path then
+		return self.plugins
+	else
+		return callbacks_find(self.tree, path);
+	end
 end
 
 -- Can't use the local function syntax, due to mutual dependency with merge_data
@@ -231,7 +235,7 @@ function supervisor:check_tree_built()
 		commit_hook_failure(function() self:invalidate_cache() end, 0);
 		-- First, let each plugin dump everything and store it for now.
 		local values = {};
-		for _, plugin in ipairs(self.plugins) do
+		for _, plugin in ipairs(self:get_plugins) do
 			local pvalues, errors = plugin:get();
 			if errors then
 				return nil, errors;
