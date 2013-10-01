@@ -133,3 +133,17 @@ function match_keysets(keys1, keys2)
 	]]
 	return check(keys1, keys2) and check(keys2, keys1);
 end
+
+--[[
+One of the our many approaches to debugging
+]]
+function log_dbg(message)
+	local f = io.open("dbg.log", "a");
+	f:write(message.."\n");
+	f:close();
+end
+
+function log_dbg_reset()
+	local f = io.open("dbg.log", "w+");
+	f:close();
+end
