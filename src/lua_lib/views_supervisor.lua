@@ -3,6 +3,7 @@ require("nutils");
 require("datastore");
 require("xmltree");
 require("commits");
+require("dumper");
 
 -- Global state varables
 supervisor = {
@@ -222,6 +223,63 @@ build_children = function(name, values, level)
 	return result;
 end
 
+-- For debug purposes... TODO: Remove before production
+local function levelizer(level)
+	local out = "";
+	for i=1,level do
+		out = out .. "* ";
+	end
+
+	return out;
+end
+
+--[[
+Recursively go through the tree and find collisions
+Return true if some collision was found, false otherwise
+]]
+local function handle_collisions_rec(node, path, level)
+	if not node then
+		-- End of recursion
+		-- This path is clean
+		return false;
+	end
+
+	local collision_found;
+	for _, item in pairs(node) do
+		path[level] = item.name;
+		if item.errors then
+			log_dbg("Collision: "..item.name);
+			return true, item;
+		end
+		log_dbg(levelizer(level) .. item.name);
+		collision_found, broken_node = handle_collisions_rec(item.children, path, level+1);
+		if collision_found then
+			-- Collision was found, distribute it
+			return collision_found, broken_node;
+		end
+		path[level+1] = nil;
+	end
+
+	return false;
+end
+
+function supervisor:handle_collisions()
+	log_dbg_reset();
+	--log_dbg(DataDumper(self.data.children));
+
+	local collision_found, broken_node, errormsg;
+	local path = {};
+	while true do
+		collision_found, broken_node = handle_collisions_rec(self.data.children, path, 1);
+		if collision_found then
+			--solve_collision(self.data, broken_node, path);
+		else
+			-- All collisions were solved
+			break;
+		end
+	end
+end
+
 --[[
 Check that the tree with data from the plugins is built. If not, build it.
 ]]
@@ -259,10 +317,7 @@ function supervisor:check_tree_built()
 		for _, subtree in pairs(self.data.children or {}) do
 			self.index[subtree.name] = subtree;
 		end
-		--[[
-		TODO: Collision and error checking ‒ walk the tree and call relevant plugins
-		on the places where something happens. (#2680)
-		]]
+		self:handle_collisions()
 		self.cached = true;
 	end
 end
