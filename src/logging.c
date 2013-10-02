@@ -40,3 +40,11 @@ void nlog(enum log_level log_level, const char *format, ...) {
 	vnlog(log_level, format, args);
 	va_end(args);
 }
+
+void die(const char *format, ...) {
+	va_list args;
+	va_start(args, format);
+	vnlog(NLOG_FATAL, format, args);
+	va_end(args);
+	exit(1);
+}
