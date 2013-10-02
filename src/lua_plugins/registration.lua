@@ -26,7 +26,12 @@ function datastore:user_rpc(rpc)
 		end
 		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(serial) .. "-" .. trimr(stdout) .. "</reg-num>";
 	else
-		return nil, 'TODO:  Proper error message';
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
 	end
 end
 
