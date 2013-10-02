@@ -248,14 +248,28 @@ void comm_start_loop(const struct srv_config *config) {
 			char *rpc_procedure = nc_rpc_get_op_name(communication.msg);
 			char *rpc_data = nc_rpc_get_op_content(communication.msg);
 
-			char *ds_reply = NULL;
 			bool ds_found = false;
+			communication.reply = NULL;
 
 			//find namespace
 			for (size_t i = 0; i < config->config_datastore_count; i ++) {
 				if (strcmp(ns, config->config_datastores[i].ns) == 0) {
 					ds_found = true;
-					ds_reply = interpreter_process_user_rpc(config->interpreter, config->config_datastores[i].lua, rpc_procedure, rpc_data);
+					char *xml = NULL;
+					char *xml_part = interpreter_process_user_rpc(config->interpreter, config->config_datastores[i].lua, rpc_procedure, rpc_data);
+					/*
+					 * We have the answer. However, we need to do some manual juggling
+					 * to generate the answer, since libnetconf wants to put <data> or <ok>
+					 * into everything.
+					 */
+					if (xml_part) {
+						const char *format = "<rpc-reply xmlns='urn:ietf:params:xml:ns:netconf:base:1.0'>%s</rpc-reply>";
+						int size = snprintf(NULL, 0, format, xml_part);
+						xml = malloc(size + 1);
+						snprintf(xml, size + 1, format, xml_part);
+						communication.reply = nc_reply_build(xml);
+						free(xml);
+					}
 					break;
 				}
 			}
@@ -265,20 +279,15 @@ void comm_start_loop(const struct srv_config *config) {
 				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_NS));
 
 			//Some interpreter error
-			} else if (ds_reply == NULL) { //ds_reply shoud be NULL even if datastore was found
+			} else if (!communication.reply) { // Reply could be NULL even if the data store was found
 				//This is for all cases: If lua detect some error enterpreter is better send any status message.
 				communication.reply = nc_reply_error(nc_err_create_from_lua(config->interpreter));
-
-			//Interpreter send answer
-			} else {
-				communication.reply = nc_reply_data(ds_reply);
 			}
 
 			//cleanup
 			free(ns);
 			free(rpc_procedure);
 			free(rpc_data);
-			free(ds_reply);
 
 			//TODO
 			//Check if libnetconf is testing rpc content
