@@ -263,21 +263,38 @@ local function handle_collisions_rec(node, path, level)
 	return false;
 end
 
+local function handle_single_collision(tree, node, path)
+	node.errors = nil;
+	log_dbg("Colision " .. DataDumper(path) .. " solved.");
+
+	return true;
+end
+
 function supervisor:handle_collisions()
 	log_dbg_reset();
 	--log_dbg(DataDumper(self.data.children));
 
-	local collision_found, broken_node, errormsg;
+	local collision_found, broken_node;
 	local path = {};
 	while true do
 		collision_found, broken_node = handle_collisions_rec(self.data.children, path, 1);
 		if collision_found then
-			--solve_collision(self.data, broken_node, path);
+			local status, err = handle_single_collision(self.data, broken_node, path);
+			if status == true then
+				log_dbg("Problem solved");
+			elseif status == false then
+				log_dbg("Handler doesn't know how to solve collision");
+			else
+				log_dbg("An error occured");
+				return status, err;
+			end
 		else
 			-- All collisions were solved
 			break;
 		end
 	end
+
+	return true;
 end
 
 --[[
@@ -317,13 +334,21 @@ function supervisor:check_tree_built()
 		for _, subtree in pairs(self.data.children or {}) do
 			self.index[subtree.name] = subtree;
 		end
-		self:handle_collisions()
+		local status, err = self:handle_collisions()
+		if not status then
+			return status, err;
+		end
 		self.cached = true;
 	end
+
+	return true;
 end
 
 function supervisor:get(name, ns)
-	self:check_tree_built();
+	local status, err = self:check_tree_built();
+	if not status then
+		return status, err;
+	end
 	--[[
 	Extract the appropriate part of tree and convert to XML.
 
