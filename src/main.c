@@ -1,6 +1,7 @@
 #include "communication.h"
 #include "interpreter.h"
 #include "register.h"
+#include "logging.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,23 +10,15 @@
 #include <libnetconf.h>
 #include <libxml/parser.h>
 
-void callback_print(NC_VERB_LEVEL level, const char *msg) {
-	const char *level_message = "<UNKNOWN>";
-	switch (level) {
-		case NC_VERB_ERROR:
-			level_message = "ERROR";
-			break;
-		case NC_VERB_WARNING:
-			level_message = "WARNING";
-			break;
-		case NC_VERB_VERBOSE:
-			level_message = "VERBOSE";
-			break;
-		case NC_VERB_DEBUG:
-			level_message = "DEBUG";
-			break;
-	}
-	fprintf(stderr, "%s\t%s\n", level_message, msg);
+static enum log_level levels[] = {
+	[NC_VERB_ERROR] = NLOG_ERROR,
+	[NC_VERB_WARNING] = NLOG_WARN,
+	[NC_VERB_VERBOSE] = NLOG_DEBUG,
+	[NC_VERB_DEBUG] = NLOG_TRACE
+};
+
+static void callback_print(NC_VERB_LEVEL level, const char *msg) {
+	nlog(levels[level], "%s", msg);
 }
 
 int main(int argc, const char *argv[]) {

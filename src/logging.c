@@ -16,8 +16,8 @@ static const char *names[] = {
 };
 
 void vnlog(enum log_level log_level, const char *format, va_list args) {
-	bool log_stderr = log_level >= stderr_level;
-	bool log_syslog = log_level >= syslog_level;
+	bool log_stderr = log_level <= stderr_level;
+	bool log_syslog = log_level <= syslog_level;
 	if (!log_stderr && !log_syslog)
 		return; // Don't do the formatting if we don't log anything.
 	// Format the message
