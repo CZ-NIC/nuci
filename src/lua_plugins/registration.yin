@@ -3,17 +3,14 @@
   <yang-version value="1"/>
   <namespace uri="http://www.nic.cz/ns/router/registration"/>
   <prefix value="registration"/>
-  <container name="registration">
+  <rpc name='get'>
+    <output>
+      <leaf name='reg-num'>
+        <type name='string'/>
+      </leaf>
+    </output>
     <description>
-      <text>Information related to registration of the device on CZ.NIC web.</text>
+      <text>A request to provide current response to the today's challenge of the day. Used for registration of the box.</text>
     </description>
-    <leaf name="serial">
-      <type name='string'/>
-      <description>
-        <text>The extended serial number that is copy-pasted to the website.</text>
-      </description>
-      <mandatory value='true'/>
-    </leaf>
-    <config value='false'/>
-  </container>
+  </rpc>
 </module>
