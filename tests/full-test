@@ -30,8 +30,7 @@ ed "$TMP" <<ENDED
 %s/]]>]]>//g
 $
 d
-?UTF-8
--1
+?xml version=
 1,.d
 w
 q

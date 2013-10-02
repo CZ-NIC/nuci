@@ -1,4 +1,3 @@
-<?xml version='1.0' encoding='UTF-8'?>
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
  <rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
   <error-type xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">application</error-type>
