@@ -2,7 +2,7 @@
 #include "register.h"
 #include "model.h"
 #include "logging.h"
-#include "xmlwrap/xmlwrap.h"
+#include "xmlwrap.h"
 
 #include <libnetconf.h>
 #include <uci.h>

@@ -24,6 +24,7 @@
  */
 
 #include "xmlwrap.h"
+#include "logging.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -71,44 +72,6 @@ static void luaL_setmetatable (lua_State *L, const char *tname) {
 
 // ================= END of 5.2 Features INJECTION ====================
 
-
-
-/*
- * We doesn't need it now, but it should be useful.
- */
-#if 0
-static void lua_stack_dump(lua_State *L, const char *func) {
-	int i;
-	int top = lua_gettop(L);
-
-	printf("%s stack: ", func);
-	for (i = 1; i <= top; i++) { /* repeat for each level */
-		int t = lua_type(L, i);
-
-		switch (t) {
-		case LUA_TSTRING: { /* strings */
-			printf("%d:'%s'", i, lua_tostring(L, i));
-			break;
-			}
-		case LUA_TBOOLEAN: { /* booleans */
-			printf(lua_toboolean(L, i) ? "true" : "false");
-			break;
-			}
-		case LUA_TNUMBER: { /* numbers */
-			printf("%d:%g", i, lua_tonumber(L, i));
-			break;
-		}
-		default: { /* other values */
-			printf("%d:%s", i, lua_typename(L, t));
-			break;
-			}
-		}
-		printf(" "); /* put a separator */
-	}
-
-	printf("\n"); /* end the listing */
-}
-#endif
 /*
  * Creates an xmlDocPtr document and returns the handle to lua
  */
@@ -128,7 +91,7 @@ static int mod_read_file(lua_State *L) {
 	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
-	fprintf(stderr, "Created XML DOC from file %p\n", (void *) doc);
+	nlog(NLOG_TRACE, "Created XML DOC from file %p\n", (void *) doc);
 
 	return 1;
 }
@@ -145,7 +108,7 @@ static int mod_read_memory(lua_State *L) {
 	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
-	fprintf(stderr, "Created XML DOC from mem %p\n", (void *) doc);
+	nlog(NLOG_TRACE, "Created XML DOC from mem %p\n", (void *) doc);
 
 	return 1;
 }
@@ -477,9 +440,6 @@ static int doc_get_root_element(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	//don't do this in nuci
-	//lua_stack_dump(L, __func__);
-
 	return 1;
 }
 
@@ -501,7 +461,7 @@ static int doc_node_list_get_string(lua_State *L) {
 
 static int doc_gc(lua_State *L) {
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
-	fprintf(stderr, "GC XML document %p\n", (void *) xml2->doc);
+	nlog(NLOG_TRACE, "GC XML document %p\n", (void *) xml2->doc);
 
 	if (xml2->doc != NULL)
 		xmlFreeDoc(xml2->doc);

@@ -1,5 +1,0 @@
-
-LIBRARIES += src/xmlwrap/libxmlwrap
-libxmlwrap_MODULES := xmlwrap
-libxmlwrap_EXE_CONFIGS := xml2
-libxmlwrap_PKG_CONFIGS := $(LUA_NAME)

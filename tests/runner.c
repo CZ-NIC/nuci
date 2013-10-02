@@ -1,4 +1,4 @@
-#include "../src/xmlwrap/xmlwrap.h"
+#include "../src/xmlwrap.h"
 
 #include <lua.h>
 #include <lualib.h>
