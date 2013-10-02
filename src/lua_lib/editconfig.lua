@@ -56,9 +56,9 @@ local model_names = {
 			end
 			local keys = list_keys(model);
 			for key_name in keys do
-				io.stderr:write((command_key or "[nil value]") .. "\n");
+				nlog(NLOG_TRACE, (command_key or "[nil value]"));
 				local command_key = extract_leaf_subvalue(command_node, model, key_name);
-				io.stderr:write((command_key or "[nil value]") .. "\n");
+				nlog(NLOG_TRACE, (command_key or "[nil value]"));
 				if not command_key then
 					return nil, {
 						msg="Missing key in configuration: " .. key_name,
@@ -126,7 +126,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					info_badelem=command_name
 				};
 			end
-			io.stderr:write("Found model node " .. model_node:name() .. " for " .. command_name .. "\n");
+			nlog(NLOG_TRACE, "Found model node ", model_node:name(), " for ", command_name);
 			local config_node, err = config_identify(model_node, model_opts, command_node, config, ns);
 			if err then
 				return err;
@@ -141,7 +141,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				operation = 'replace'
 			end
 			if config_node then
-				io.stderr:write("Found config node " .. config_node:name() .. " for " .. command_name .. "\n");
+				nlog(NLOG_TRACE, "Found config node ", config_node:name(), " for ", command_name);
 				-- The value exists
 				if operation == 'create' then
 					return {
@@ -160,7 +160,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					operation = 'none';
 				end
 			else
-				io.stderr:write("Not found corresponding node\n")
+				nlog(NLOG_TRACE, "Not found corresponding node");
 				-- The value does not exist in config now
 				if operation == 'none' or operation == 'delete' then
 					return {
@@ -187,9 +187,9 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 			* create
 			* remove
 			]]
-			io.stderr:write("Performing operation " .. operation .. "\n")
+			nlog(NLOG_TRACE, "Performing operation ", operation);
 			local function add_op(name, note)
-				io.stderr:write("Adding operation " .. name .. '(' .. (note or '') .. ')' .. ' on ' .. command_node:name() .. "\n");
+				nlog(NLOG_TRACE, "Adding operation ", name, '(', (note or ''), ')', ' on ', command_node:name());
 				table.insert(ops, {
 					op=name,
 					command_node=command_node,
@@ -217,7 +217,7 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 					return err;
 				end
 				if #ops == op_last then
-					io.stderr:write("Dropping the last enter, as the command is empty\n");
+					nlog(NLOG_TRACE, "Dropping the last enter, as the command is empty");
 					ops[op_last] = nil;
 				else
 					add_op('leave');
@@ -263,9 +263,9 @@ TODO: Describe the description.
 function applyops(ops, description)
 	local desc_stack = {}
 	local current_desc = description;
-	io.stderr:write("Opcount: " .. #ops .. "\n");
+	nlog(NLOG_DEBUG, "Opcount: ", #ops);
 	for i, op in ipairs(ops) do
-		io.stderr:write("Operation " .. op.op .. "\n");
+		nlog(NLOG_TRACE, "Operation ", op.op);
 		local result;
 		local recursing = 0;
 		-- Stack manipulation function
@@ -298,29 +298,29 @@ function applyops(ops, description)
 		local apply;
 		-- Recurse through children and apply the operation on them.
 		local function recurse(name, node, operation)
-			io.stderr:write("Recurse " .. name .. "\n")
+			nlog(NLOG_TRACE, "Recurse ", name);
 			-- Prepare list of skipped children
 			local skip_ar = current_desc[name .. '_recurse_skip'] or {};
 			local skip = {};
 			for _, s in ipairs(skip_ar) do
-				io.stderr:write("Skip " .. s .. "\n");
+				nlog(NLOG_TRACE, "Skip ", s);
 				skip[s] = true;
 			end
 			-- Have a list of mandatory sub nodes (and remove them if we see them)
 			local mandatory_ar = current_desc[name .. '_recurse_mandatory'] or {};
 			local mandatory = {};
 			for _, m in ipairs(mandatory_ar) do
-				io.stderr:write("Preparing mandatory " .. m .. "\n");
+				nlog(NLOG_TRACE, "Preparing mandatory ", m);
 				mandatory[m] = true;
 			end
 			-- Go through children and apply their operations on them.
 			for child in node:iterate() do
 				local nname, nns = child:name();
-				io.stderr:write("Child " .. nname .. "@" .. (nns or "") .. "\n");
+				nlog(NLOG_TRACE, "Child ", nname, "@", (nns or ""));
 				if nns == description.namespace then -- Namespace is ours
 					mandatory[nname] = nil; -- Seen this, mandatory satisfied
 					if not skip[nname] then
-						io.stderr:write("Recursing " .. nname .. "\n");
+						nlog(NLOG_TRACE, "Recursing ", nname);
 						table.insert(desc_stack, current_desc);
 						current_desc = (current_desc.children or {})[nname];
 						if not current_desc then
@@ -344,7 +344,7 @@ function applyops(ops, description)
 							return;
 						end
 					else
-						io.stderr:write("Skipping " .. nname .. "\n");
+						nlog(NLOG_TRACE, "Skipping ", nname);
 					end;
 				elseif nns then -- Some foreign stuff
 					result = {
@@ -369,7 +369,7 @@ function applyops(ops, description)
 		end
 		-- Apply a function or other behaviour to the operation.
 		apply = function(name, node, node_before, node_after, operation, older_operation)
-			io.stderr:write("Apply " .. name .. " to " .. node:name() .. "\n");
+			nlog(NLOG_TRACE, "Apply ", name, " to ", node:name());
 			push();
 			if current_desc[name .. '_recurse_before'] then
 				recursing = recursing + 1;
@@ -377,7 +377,7 @@ function applyops(ops, description)
 				recursing = recursing - 1;
 			end
 			if not result then
-				io.stderr:write("Tag: " .. (current_desc.dbg or '<none>') .. "\n");
+				nlog(NLOG_TRACE, "Tag: ", (current_desc.dbg or '<none>'));
 				local what = current_desc[name];
 				if not what then
 					local nname, nns = node:name();
@@ -390,7 +390,7 @@ function applyops(ops, description)
 				elseif type(what) == 'table' or type(what) == 'string' then
 					result = what;
 				else
-					io.stderr:write("Func\n");
+					nlog(NLOG_TRACE, "Func");
 					result = current_desc[name](node, operation, older_operation)
 				end
 			end
