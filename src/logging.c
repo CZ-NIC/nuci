@@ -48,3 +48,7 @@ void die(const char *format, ...) {
 	va_end(args);
 	exit(1);
 }
+
+void log_set_stderr(enum log_level level) {
+	stderr_level = level;
+}

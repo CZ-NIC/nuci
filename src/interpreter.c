@@ -333,6 +333,27 @@ static int file_executable_lua(lua_State *lua) {
 	return 1;
 }
 
+static int nlog_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count < 1)
+		luaL_error(lua, "nlog expects at least 1 parameter");
+	enum log_level level = lua_tonumber(lua, 1);
+	// TODO Check if we do any logging and skip the rest if not
+	char *message = malloc(1);
+	size_t size = 0;
+	*message = '\0';
+	for (int i = 2; i <= param_count; i ++) {
+		const char *param = lua_tostring(lua, i);
+		size_t len = strlen(param);
+		message = realloc(message, size + len + 1);
+		strcpy(message + size, param);
+		size += len;
+	}
+	nlog(level, "%s", message);
+	free(message);
+	return 0;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -340,6 +361,11 @@ struct interpreter {
 
 static void add_func(struct interpreter *interpreter, const char *name, lua_CFunction function) {
 	lua_pushcfunction(interpreter->state, function);
+	lua_setglobal(interpreter->state, name);
+}
+
+static void add_const(struct interpreter *interpreter, const char *name, int value) {
+	lua_pushnumber(interpreter->state, value);
 	lua_setglobal(interpreter->state, name);
 }
 
@@ -355,6 +381,13 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
 	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
 	add_func(result, "file_executable", file_executable_lua);
+	add_func(result, "nlog", nlog_lua);
+	add_const(result, "NLOG_FATAL", NLOG_FATAL);
+	add_const(result, "NLOG_ERROR", NLOG_ERROR);
+	add_const(result, "NLOG_WARN", NLOG_WARN);
+	add_const(result, "NLOG_INFO", NLOG_INFO);
+	add_const(result, "NLOG_DEBUG", NLOG_DEBUG);
+	add_const(result, "NLOG_TRACE", NLOG_TRACE);
 
 	xmlwrap_init(result->state);
 
