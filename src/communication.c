@@ -3,6 +3,7 @@
 #include "register.h"
 #include "interpreter.h"
 #include "model.h"
+#include "logging.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +36,7 @@ struct srv_config global_srv_config;
 static void(*clb_print_error)(const char *message) = NULL;
 
 static void clb_print_error_default(const char *message) {
-	fprintf(stderr, "Module Communication Error:\n %s\n", message);
+	nlog(NLOG_ERROR, "Module communication error: %s", message);
 }
 
 static void comm_test_values(void) {

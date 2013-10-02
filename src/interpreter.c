@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include "register.h"
 #include "model.h"
+#include "logging.h"
 #include "xmlwrap/xmlwrap.h"
 
 #include <libnetconf.h>
@@ -10,7 +11,6 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
@@ -22,35 +22,6 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
-
-/*
- * For debug purposes
- */
-#if 0
-static void explain_statuscode(char *callname, int status) {
-	const char *result;
-
-	switch (status) {
-		case 0:
-			result = "OK";
-			break;
-		case LUA_ERRRUN:
-			result = "LUA_ERRRUN: a runtime error";
-			break;
-		case LUA_ERRMEM:
-			result = "LUA_ERRMEM: memory allocation error. For such errors, Lua does not call the error handler function.";
-			break;
-		case LUA_ERRERR:
-			result = "LUA_ERRERR: error while running the error handler function.";
-			break;
-		default:
-			result = "Unrecognized ERROR code";
-			break;
-		}
-
-		fprintf(stderr, "Called %s: %s\n", callname, result);
-}
-#endif
 
 /**
  * Our own error handler for pcall calls.
@@ -65,13 +36,7 @@ static int lua_handle_runtime_error(lua_State *L) {
 	lua_getfield(L, -1, "stacktrace");
 	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
 
-	fprintf(stderr, "%s\n", lua_tostring(L, -1));
-
-	/* Lua print() alternative
-	lua_getfield(L, LUA_GLOBALSINDEX, "print");
-	lua_pushvalue(L, -2);
-	lua_pcall(L, 1, 0, 0); //call print
-	*/
+	nlog(NLOG_ERROR, "%s", lua_tostring(L, -1));
 
 	lua_pushstring(L, errmsg); //return
 
@@ -119,8 +84,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 // Check the result is not -1, cause abort and error message if it is
 static void check(int result, const char *operation) {
 	if (result == -1) {
-		fprintf(stderr, "Error during %s: %s", operation, strerror(errno));
-		abort();
+		die("Error during %s: %s", operation, strerror(errno));
 	}
 }
 
@@ -277,14 +241,6 @@ static int run_command_lua(lua_State *lua) {
 	return 3;
 }
 
-static void error(const char *format, ...) {
-	// TODO: Unify logging
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-}
-
 static void entity(char *buffer, size_t *pos, const char *name) {
 	buffer[(*pos) ++] = '&';
 	for (const char *c = name; *c; c ++)
@@ -428,7 +384,7 @@ struct interpreter *interpreter_create(void) {
 bool interpreter_load_plugins(struct interpreter *interpreter, const char *path) {
 	DIR *dir = opendir(path);
 	if (!dir) {
-		error("Can't read directory %s (%s)\n", path, strerror(errno));
+		nlog(NLOG_ERROR, "Can't read directory %s (%s)", path, strerror(errno));
 		return false;
 	}
 
@@ -452,7 +408,7 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 		assert(print_len == complete_len - 1);
 		if (luaL_dofile(interpreter->state, filename) != 0) {
 			// The error is on the top of the string, at index -1
-			error("Failure to load lua plugin %s: %s\n", ent->d_name, lua_tostring(interpreter->state, -1));
+			nlog(NLOG_ERROR, "Failure to load lua plugin %s: %s", ent->d_name, lua_tostring(interpreter->state, -1));
 			return false;
 		}
 	}
@@ -653,7 +609,6 @@ void interpreter_commit(struct interpreter *interpreter, bool success) {
 	lua_call(lua, 1, 1);
 	if (!lua_isnil(lua, -1)) {
 		const char *error = lua_tostring(lua, -1);
-		fprintf(stderr, "Error during commit/rollback: %s\n", error);
-		abort();
+		die("Error during commit/rollback: %s", error);
 	}
 }
