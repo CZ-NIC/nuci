@@ -91,7 +91,7 @@ static int mod_read_file(lua_State *L) {
 	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
-	nlog(NLOG_TRACE, "Created XML DOC from file %p\n", (void *) doc);
+	nlog(NLOG_TRACE, "Created XML DOC from file %p", (void *) doc);
 
 	return 1;
 }
@@ -108,7 +108,7 @@ static int mod_read_memory(lua_State *L) {
 	luaL_setmetatable(L, WRAP_XMLDOC);
 
 	xml2->doc = doc;
-	nlog(NLOG_TRACE, "Created XML DOC from mem %p\n", (void *) doc);
+	nlog(NLOG_TRACE, "Created XML DOC from mem %p", (void *) doc);
 
 	return 1;
 }
@@ -461,7 +461,7 @@ static int doc_node_list_get_string(lua_State *L) {
 
 static int doc_gc(lua_State *L) {
 	struct xmlwrap_object *xml2 = lua_touserdata(L, 1);
-	nlog(NLOG_TRACE, "GC XML document %p\n", (void *) xml2->doc);
+	nlog(NLOG_TRACE, "GC XML document %p", (void *) xml2->doc);
 
 	if (xml2->doc != NULL)
 		xmlFreeDoc(xml2->doc);
