@@ -51,6 +51,8 @@ model_path::
 model_ns::
   The namespace of the model. Filled in by the
   `register_datastore_provider`.
+model_name::
+  The name of the model.
 model::
   The parsed XML document representing the model. Filled in by the
   `register_datastore_provider`.
