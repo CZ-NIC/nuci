@@ -5,6 +5,7 @@ set -ex
 TMP=`tempfile`
 DIR="$1"
 CFG="$TMP.d"
+mkdir -p "$DIR/config" # Some tests have empty config, make sure we have one.
 cp -r "$DIR/config" "$CFG"
 export NUCI_TEST_CONFIG_DIR="$CFG"
 export NUCI_DONT_RESTART=1
