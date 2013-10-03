@@ -455,6 +455,10 @@ void interpreter_destroy(struct interpreter *interpreter) {
 	free(interpreter);
 }
 
+lua_State *interpreter_get_lua(struct interpreter *interpreter) {
+	return interpreter->state;
+}
+
 const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
 	lua_State *lua = interpreter->state;
 	lua_checkstack(lua, LUA_MINSTACK); // Make sure it works even when called multiple times from C
