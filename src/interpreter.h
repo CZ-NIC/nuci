@@ -77,11 +77,10 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter, struct nc
  * Do a commit or rollback (depending on the value of success).
  *
  * This aborts the program in case of any error.
- * TODO: Make it report the error somehow, needed for other things than
- * just restarting daemons.
  *
- * #2698.
+ * If it is successfull, it returns true, false otherwise (and it also flags error
+ * and sets it, so you can call nc_err_create_from_lua later).
  */
-void interpreter_commit(struct interpreter *interpreter, bool success);
+bool interpreter_commit(struct interpreter *interpreter, bool success);
 
 #endif

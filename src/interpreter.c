@@ -647,14 +647,17 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter, struct nc
 	}
 }
 
-void interpreter_commit(struct interpreter *interpreter, bool success) {
+bool interpreter_commit(struct interpreter *interpreter, bool success) {
 	lua_State *lua = interpreter->state;
+	int errfunc_index = prepare_errfunc(lua);
 	lua_getfield(lua, LUA_GLOBALSINDEX, "commit_execute");
 	lua_pushboolean(lua, success);
-	lua_call(lua, 1, 1);
+	lua_pcall(lua, 1, 1, errfunc_index);
 	if (!lua_isnil(lua, -1)) {
-		// FIXME: Change to reporting the error, not aborting (#2698)
-		const char *error = lua_tostring(lua, -1);
-		die("Error during commit/rollback: %s", error);
+		flag_error(interpreter, true, -1);
+		nlog(NLOG_WARN, "Commit led to failure");
+		return false;
 	}
+	flag_error(interpreter, false, 0);
+	return true;
 }
