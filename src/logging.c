@@ -85,6 +85,9 @@ static struct level_name level_names[] = {
 	{ "error", NLOG_ERROR },
 	{ "fatal", NLOG_FATAL },
 	{ "critical", NLOG_FATAL },
+	{ "off", NLOG_DISABLE },
+	{ "disable", NLOG_DISABLE },
+	{ "disabled", NLOG_DISABLE },
 	{ NULL }
 };
 
