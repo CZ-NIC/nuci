@@ -1,6 +1,5 @@
 #include "logging.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -96,4 +95,8 @@ enum log_level get_log_level(const char *name) {
 		if (strcasecmp(name, level->name) == 0)
 			return level->level;
 	die("Log level %s not recognized", name);
+}
+
+bool would_log(enum log_level level) {
+	return (level <= stderr_level) || (level <= syslog_level);
 }

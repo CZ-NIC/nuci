@@ -338,7 +338,8 @@ static int nlog_lua(lua_State *lua) {
 	if (param_count < 1)
 		luaL_error(lua, "nlog expects at least 1 parameter");
 	enum log_level level = lua_tonumber(lua, 1);
-	// TODO Check if we do any logging and skip the rest if not
+	if (!would_log(level))
+		return 0; // Skip the string juggling if we wouldn't log it anyway
 	char *message = malloc(1);
 	size_t size = 0;
 	*message = '\0';
