@@ -1,8 +1,9 @@
 #include "logging.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
+#include <strings.h>
 
 static enum log_level stderr_level = NLOG_INFO, syslog_level = NLOG_WARN;
 
@@ -13,6 +14,15 @@ static const char *names[] = {
 	[NLOG_INFO]  = "\x1b[34mINFO\x1b[0m:  ",
 	[NLOG_DEBUG] = "DEBUG: ",
 	[NLOG_TRACE] = "TRACE: "
+};
+
+static int syslog_prios[] = {
+	[NLOG_FATAL] = LOG_CRIT,
+	[NLOG_ERROR] = LOG_ERR,
+	[NLOG_WARN] = LOG_WARNING,
+	[NLOG_INFO] = LOG_INFO,
+	[NLOG_DEBUG] = LOG_DEBUG,
+	[NLOG_TRACE] = LOG_DEBUG
 };
 
 void vnlog(enum log_level log_level, const char *format, va_list args) {
@@ -31,6 +41,9 @@ void vnlog(enum log_level log_level, const char *format, va_list args) {
 	va_end(copy);
 	if (log_stderr)
 		fprintf(stderr, "%s%s\n", names[log_level], message);
+
+	if (log_syslog)
+		syslog(LOG_MAKEPRI(LOG_DAEMON, syslog_prios[log_level]), "%s", message);
 	free(message);
 }
 
@@ -51,4 +64,39 @@ void die(const char *format, ...) {
 
 void log_set_stderr(enum log_level level) {
 	stderr_level = level;
+}
+
+void log_set_syslog(enum log_level level) {
+	syslog_level = level;
+}
+
+struct level_name {
+	const char *name;
+	enum log_level level;
+};
+
+static struct level_name level_names[] = {
+	{ "trace", NLOG_TRACE },
+	{ "debug", NLOG_DEBUG },
+	{ "info", NLOG_INFO },
+	{ "warning", NLOG_WARN },
+	{ "warn", NLOG_WARN },
+	{ "error", NLOG_ERROR },
+	{ "fatal", NLOG_FATAL },
+	{ "critical", NLOG_FATAL },
+	{ "off", NLOG_DISABLE },
+	{ "disable", NLOG_DISABLE },
+	{ "disabled", NLOG_DISABLE },
+	{ NULL }
+};
+
+enum log_level get_log_level(const char *name) {
+	for (const struct level_name *level = level_names; level; level ++)
+		if (strcasecmp(name, level->name) == 0)
+			return level->level;
+	die("Log level %s not recognized", name);
+}
+
+bool would_log(enum log_level level) {
+	return (level <= stderr_level) || (level <= syslog_level);
 }

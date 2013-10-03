@@ -1,5 +1,6 @@
 #include "../src/xmlwrap.h"
 #include "../src/interpreter.h"
+#include "../src/logging.h"
 
 #include <lua.h>
 #include <lualib.h>
@@ -9,11 +10,14 @@
 
 int main(int argc, const char *argv[]) {
 	(void) argc;
+	(void) argv;
+
+	log_set_stderr(NLOG_TRACE);
+	log_set_syslog(NLOG_DISABLE);
 
 	//libxml2 init
 	xmlInitParser();
 	LIBXML_TEST_VERSION
-
 
 	struct interpreter *interpreter = interpreter_create();
 	lua_State *lua = interpreter_get_lua(interpreter);

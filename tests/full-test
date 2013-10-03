@@ -23,7 +23,7 @@ ENDXML
 	cat "$DIR/input"
 	echo "</rpc>"
 	echo "]]>]]>"
-) | socat STDIO EXEC:./bin/nuci,pty >"$TMP"
+) | socat STDIO EXEC:'./bin/nuci -e trace -s disable',pty >"$TMP"
 echo "Raw output"
 cat "$TMP"
 echo "==============="

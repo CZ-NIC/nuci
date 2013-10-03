@@ -23,4 +23,4 @@ cat <<ENDXML
 ENDXML
 
 read
-) | socat STDIO EXEC:./bin/nuci,pty
+) | socat STDIO EXEC:'./bin/nuci -e trace -s disable',pty
