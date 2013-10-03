@@ -45,7 +45,7 @@ end
 -- Dump the table, for debug purposes.
 function dump_table(tab)
 	for k, v in pairs(tab) do
-		io.stderr:write(k .. ":" .. tostring(v) .. "\n");
+		nlog(NLOG_TRACE, k, ":", tostring(v));
 	end
 end
 
@@ -66,12 +66,12 @@ end
 function var_test(varname, var)
 	local str;
 	if var == nil then str = ""; else str = "not "; end
-	io.stderr:write(varname .. " is " .. str .. "nil " .. "\n");
+	nlog(NLOG_TRACE, varname, " is ", str, "nil ");
 end
 
 function var_len(varname, var)
 	if var then
-		io.stderr:write(varname .. " has length " .. #var .. "\n");
+		nlog(NLOG_TRACE, varname, " has length ", #var);
 	end
 end
 

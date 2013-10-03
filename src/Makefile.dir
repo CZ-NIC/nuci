@@ -1,20 +1,24 @@
 BINARIES += src/nuci
+LIBRARIES += src/libnuci_core
 
-nuci_MODULES := main \
+nuci_MODULES := main
+
+libnuci_core_MODULES := \
 	communication \
 	nuci_datastore \
 	interpreter \
 	register \
-	model
+	model \
+	logging \
+	xmlwrap
 
 nuci_PKG_CONFIGS := $(LUA_NAME) libnetconf
-nuci_EXE_CONFIGS := xml2
-nuci_LOCAL_LIBS := xmlwrap
+nuci_EXE_CONFIGS := xml2 xslt
+nuci_LOCAL_LIBS := nuci_core
 nuci_SYSTEM_LIBS := uci
 
 DOCS += src/plugins \
 	src/design
 
-include $(S)/src/xmlwrap/Makefile.dir
 include $(S)/src/lua_lib/Makefile.dir
 include $(S)/src/lua_plugins/Makefile.dir

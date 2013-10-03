@@ -1,7 +1,8 @@
 #include "interpreter.h"
 #include "register.h"
 #include "model.h"
-#include "xmlwrap/xmlwrap.h"
+#include "logging.h"
+#include "xmlwrap.h"
 
 #include <libnetconf.h>
 #include <uci.h>
@@ -10,7 +11,6 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
@@ -36,7 +36,7 @@ static int lua_handle_runtime_error(lua_State *L) {
 	lua_getfield(L, -1, "stacktrace");
 	lua_pcall(L, 0, 1, 0); //call STP.stacktrace
 
-	fprintf(stderr, "%s\n", lua_tostring(L, -1));
+	nlog(NLOG_ERROR, "%s", lua_tostring(L, -1));
 
 	lua_pushstring(L, errmsg); //return
 
@@ -87,8 +87,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 // Check the result is not -1, cause abort and error message if it is
 static void check(int result, const char *operation) {
 	if (result == -1) {
-		fprintf(stderr, "Error during %s: %s\n", operation, strerror(errno));
-		abort();
+		die("Error during %s: %s", operation, strerror(errno));
 	}
 }
 
@@ -245,14 +244,6 @@ static int run_command_lua(lua_State *lua) {
 	return 3;
 }
 
-static void error(const char *format, ...) {
-	// TODO: Unify logging (#2707)
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-}
-
 static void entity(char *buffer, size_t *pos, const char *name) {
 	buffer[(*pos) ++] = '&';
 	for (const char *c = name; *c; c ++)
@@ -345,6 +336,27 @@ static int file_executable_lua(lua_State *lua) {
 	return 1;
 }
 
+static int nlog_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count < 1)
+		luaL_error(lua, "nlog expects at least 1 parameter");
+	enum log_level level = lua_tonumber(lua, 1);
+	// TODO Check if we do any logging and skip the rest if not
+	char *message = malloc(1);
+	size_t size = 0;
+	*message = '\0';
+	for (int i = 2; i <= param_count; i ++) {
+		const char *param = lua_tostring(lua, i);
+		size_t len = strlen(param);
+		message = realloc(message, size + len + 1);
+		strcpy(message + size, param);
+		size += len;
+	}
+	nlog(level, "%s", message);
+	free(message);
+	return 0;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -352,6 +364,11 @@ struct interpreter {
 
 static void add_func(struct interpreter *interpreter, const char *name, lua_CFunction function) {
 	lua_pushcfunction(interpreter->state, function);
+	lua_setglobal(interpreter->state, name);
+}
+
+static void add_const(struct interpreter *interpreter, const char *name, int value) {
+	lua_pushnumber(interpreter->state, value);
 	lua_setglobal(interpreter->state, name);
 }
 
@@ -367,6 +384,13 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
 	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
 	add_func(result, "file_executable", file_executable_lua);
+	add_func(result, "nlog", nlog_lua);
+	add_const(result, "NLOG_FATAL", NLOG_FATAL);
+	add_const(result, "NLOG_ERROR", NLOG_ERROR);
+	add_const(result, "NLOG_WARN", NLOG_WARN);
+	add_const(result, "NLOG_INFO", NLOG_INFO);
+	add_const(result, "NLOG_DEBUG", NLOG_DEBUG);
+	add_const(result, "NLOG_TRACE", NLOG_TRACE);
 
 	xmlwrap_init(result->state);
 
@@ -396,7 +420,7 @@ struct interpreter *interpreter_create(void) {
 bool interpreter_load_plugins(struct interpreter *interpreter, const char *path) {
 	DIR *dir = opendir(path);
 	if (!dir) {
-		error("Can't read directory %s (%s)\n", path, strerror(errno));
+		nlog(NLOG_ERROR, "Can't read directory %s (%s)", path, strerror(errno));
 		return false;
 	}
 
@@ -420,7 +444,7 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 		assert(print_len == complete_len - 1);
 		if (luaL_dofile(interpreter->state, filename) != 0) {
 			// The error is on the top of the string, at index -1
-			error("Failure to load lua plugin %s: %s\n", ent->d_name, lua_tostring(interpreter->state, -1));
+			nlog(NLOG_ERROR, "Failure to load lua plugin %s: %s", ent->d_name, lua_tostring(interpreter->state, -1));
 			return false;
 		}
 	}
@@ -432,6 +456,10 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 void interpreter_destroy(struct interpreter *interpreter) {
 	lua_close(interpreter->state);
 	free(interpreter);
+}
+
+lua_State *interpreter_get_lua(struct interpreter *interpreter) {
+	return interpreter->state;
 }
 
 const char *interpreter_get(struct interpreter *interpreter, lua_datastore datastore, const char *method) {
@@ -626,7 +654,6 @@ void interpreter_commit(struct interpreter *interpreter, bool success) {
 	if (!lua_isnil(lua, -1)) {
 		// FIXME: Change to reporting the error, not aborting (#2698)
 		const char *error = lua_tostring(lua, -1);
-		fprintf(stderr, "Error during commit/rollback: %s\n", error);
-		abort();
+		die("Error during commit/rollback: %s", error);
 	}
 }

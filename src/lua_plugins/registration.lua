@@ -3,27 +3,36 @@ require("nutils");
 
 local datastore = datastore('registration.yin');
 
-function datastore:get()
-	local ecode, serial_output, errs = run_command(nil, 'atsha204cmd', 'serial-number');
+-- Where we get the challenge
+local challenge_url = 'https://test-dev.securt.cz/challenge.cgi';
 
-	if ecode ~= 0 then
-		return nil, "Failed to acquire own serial number: " .. errs;
+function datastore:user_rpc(rpc)
+	if rpc == 'get' then
+		--[[
+		Download the challenge and generate a response to it.
+
+		Notice that the challenge doesn't check certificate here. It is simply not needed.
+		If someone is able to MITM the communication, they'd be able to only prevent
+		generation of the correct response, but that would be possible with the
+		cert checking too.
+		]]
+		local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k ' .. challenge_url .. ' | atsha204cmd challenge-response');
+		if ecode ~= 0 then
+			return nil, "Can't generate challenge";
+		end
+		local ecode, serial = run_command(nil, 'atsha204cmd', 'serial-number');
+		if ecode ~= 0 then
+			return nil, "Can't get my own serial";
+		end
+		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(serial) .. "-" .. trimr(stdout) .. "</reg-num>";
+	else
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
 	end
-
-	local ecode, challenge_output, errs = run_command('0000000000000000000000000000000000000000000000000000000000000000', 'atsha204cmd', 'challenge-response');
-
-	if ecode ~= 0 then
-		return nil, "Failed to compute the serial extention: " .. errs;
-	end
-
-	local serial = trimr(serial_output) .. "-" .. trimr(challenge_output);
-
-	-- Encode it as XML
-	local doc, root, node;
-	doc = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
-	root = doc:root();
-	root:add_child("serial"):set_text(serial);
-	return doc:strdump();
 end
 
 register_datastore_provider(datastore)

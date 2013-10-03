@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include <stdbool.h>
+#include <lua.h>
 
 /*
  * The Lua interpreter is hidden inside this module.
@@ -14,6 +15,8 @@ struct interpreter;
 struct interpreter *interpreter_create(void);
 // Destroy the lua interpreter
 void interpreter_destroy(struct interpreter *interpreter);
+
+lua_State *interpreter_get_lua(struct interpreter *interpreter);
 
 /*
  * Scan given directory and load and run all *.lua files there on given interpreter.

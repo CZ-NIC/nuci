@@ -1,4 +1,3 @@
-<?xml version='1.0' encoding='UTF-8'?>
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
  <ok xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"/>
 </rpc-reply>

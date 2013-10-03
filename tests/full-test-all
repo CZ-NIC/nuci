@@ -2,6 +2,8 @@
 
 set -e
 
+export PATH=./tests:"$PATH"
+
 for case in tests/full/cases/* ; do
 	echo "===================================================================="
 	echo "Running test: $case"

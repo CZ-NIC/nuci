@@ -1,7 +1,7 @@
 #include "nuci_datastore.h"
 #include "configuration.h"
+#include "logging.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -36,8 +36,7 @@ struct nuci_lock_info *lock_info_create(void) {
 	//is important to have acces to lockfile before we start
 	info->lockfile = open(NUCI_LOCKFILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 	if (info->lockfile == -1) {
-		fprintf(stderr, "Couldn't create lock file %s: %s", NUCI_LOCKFILE, strerror(errno));
-		abort();
+		die("Couldn't create lock file %s: %s", NUCI_LOCKFILE, strerror(errno));
 	}
 	return info;
 }
