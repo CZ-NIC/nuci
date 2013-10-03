@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
 
 static enum log_level stderr_level = NLOG_INFO, syslog_level = NLOG_WARN;
 
@@ -13,6 +14,15 @@ static const char *names[] = {
 	[NLOG_INFO]  = "\x1b[34mINFO\x1b[0m:  ",
 	[NLOG_DEBUG] = "DEBUG: ",
 	[NLOG_TRACE] = "TRACE: "
+};
+
+static int syslog_prios[] = {
+	[NLOG_FATAL] = LOG_CRIT,
+	[NLOG_ERROR] = LOG_ERR,
+	[NLOG_WARN] = LOG_WARNING,
+	[NLOG_INFO] = LOG_INFO,
+	[NLOG_DEBUG] = LOG_DEBUG,
+	[NLOG_TRACE] = LOG_DEBUG
 };
 
 void vnlog(enum log_level log_level, const char *format, va_list args) {
@@ -31,6 +41,9 @@ void vnlog(enum log_level log_level, const char *format, va_list args) {
 	va_end(copy);
 	if (log_stderr)
 		fprintf(stderr, "%s%s\n", names[log_level], message);
+
+	if (log_syslog)
+		syslog(LOG_MAKEPRI(LOG_DAEMON, syslog_prios[log_level]), "%s", message);
 	free(message);
 }
 
@@ -51,4 +64,8 @@ void die(const char *format, ...) {
 
 void log_set_stderr(enum log_level level) {
 	stderr_level = level;
+}
+
+void log_set_syslog(enum log_level level) {
+	syslog_level = level;
 }
