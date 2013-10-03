@@ -2,7 +2,7 @@
 
 export PATH=./tests:"$PATH"
 
-socat STDIO EXEC:./bin/nuci,pty <<ENDXML
+socat STDIO EXEC:'./bin/nuci -e trace -s disable',pty <<ENDXML
 <?xml version="1.0" encoding="UTF-8"?>
 <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
   <capabilities>
