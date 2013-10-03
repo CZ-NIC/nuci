@@ -21,9 +21,21 @@ static void callback_print(NC_VERB_LEVEL level, const char *msg) {
 	nlog(levels[level], "%s", msg);
 }
 
-int main(int argc, const char *argv[]) {
-	(void) argc;
-	(void) argv;
+int main(int argc, char *argv[]) {
+	int opt;
+	while ((opt = getopt(argc, argv, "s:e:h")) != -1) {
+		switch (opt) {
+			case 'e':
+				log_set_stderr(get_log_level(optarg));
+				break;
+			case 's':
+				log_set_syslog(get_log_level(optarg));
+				break;
+			default:
+				printf("-e level or -s level -- set logging to stderr or syslog to given level\n");
+				break;
+		}
+	}
 
 	//some setting
 	//Set verbosity and function to print libnetconf's messages

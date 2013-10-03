@@ -20,4 +20,6 @@ void die(const char *message, ...) __attribute__((format(printf, 1, 2))) __attri
 void log_set_stderr(enum log_level from_level);
 void log_set_syslog(enum log_level from_level);
 
+enum log_level get_log_level(const char *name);
+
 #endif

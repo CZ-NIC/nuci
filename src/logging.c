@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include <strings.h>
 
 static enum log_level stderr_level = NLOG_INFO, syslog_level = NLOG_WARN;
 
@@ -68,4 +69,28 @@ void log_set_stderr(enum log_level level) {
 
 void log_set_syslog(enum log_level level) {
 	syslog_level = level;
+}
+
+struct level_name {
+	const char *name;
+	enum log_level level;
+};
+
+static struct level_name level_names[] = {
+	{ "trace", NLOG_TRACE },
+	{ "debug", NLOG_DEBUG },
+	{ "info", NLOG_INFO },
+	{ "warning", NLOG_WARN },
+	{ "warn", NLOG_WARN },
+	{ "error", NLOG_ERROR },
+	{ "fatal", NLOG_FATAL },
+	{ "critical", NLOG_FATAL },
+	{ NULL }
+};
+
+enum log_level get_log_level(const char *name) {
+	for (const struct level_name *level = level_names; level; level ++)
+		if (strcasecmp(name, level->name) == 0)
+			return level->level;
+	die("Log level %s not recognized", name);
 }
