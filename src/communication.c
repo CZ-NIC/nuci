@@ -302,8 +302,22 @@ void comm_start_loop(const struct srv_config *config) {
 				communication.reply = nc_reply_error(nc_err_new(NC_ERR_UNKNOWN_ELEM));
 			}
 			bool error = nc_reply_get_type(communication.reply) == NC_REPLY_ERROR;
-			interpreter_commit(config->interpreter, !error);
-			// TODO: Check for errors reported by interpreter_commit (#2698)
+			bool finished = false;
+			while (!finished) {
+				bool failed = interpreter_commit(config->interpreter, !error);
+				if (failed) {
+					if (error)
+						die("Rollback failed, no idea what to do about that");
+					else {
+						nlog(NLOG_INFO, "Commit failed, doing rollback instead");
+						error = true;
+						nc_reply_free(communication.reply);
+						communication.reply = nc_reply_error(nc_err_create_from_lua(config->interpreter, NULL));
+						assert(communication.reply);
+					}
+				} else
+					finished = true;
+			}
 		}
 
 		//send reply
