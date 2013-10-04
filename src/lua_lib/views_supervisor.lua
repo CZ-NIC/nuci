@@ -269,7 +269,6 @@ local function handle_collisions_rec(node, path, keyset, level)
 		if item.errors then
 			return true, item;
 		end
-		log_dbg(levelizer(level) .. item.name);
 		collision_found, broken_node = handle_collisions_rec(item.children, path, keyset, level+1);
 		if collision_found then
 			-- Collision was found, distribute it

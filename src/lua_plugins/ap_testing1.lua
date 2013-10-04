@@ -130,7 +130,6 @@ end
 
 function self:collision(tree, node, path, keyset)
 	node.errors = nil;
-	log_dbg("Colision " .. DataDumper(path) .. " solved.");
 
 	return true;
 end
