@@ -71,7 +71,7 @@ function datastore:get()
 
 	local file = io.open(HIST_FILE);
 	if not file then
-		return nil, "Cannot open file with history";
+		return nil, "Cannot open file with history: " .. HIST_FILE;
 	end
 	parse_file(file, root:add_child('snapshots'));
 	file:close();
