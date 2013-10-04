@@ -61,9 +61,16 @@ self.watch = {
 		multival = {"10.11.22.13"}
 	},
 	{
-		path = {'supervisor-test', 'networking', 'internet', 'interface', 'gateway'},
-		keys = {{}, {}, {}, {name = "eth1"}, {}},
-		val = "10.11.22.1"
+		path = {'supervisor-test', 'networking', 'internet', 'interface', 'xxx'},
+		keys = {{}, {}, {}, {}, {}},
+		val = "10.11.22.1",
+		collision_priority = 20
+	},
+	{
+		path = {'supervisor-test', 'networking', 'internet', 'interface', 'xxx'},
+		keys = {{}, {}, {}, {}, {}},
+		val = "10.11.22.2",
+		collision_priority = 10
 	},
 	{
 		path = {'supervisor-test', 'networking', 'internet', 'interface', 'dns'},
@@ -108,6 +115,24 @@ function self:positions()
 	return result;
 end
 
+--[[
+Return paths in which I'm able to solve collision.
+]]
+function self:collision_handlers()
+	local result = {};
+	for _, value in ipairs(self.watch) do
+		if value.collision_priority then
+			table.insert(result, { path = value.path, priority = value.collision_priority });
+		end
+	end
+	return result;
+end
+
+function self:collision(tree, node, path, keyset)
+	node.errors = nil;
+
+	return true;
+end
 --[[
 Return values. Parameters are ignored here and we return everything all the time.
 This is legal, the parameters are optimisation only and the caller would filter

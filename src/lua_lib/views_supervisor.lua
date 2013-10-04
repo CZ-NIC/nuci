@@ -3,11 +3,13 @@ require("nutils");
 require("datastore");
 require("xmltree");
 require("commits");
+require("dumper");
 
 -- Global state varables
 supervisor = {
 	plugins = {},
 	tree = { subnodes = {}, plugins = {} },
+	collision_tree = { subnodes = {}, plugins = {} }
 };
 
 -- Add a plugin to given path in the tree
@@ -56,6 +58,9 @@ function supervisor:register_plugin(plugin)
 	table.insert(self.plugins, plugin);
 	for _, path in pairs(plugin:positions()) do
 		register_to_tree(self.tree, path, plugin);
+	end
+	for _, info in pairs(plugin:collision_handlers()) do
+		register_to_tree(self.collision_tree, info.path, { priority = info.priority, plugin = plugin });
 	end
 end
 
@@ -194,7 +199,7 @@ build_children = function(name, values, level)
 		-- FIXME: Check the key sets are for the same indexes (#2697)
 		-- FIXME: Choose order of the keys (#2696)
 		for name, value in pairs(keyset) do
-			table.insert(key_list, { name = name, text = value });
+			table.insert(key_list, { name = name, text = value, key = true });
 		end
 		for _, value in ipairs(values) do
 			if match_keysets(keyset, (value.keys or { [level] = {} })[level] or {}) then
@@ -220,6 +225,101 @@ build_children = function(name, values, level)
 		child.name = name;
 	end
 	return result;
+end
+
+-- For debug purposes... TODO: Remove before production
+local function levelizer(level)
+	local out = "";
+	for i=1,level do
+		out = out .. "* ";
+	end
+
+	return out;
+end
+
+--[[
+Recursively go through the tree and find collisions
+Return true if some collision was found, false otherwise
+]]
+local function handle_collisions_rec(node, path, keyset, level)
+	local add_keys_into_keyset = function(ks, node)
+		for _, item in pairs(node) do
+			if item.key then
+				ks[item.name] = item.text;
+			end
+		end
+	end
+
+	if not node then
+		-- End of recursion
+		-- This path is clean
+		return false;
+	end
+
+	local collision_found;
+
+	-- Prepare keyset structure for this level
+	if not keyset[level] then
+		keyset[level] = {};
+	end
+	add_keys_into_keyset(keyset[level], node);
+
+	for _, item in pairs(node) do
+		path[level] = item.name;
+		if item.errors then
+			return true, item;
+		end
+		collision_found, broken_node = handle_collisions_rec(item.children, path, keyset, level+1);
+		if collision_found then
+			-- Collision was found, distribute it
+			return collision_found, broken_node;
+		end
+		path[level+1] = nil;
+		keyset[level+1] = nil;
+	end
+
+	return false;
+end
+
+local function handle_single_collision(collision_tree, tree, node, path, keyset)
+	local callbacks = callbacks_find(collision_tree, path);
+	table.sort(callbacks, function (a, b) return a.priority > b.priority end);
+	for _, clb in ipairs(callbacks) do
+		local status, err = clb.plugin:collision(tree, node, path, keyset);
+		if status == true then
+			-- Problem solved
+			return true;
+		elseif status == false then
+			-- DO NOT ERASE THIS BRANCH!!
+			-- Handler doesn't know how to solve collision
+			-- continue;
+		else
+			-- An error occured
+			return status, err;
+		end
+	end
+
+	return nil, "Any plugin wasn't able to solve collision.";
+end
+
+function supervisor:handle_collisions()
+	local collision_found, broken_node;
+	local path = {};
+	local keyset = {};
+	while true do
+		collision_found, broken_node = handle_collisions_rec(self.data.children, path, keyset, 1);
+		if collision_found then
+			local status, err = handle_single_collision(self.collision_tree, self.data, broken_node, path, keyset);
+			if not status then
+				return status, err;
+			end
+		else
+			-- All collisions were solved
+			break;
+		end
+	end
+
+	return true;
 end
 
 --[[
@@ -259,16 +359,21 @@ function supervisor:check_tree_built()
 		for _, subtree in pairs(self.data.children or {}) do
 			self.index[subtree.name] = subtree;
 		end
-		--[[
-		TODO: Collision and error checking ‒ walk the tree and call relevant plugins
-		on the places where something happens. (#2680)
-		]]
+		local status, err = self:handle_collisions()
+		if not status then
+			return status, err;
+		end
 		self.cached = true;
 	end
+
+	return true;
 end
 
 function supervisor:get(name, ns)
-	self:check_tree_built();
+	local status, err = self:check_tree_built();
+	if not status then
+		return status, err;
+	end
 	--[[
 	Extract the appropriate part of tree and convert to XML.
 
