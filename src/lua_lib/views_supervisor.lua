@@ -9,6 +9,7 @@ require("dumper");
 supervisor = {
 	plugins = {},
 	tree = { subnodes = {}, plugins = {} },
+	collision_tree = { subnodes = {}, plugins = {} }
 };
 
 -- Add a plugin to given path in the tree
@@ -57,6 +58,9 @@ function supervisor:register_plugin(plugin)
 	table.insert(self.plugins, plugin);
 	for _, path in pairs(plugin:positions()) do
 		register_to_tree(self.tree, path, plugin);
+	end
+	for _, info in pairs(plugin:collision_handlers()) do
+		register_to_tree(self.collision_tree, info.path, { priority = info.priority, plugin = plugin });
 	end
 end
 
@@ -248,7 +252,6 @@ local function handle_collisions_rec(node, path, level)
 	for _, item in pairs(node) do
 		path[level] = item.name;
 		if item.errors then
-			log_dbg("Collision: "..item.name);
 			return true, item;
 		end
 		log_dbg(levelizer(level) .. item.name);
@@ -263,29 +266,35 @@ local function handle_collisions_rec(node, path, level)
 	return false;
 end
 
-local function handle_single_collision(tree, node, path)
-	node.errors = nil;
-	log_dbg("Colision " .. DataDumper(path) .. " solved.");
+local function handle_single_collision(collision_tree, tree, node, path)
+	local callbacks = callbacks_find(collision_tree, path);
+	table.sort(callbacks, function (a, b) return a.priority > b.priority end);
+	for _, clb in ipairs(callbacks) do
+		local status, err = clb.plugin:collision(tree, node, path);
+		if status == true then
+			-- Problem solved
+			return true;
+		elseif status == false then
+			-- DO NOT ERASE THIS BRANCH!!
+			-- Handler doesn't know how to solve collision
+			-- continue;
+		else
+			-- An error occured
+			return status, err;
+		end
+	end
 
-	return true;
+	return nil, "Any plugin wasn't able to solve collision.";
 end
 
 function supervisor:handle_collisions()
-	log_dbg_reset();
-	--log_dbg(DataDumper(self.data.children));
-
 	local collision_found, broken_node;
 	local path = {};
 	while true do
 		collision_found, broken_node = handle_collisions_rec(self.data.children, path, 1);
 		if collision_found then
-			local status, err = handle_single_collision(self.data, broken_node, path);
-			if status == true then
-				log_dbg("Problem solved");
-			elseif status == false then
-				log_dbg("Handler doesn't know how to solve collision");
-			else
-				log_dbg("An error occured");
+			local status, err = handle_single_collision(self.collision_tree, self.data, broken_node, path);
+			if not status then
 				return status, err;
 			end
 		else
