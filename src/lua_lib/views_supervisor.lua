@@ -199,7 +199,7 @@ build_children = function(name, values, level)
 		-- FIXME: Check the key sets are for the same indexes (#2697)
 		-- FIXME: Choose order of the keys (#2696)
 		for name, value in pairs(keyset) do
-			table.insert(key_list, { name = name, text = value });
+			table.insert(key_list, { name = name, text = value, key = true });
 		end
 		for _, value in ipairs(values) do
 			if match_keysets(keyset, (value.keys or { [level] = {} })[level] or {}) then
@@ -241,7 +241,15 @@ end
 Recursively go through the tree and find collisions
 Return true if some collision was found, false otherwise
 ]]
-local function handle_collisions_rec(node, path, level)
+local function handle_collisions_rec(node, path, keyset, level)
+	local add_keys_into_keyset = function(ks, node)
+		for _, item in pairs(node) do
+			if item.key then
+				ks[item.name] = item.text;
+			end
+		end
+	end
+
 	if not node then
 		-- End of recursion
 		-- This path is clean
@@ -249,28 +257,36 @@ local function handle_collisions_rec(node, path, level)
 	end
 
 	local collision_found;
+
+	-- Prepare keyset structure for this level
+	if not keyset[level] then
+		keyset[level] = {};
+	end
+	add_keys_into_keyset(keyset[level], node);
+
 	for _, item in pairs(node) do
 		path[level] = item.name;
 		if item.errors then
 			return true, item;
 		end
 		log_dbg(levelizer(level) .. item.name);
-		collision_found, broken_node = handle_collisions_rec(item.children, path, level+1);
+		collision_found, broken_node = handle_collisions_rec(item.children, path, keyset, level+1);
 		if collision_found then
 			-- Collision was found, distribute it
 			return collision_found, broken_node;
 		end
 		path[level+1] = nil;
+		keyset[level+1] = nil;
 	end
 
 	return false;
 end
 
-local function handle_single_collision(collision_tree, tree, node, path)
+local function handle_single_collision(collision_tree, tree, node, path, keyset)
 	local callbacks = callbacks_find(collision_tree, path);
 	table.sort(callbacks, function (a, b) return a.priority > b.priority end);
 	for _, clb in ipairs(callbacks) do
-		local status, err = clb.plugin:collision(tree, node, path);
+		local status, err = clb.plugin:collision(tree, node, path, keyset);
 		if status == true then
 			-- Problem solved
 			return true;
@@ -290,10 +306,11 @@ end
 function supervisor:handle_collisions()
 	local collision_found, broken_node;
 	local path = {};
+	local keyset = {};
 	while true do
-		collision_found, broken_node = handle_collisions_rec(self.data.children, path, 1);
+		collision_found, broken_node = handle_collisions_rec(self.data.children, path, keyset, 1);
 		if collision_found then
-			local status, err = handle_single_collision(self.collision_tree, self.data, broken_node, path);
+			local status, err = handle_single_collision(self.collision_tree, self.data, broken_node, path, keyset);
 			if not status then
 				return status, err;
 			end

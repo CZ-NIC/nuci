@@ -128,7 +128,7 @@ function self:collision_handlers()
 	return result;
 end
 
-function self:collision(tree, node, path)
+function self:collision(tree, node, path, keyset)
 	node.errors = nil;
 	log_dbg("Colision " .. DataDumper(path) .. " solved.");
 
