@@ -28,6 +28,9 @@ local function test_provider(value_definitions)
 	function provider:get()
 		return value_definitions;
 	end
+	function provider:collision_handlers()
+		return {};
+	end
 	return provider;
 end
 
@@ -127,14 +130,14 @@ local function test_tree_simple(namespace)
 					{
 						name = 'c',
 						children = {
-							{ name = 'key', text = 'hello' },
+							{ key = true, name = 'key', text = 'hello' },
 							{ name = 'value', text = 42 }
 						}
 					},
 					{
 						name = 'c',
 						children = {
-							{ name = 'key', text = 'greetings' },
+							{ key = true, name = 'key', text = 'greetings' },
 							{ name = 'value', text = 24 }
 						}
 					}
@@ -333,7 +336,7 @@ local tests = {
 					{
 						name = 'c',
 						children = {
-							{ name = 'key', text = 'key' },
+							{ key = true, name = 'key', text = 'key' },
 							{ name = 'value', text = 'value' }
 						}
 					},
