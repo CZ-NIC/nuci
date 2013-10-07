@@ -67,4 +67,21 @@ function datastore:get()
 	return xml:strdump();
 end
 
+function datastore:user_rpc(rpc)
+	if rpc == 'check' then
+		local code, stdout, stderr = run_command(nil, 'updater.sh');
+		if code ~= 0 then
+			return nil, "Failed to run the updater: " .. stderr;
+		end
+		return '<ok/>';
+	else
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
+	end
+end
+
 register_datastore_provider(datastore)
