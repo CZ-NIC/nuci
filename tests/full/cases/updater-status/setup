@@ -1,5 +1,7 @@
 test -d /tmp/update-state && exit 1 # Not clean
 
+export NUCI_TEST_PLUGIN_LIST=updater,init
+
 mkdir /tmp/update-state
 echo 'running' >/tmp/update-state/state
 cat >/tmp/update-state/log <<ENDLOG
