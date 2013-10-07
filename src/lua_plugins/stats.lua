@@ -319,7 +319,7 @@ local function get_output(command)
 		data = uci.cursor().get_all(command.uci)
 		for i, selector in ipairs(command.selector or {}) do
 			local found = false;
-			for name, item in pairs(data) do
+			for name, item in pairs(data or {}) do
 				local selected = true;
 				if selector.name then
 					selected = selected and (selector.name == name);
