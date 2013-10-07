@@ -418,6 +418,22 @@ struct interpreter *interpreter_create(void) {
 	return result;
 }
 
+static bool load_plugin(struct interpreter *interpreter, const char *path, const char *plugin_name) {
+	nlog(NLOG_DEBUG, "Loading plugin %s", plugin_name);
+	size_t path_len = strlen(path);
+	size_t complete_len = strlen(plugin_name) + path_len + 2; // 1 for '\0', 1 for '/'
+	char filename[complete_len];
+	size_t print_len = snprintf(filename, complete_len, "%s/%s", path, plugin_name);
+	assert(print_len == complete_len - 1);
+
+	if (luaL_dofile(interpreter->state, filename) != 0) {
+		// The error is on the top of the string, at index -1
+		nlog(NLOG_FATAL, "Failure to load lua plugin %s: %s", plugin_name, lua_tostring(interpreter->state, -1));
+		return false;
+	}
+	return true;
+}
+
 bool interpreter_load_plugins(struct interpreter *interpreter, const char *path) {
 	DIR *dir = opendir(path);
 	if (!dir) {
@@ -425,32 +441,39 @@ bool interpreter_load_plugins(struct interpreter *interpreter, const char *path)
 		return false;
 	}
 
-	size_t path_len = strlen(path);
-	struct dirent *ent;
-	while ((ent = readdir(dir))) {
-		// First, check if it ends with .lua
-		const char *dot = rindex(ent->d_name, '.');
-		// Either no file extention, or the extention is not lua nor luac
 #ifdef LUA_COMPILE
-		const char *ext = ".luac";
+	const char *ext = ".luac";
 #else
-		const char *ext = ".lua";
+	const char *ext = ".lua";
 #endif
-		if (!dot || strcmp(dot, ext) != 0)
-			continue;
-
-		size_t complete_len = strlen(ent->d_name) + path_len + 2; // 1 for '\0', 1 for '/'
-		char filename[complete_len];
-		size_t print_len = snprintf(filename, complete_len, "%s/%s", path, ent->d_name);
-		assert(print_len == complete_len - 1);
-		if (luaL_dofile(interpreter->state, filename) != 0) {
-			// The error is on the top of the string, at index -1
-			nlog(NLOG_ERROR, "Failure to load lua plugin %s: %s", ent->d_name, lua_tostring(interpreter->state, -1));
-			return false;
+	const char *plugin_list = getenv("NUCI_TEST_PLUGIN_LIST");
+	if (plugin_list) {
+		char plugins[strlen(plugin_list) + 1];
+		strcpy(plugins, plugin_list);
+		char *plugins_cp = plugins;
+		char *plugin_name;
+		while ((plugin_name = strtok(plugins_cp, " \t,;:"))) {
+			plugins_cp = NULL;
+			char full_name[1 + strlen(ext) + strlen(plugin_name)];
+			strcpy(full_name, plugin_name);
+			strcat(full_name, ext);
+			if (!load_plugin(interpreter, path, full_name))
+				return false;
 		}
-	}
+	} else {
+		struct dirent *ent;
+		while ((ent = readdir(dir))) {
+			// First, check if it ends with .lua
+			const char *dot = rindex(ent->d_name, '.');
+			// Either no file extention, or the extention is not lua nor luac
+			if (!dot || strcmp(dot, ext) != 0)
+				continue;
 
-	closedir(dir);
+			if (!load_plugin(interpreter, path, ent->d_name))
+				return false;
+		}
+		closedir(dir);
+	}
 	return true;
 }
 
