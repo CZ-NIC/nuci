@@ -670,6 +670,27 @@ struct nc_err *nc_err_create_from_lua(struct interpreter *interpreter, struct nc
 	}
 }
 
+static const char *extract_err_string_from_lua(struct interpreter *interpreter) {
+	if (interpreter->last_error) {
+		lua_State *lua = interpreter->state;
+		if (lua_isstring(lua, -1))
+			return lua_tostring(lua, -1);
+		else if lua_istable(lua, -1) {
+			int eindex = lua_gettop(lua);
+			const char *message = get_err_value(lua, eindex, "message", "Unknown error");
+			/*
+			 * This does pop the string from the stack. But it is still left in the
+			 * table, so it won't be garbage collected yet.
+			 */
+			lua_pop(lua, lua_gettop(lua) - eindex);
+			return message;
+		} else
+			return "Error that is neither string nor table";
+	} else {
+		return NULL;
+	}
+}
+
 bool interpreter_commit(struct interpreter *interpreter, bool success) {
 	lua_State *lua = interpreter->state;
 	int errfunc_index = prepare_errfunc(lua);
@@ -678,7 +699,7 @@ bool interpreter_commit(struct interpreter *interpreter, bool success) {
 	lua_pcall(lua, 1, 1, errfunc_index);
 	if (!lua_isnil(lua, -1)) {
 		flag_error(interpreter, true, -1);
-		nlog(NLOG_WARN, "Commit led to failure");
+		nlog(NLOG_WARN, "Commit led to failure: %s", extract_err_string_from_lua(interpreter));
 		return false;
 	}
 	flag_error(interpreter, false, 0);
