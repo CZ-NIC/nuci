@@ -59,7 +59,7 @@ void die(const char *format, ...) {
 	va_start(args, format);
 	vnlog(NLOG_FATAL, format, args);
 	va_end(args);
-	exit(1);
+	abort();
 }
 
 void log_set_stderr(enum log_level level) {

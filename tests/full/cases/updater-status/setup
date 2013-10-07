@@ -1,0 +1,9 @@
+test -d /tmp/update-state && exit 1 # Not clean
+
+mkdir /tmp/update-state
+echo 'running' >/tmp/update-state/state
+cat >/tmp/update-state/log <<ENDLOG
+I package
+I another
+R garbage
+ENDLOG

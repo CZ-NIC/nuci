@@ -23,6 +23,7 @@ check:
 	cd $(S) && make
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/editconfig_test.lua
 	cd $(S) && ./tests/lua-test-all
+	cd $(S) && ./tests/full-test-all
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/xmltree-test.lua
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/stress2_xml.lua
 	cd $(S) && valgrind -v --error-exitcode=1 ./bin/test_runner ./tests/stress_xml.lua

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="updater" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+	<yang-version value="1"/>
+	<namespace uri="http://www.nic.cz/ns/router/updater"/>
+	<prefix value="updater"/>
+  <rpc name='check'>
+    <description>
+      <text>Start the updater and check for new updates. No parameters or result (eg. the &lt;ok/&gt; is sent in answer)</text>
+    </description>
+  </rpc>
+  <container name='updater'>
+    <description>
+      <text>Describes the current state of the updater and its last known activity</text>
+    </description>
+    <config value='false'/>
+    <leaf name='running'>
+      <type name='enumeration'>
+        <enum name='initial sleep'/>
+        <enum name='get package listlist'/>
+        <enum name='remove'/>
+        <enum name='install'/>
+        <enum name='cooldown'/>
+        <enum name='examine'/>
+      </type>
+      <description>
+        <text>If present, the updater is currently running. The content describes its current activity. The last-activity is relevant to the currently running updater and the last item in there is the one being worked on right now.</text>
+      </description>
+    </leaf>
+    <leaf name='failed'>
+      <type name='string'/>
+      <description>
+        <text>If present, the last run of updater failed. The content is the reason.</text>
+      </description>
+    </leaf>
+    <container name='last-activity'>
+      <description>
+        <text>Describes what happened during the last run of the updater (if known). It may be present, but empty ‒ the last time the updater run, it had nothing to do.</text>
+      </description>
+      <presence value='Present if the updater has run from the last restart'/>
+      <list name='install'>
+        <type name='string'/>
+        <description>
+          <text>A package is/was installed.</text>
+        </description>
+      </list>
+      <list name='remove'>
+        <type name='string'/>
+        <description>
+          <text>A package is/was uninstalled.</text>
+        </description>
+      </list>
+    </container>
+  </container>
+</module>

@@ -3,7 +3,8 @@ NUCI_PLUGINS := \
 	uci-raw \
 	nethist \
 	supervisor_test \
-	registration
+	registration \
+	updater
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 
 NUCI_PLUGINS_BARE := \
