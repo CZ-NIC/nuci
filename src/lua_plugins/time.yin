@@ -13,11 +13,11 @@
         </description>
       </leaf>
       <leaf name='utc'>
-        <type name='empty'>
+        <type name='empty'/>
         <description>
           <text>If present, the given date is not in local time, but in UTC.</text>
         </description>
-      </type>
+      </leaf>
     </input>
     <description>
       <text>Set the date and time on the device and store it to hardware clock.</text>

@@ -4,7 +4,8 @@ NUCI_PLUGINS := \
 	nethist \
 	supervisor_test \
 	registration \
-	updater
+	updater \
+	time
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 
 NUCI_PLUGINS_BARE := \
