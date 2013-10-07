@@ -1,0 +1,12 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
+ <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <updater xmlns="http://www.nic.cz/ns/router/updater">
+   <failed xmlns="http://www.nic.cz/ns/router/updater">Died of old age</failed>
+   <last_activity xmlns="http://www.nic.cz/ns/router/updater">
+    <install xmlns="http://www.nic.cz/ns/router/updater">package</install>
+    <install xmlns="http://www.nic.cz/ns/router/updater">another</install>
+    <remove xmlns="http://www.nic.cz/ns/router/updater">garbage</remove>
+   </last_activity>
+  </updater>
+ </data>
+</rpc-reply>
