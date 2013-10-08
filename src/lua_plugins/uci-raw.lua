@@ -65,6 +65,8 @@ end
 function uci_datastore:get_config()
 	local cursor = get_uci_cursor();
 	local result = [[<uci xmlns='http://www.nic.cz/ns/router/uci-raw'>]];
+	local configs = uci_list_configs();
+	table.sort(configs);
 	for _, config in ipairs(uci_list_configs()) do
 		result = result .. list_config(cursor, config);
 	end
