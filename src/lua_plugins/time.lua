@@ -28,4 +28,59 @@ function datastore:get()
 	return xml:strdump();
 end
 
+local function systohc()
+	-- TODO: Check the RTC is really there on the final hardware (#2724)
+	local code, stdout, stderr = run_command(nil, 'sh', '-c', 'if [ -e /dev/misc/rtc ] ; then hwclock -u -w ; fi');
+	if code == 0 then
+		return '<ok/>';
+	else
+		return nil, "Failed to store the time to hardware clock: " .. stderr;
+	end
+end
+
+function datastore:user_rpc(rpc, data)
+	local xml = xmlwrap.read_memory(data);
+	local root = xml:root();
+
+	if rpc == 'set' then
+		local time_node = find_node_name_ns(root, 'time', self.model_ns);
+		if not time_node then
+			return nil, {
+				msg = "Missing the <time> parameter, don't know what to set the time to",
+				app_tag = 'data-missing',
+				info_badelem = 'time',
+				info_badns = self.model_ns
+			};
+		end
+		local year, month, day, hour, minute, second = string.match(time_node:text(), '(....)-(..)-(..)T(..):(..):(..)');
+		if not year then
+			return nil, {
+				msg = "Malformed <time> parameter (tip: it should look something like 1970-01-01T00:00:00+0100)",
+				app_tag = 'invalid-value',
+				info_badelem = 'time',
+				info_badns = self.model_ns
+			};
+		end
+		local utc = find_node_name_ns(root, 'utc', self.model_ns);
+		local target_time = year .. '.' .. month .. '.' .. day .. '-' .. hour .. ':' .. minute .. ':' .. second;
+		local code, stdout, stderr;
+		if utc then
+			code, stdout, stderr = run_command(nil, 'date', '-u', '-s', target_time);
+		else
+			code, stdout, stderr = run_command(nil, 'date', '-s', target_time);
+		end
+		if code ~= 0 then
+			return nil, "Failed to set time: " .. stderr;
+		end
+		return systohc();
+	else
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
+	end
+end
+
 register_datastore_provider(datastore);
