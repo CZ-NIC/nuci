@@ -61,6 +61,11 @@ self.watch = {
 		multival = {"10.11.22.13"}
 	},
 	{
+		path = {'supervisor-test', 'networking', 'internet', 'interface', 'gateway'},
+		keys = {{}, {}, {}, {name = "eth1"}, {}},
+		val = "10.11.22.1"
+	},
+	{
 		path = {'supervisor-test', 'networking', 'internet', 'interface', 'xxx'},
 		keys = {{}, {}, {}, {}, {}},
 		val = "10.11.22.1",
