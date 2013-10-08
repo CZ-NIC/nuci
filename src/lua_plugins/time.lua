@@ -43,6 +43,7 @@ function datastore:user_rpc(rpc, data)
 	local root = xml:root();
 
 	if rpc == 'set' then
+		nlog(NLOG_DEBUG, "Going to set date/time manually");
 		local time_node = find_node_name_ns(root, 'time', self.model_ns);
 		if not time_node then
 			return nil, {
@@ -65,8 +66,10 @@ function datastore:user_rpc(rpc, data)
 		local target_time = year .. '.' .. month .. '.' .. day .. '-' .. hour .. ':' .. minute .. ':' .. second;
 		local code, stdout, stderr;
 		if utc then
+			nlog(NLOG_TRACE, "UTC: ", target_time);
 			code, stdout, stderr = run_command(nil, 'date', '-u', '-s', target_time);
 		else
+			nlog(NLOG_TRACE, "local: ", target_time);
 			code, stdout, stderr = run_command(nil, 'date', '-s', target_time);
 		end
 		if code ~= 0 then
