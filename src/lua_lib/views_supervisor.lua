@@ -243,40 +243,34 @@ Return true if some collision was found, false otherwise
 ]]
 local function handle_collisions_rec(node, path, keyset, level)
 	local add_keys_into_keyset = function(ks, node)
-		for _, item in pairs(node) do
+		for _, item in pairs(node.children or {}) do
 			if item.key then
 				ks[item.name] = item.text;
 			end
 		end
 	end
-
-	if not node then
-		-- End of recursion
-		-- This path is clean
-		return false;
-	end
-
-	local collision_found;
-
 	-- Prepare keyset structure for this level
-	if not keyset[level] then
+	if not keyset[level] and level > 0 then
 		keyset[level] = {};
 	end
+	--Fill informations about this level
 	add_keys_into_keyset(keyset[level], node);
-
-	for _, item in pairs(node) do
-		path[level] = item.name;
-		if item.errors then
-			return true, item;
-		end
-		collision_found, broken_node = handle_collisions_rec(item.children, path, keyset, level+1);
+	path[level] = node.name;
+	-- Detect collision in this node
+	if node.errors then
+		return true, node;
+	end
+	-- If I have some children recurse to them.
+	for _, item in pairs(node.children or {}) do
+		local collision_found, broken_node = handle_collisions_rec(item, path, keyset, level+1);
 		if collision_found then
 			-- Collision was found, distribute it
 			return collision_found, broken_node;
 		end
-		path[level+1] = nil;
-		keyset[level+1] = nil;
 	end
+	-- Cleanup my level, nothing was found and this informations are useless
+	path[level] = nil;
+	keyset[level] = nil;
 
 	return false;
 end
@@ -307,7 +301,7 @@ function supervisor:handle_collisions()
 	local path = {};
 	local keyset = {};
 	while true do
-		collision_found, broken_node = handle_collisions_rec(self.data.children, path, keyset, 1);
+		collision_found, broken_node = handle_collisions_rec(self.data, path, keyset, 0);
 		if collision_found then
 			local status, err = handle_single_collision(self.collision_tree, self.data, broken_node, path, keyset);
 			if not status then
