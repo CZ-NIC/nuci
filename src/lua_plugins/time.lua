@@ -76,6 +76,42 @@ function datastore:user_rpc(rpc, data)
 			return nil, "Failed to set time: " .. stderr;
 		end
 		return systohc();
+	elseif rpc == 'ntp' then
+		nlog(NLOG_DEBUG, "Going to run NTP");
+		local servers = {};
+		for node in root:iterate() do
+			local name, ns = node:name();
+			-- Extract list of servers from parameters
+			if name == 'server' and ns == self.model_ns then
+				table.insert(servers, node:text());
+			end
+		end
+		-- If none are given, use the ones from config
+		if #servers == 0 then
+			servers = get_uci_cursor():get("system", "ntp", "server");
+		end
+		-- Do we have any?
+		if not servers or #servers == 0 then
+			return nil, {
+				msg = "Could not determine any NTP servers",
+				app_tag = 'data-missing',
+				info_badelem = 'server',
+				info_badns = self.model_ns
+			};
+		end
+		-- Construct the param table
+		local server_params = {};
+		for _, server in ipairs(servers) do
+			nlog(NLOG_TRACE, "NTP server: ", server);
+			table.extend(server_params, {'-p', server});
+		end
+		-- Run the ntp
+		local code, stdout, stderr = run_command(nil, 'ntpd', '-n', '-q', unpack(server_params));
+		if code == 0 then
+			return "<ok/>";
+		else
+			return nil, "Failed to run ntpd: " .. stderr;
+		end
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
