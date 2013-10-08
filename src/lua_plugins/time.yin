@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="time" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+	<yang-version value="1"/>
+	<namespace uri="http://www.nic.cz/ns/router/time"/>
+	<prefix value="time"/>
+  <rpc name='set'>
+    <input>
+      <leaf name='time'>
+        <type name='string'/>
+        <mandatory value='true'/>
+        <description>
+          <text>The time to set, in the ISO-8601 format.</text>
+        </description>
+      </leaf>
+      <leaf name='utc'>
+        <type name='empty'/>
+        <description>
+          <text>If present, the given date is not in local time, but in UTC.</text>
+        </description>
+      </leaf>
+    </input>
+    <description>
+      <text>Set the date and time on the device and store it to hardware clock.</text>
+    </description>
+  </rpc>
+  <rpc name='ntp'>
+    <input>
+      <leaf-list name='server'>
+        <type name='string'/>
+        <description>
+          <text>List of servers to query. If none are specified, the configuration is taken out of the system.</text>
+        </description>
+      </leaf-list>
+    </input>
+    <description>
+      <text>Synchronize the time and date from the internet, using the NTP protocol.</text>
+    </description>
+  </rpc>
+  <container name='time'>
+    <description>
+      <text>Shows the current time on the device.</text>
+    </description>
+    <config value='false'/>
+    <leaf name='local'>
+      <type name='string'/>
+    </leaf>
+    <leaf name='timezone'>
+      <type name='string'/>
+    </leaf>
+    <leaf name='utc'>
+      <type name='string'/>
+    </leaf>
+  </container>
+</module>
