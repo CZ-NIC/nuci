@@ -67,6 +67,81 @@ local generate_duplicate = {
 	}
 };
 
+local function generate_collision_simple(value1, value2, priority)
+	return {
+		{
+			path = {'a', 'b', 'c'},
+			keys = { {}, {}, {} },
+			val = value1,
+			collision_priority = priority
+		},
+		{
+			path = {'a', 'b', 'd'},
+			keys = { {}, {}, {} },
+			val = value2,
+			collision_priority = priority
+		}
+	}
+end
+local function generate_collision_on_keyset(value1, value2, priority)
+	return {
+		{
+			path = {'a', 'b', 'c'},
+			keys = { {}, { name = "eth0"}, {} },
+			val = value1,
+			collision_priority = priority
+		},
+		{
+			path = {'a', 'b', 'd'},
+			keys = { {}, { name = "eth0"}, {} },
+			val = value2,
+			collision_priority = priority
+		}
+	}
+end
+local function generate_collision_false_alarm(keyval, priority)
+	return {
+		{
+			path = {'a', 'b', 'c'},
+			keys = { {}, { name = keyval}, {} },
+			val = 10,
+			collision_priority = priority
+		},
+		{
+			path = {'a', 'b', 'd'},
+			keys = { {}, { }, {} },
+			val = 11,
+			collision_priority = priority
+		}
+	}
+end
+
+local function collision_provider(value_definitions, collision_fce)
+	local provider = {};
+	-- Extract the paths, to know where to register.
+	function provider:positions()
+		local result = {};
+		for _, value in ipairs(value_definitions) do
+			table.insert(result, value.path);
+		end
+		return result;
+	end
+	function provider:get()
+		return value_definitions;
+	end
+	function provider:collision_handlers()
+		local result = {};
+		for _, value in ipairs(value_definitions) do
+			if value.collision_priority then
+				table.insert(result, { path = value.path, priority = value.collision_priority });
+			end
+		end
+		return result;
+	end
+	provider.collision = collision_fce;
+	return provider;
+end
+
 --[[
 Check the value1 and value2 are the same. Recurses through table structures,
 to check them for deep equality.
@@ -345,6 +420,153 @@ local tests = {
 				}
 			}, supervisor.data, 'Data');
 		end
+	},
+	{
+		name = "simple collision - first plugin solve problem",
+		provider_plugins = {
+			collision_provider(generate_collision_simple(42, 42, 20), function(self, tree, node, path, keyset)
+				-- Set value
+				if node.name == "c" then
+					node.text = 666;
+				elseif node.name == "d" then
+					node.text = 999;
+				else
+					return false;
+				end
+				-- And mark collision as solved
+				node.errors = nil;
+				node.source = nil;
+				return true;
+			end
+			),
+			collision_provider(generate_collision_simple(43, 43, 10), function(self, tree, node, path, keyset)
+				return false;
+			end
+			)
+		},
+		body = function(test)
+			supervisor:check_tree_built();
+			test_equal(
+				{ children={ { children={ { children={ { name="c", text=666 }, { name="d", text=999 } }, name="b" } }, name="a" } } },
+				supervisor.data,
+				"Collision handling result"
+			);
+		end
+	},
+	{
+		name = "simple collision - second plugin solve problem",
+		provider_plugins = {
+			collision_provider(generate_collision_simple(42, 42, 20), function(self, tree, node, path, keyset)
+				return false; -- Scond provider will do it;
+			end
+			),
+			collision_provider(generate_collision_simple(43, 43, 10), function(self, tree, node, path, keyset)
+				-- Set value
+				if node.name == "c" then
+					node.text = 999;
+				elseif node.name == "d" then
+					node.text = 666;
+				else
+					return false;
+				end
+				-- And mark collision as solved
+				node.errors = nil;
+				node.source = nil;
+				return true;
+			end
+			)
+		},
+		body = function(test)
+			supervisor:check_tree_built();
+			test_equal(
+				{ children={ { children={ { children={ { name="c", text=999 }, { name="d", text=666 } }, name="b" } }, name="a" } } },
+				supervisor.data,
+				"Collision handling result"
+			);
+		end
+	},
+	{
+		name = "simple collision - no one solve problem",
+		provider_plugins = {
+			collision_provider(generate_collision_simple(42, 42, 20), function(self, tree, node, path, keyset)
+				return false;
+			end
+			),
+			collision_provider(generate_collision_simple(43, 43, 10), function(self, tree, node, path, keyset)
+				return false;
+			end
+			)
+		},
+		body = function(test)
+			local status, err = supervisor:check_tree_built();
+			test_equal(status, nil, "Unsolved collision");
+		end
+	},
+	{
+		name = "key collision",
+		provider_plugins = {
+			collision_provider(generate_collision_on_keyset(42, 42, 20), function(self, tree, node, path, keyset)
+				local keyset_match = false;
+
+				for _, key in ipairs(keyset) do
+					if key["name"] == "eth0" then
+						keyset_match = true;
+						break;
+					end
+				end
+
+				if not keyset_match then
+					return false;
+				end
+				-- Set value
+				if node.name == "c" then
+					node.text = 666;
+				elseif node.name == "d" then
+					node.text = 999;
+				else
+					return false;
+				end
+				-- And mark collision as solved
+				node.errors = nil;
+				node.source = nil;
+				return true;
+			end
+			),
+			collision_provider(generate_collision_on_keyset(43, 43, 10), function(self, tree, node, path, keyset)
+				return false;
+			end
+			)
+		},
+		body = function(test)
+			supervisor:check_tree_built();
+			test_equal(
+				{ children={ { children={ { children={ { key=true, name="name", text="eth0"}, { name="c", text=666 }, { name="d", text=999 } }, name="b" } }, name="a" } } },
+				supervisor.data,
+				"Collision handling result"
+			);
+		end
+	},
+	{
+		name = "false alarm",
+		provider_plugins = {
+			collision_provider(generate_collision_false_alarm("eth0", 20), function(self, tree, node, path, keyset)
+				return nil;
+			end
+			),
+			collision_provider(generate_collision_false_alarm("eth1", 10), function(self, tree, node, path, keyset)
+				return nil;
+			end
+			)
+		},
+		body = function(test)
+			local status, err = supervisor:check_tree_built();
+			test_equal(
+				{ children={ { children={ { children={ { key=true, name="name", text="eth0" }, { name="c", text=10 } }, name="b" },
+				{ children={ { name="d", text=11 } }, name="b" }, { children={ { key=true, name="name", text="eth1" }, { name="c", text=10 } }, name="b" } }, name="a" } } },
+				supervisor.data,
+				"False alarm triggered"
+			)
+		end
 	}
 }
 
@@ -360,7 +582,8 @@ local function run_test(test)
 	-- Reset the cache
 	supervisor:invalidate_cache();
 	supervisor.plugins = {};
-	supervisor.tree = { subnodes = {}, plugins = {} }
+	supervisor.tree = { subnodes = {}, plugins = {} };
+	supervisor.collision_tree = { subnodes = {}, plugins = {} };
 	io.write("OK\n");
 end
 
