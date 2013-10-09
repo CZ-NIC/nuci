@@ -569,6 +569,33 @@ local tests = {
 				"False alarm triggered"
 			)
 		end
+	},
+	{
+		name = "remove parent",
+		provider_plugins = {
+			collision_provider(generate_collision_simple(42, 42, 20), function(self, tree, node, path, keyset)
+				-- Get my parent's name
+				local parent_name = node.parent.name;
+				for i, child in ipairs(node.parent.parent.children) do
+					if child.name == parent_name then
+						table.remove(node.parent.parent.children, i);
+					end
+				end
+				return true;
+			end
+			),
+			collision_provider(generate_collision_simple(43, 43, 10), function(self, tree, node, path, keyset)
+				global_check_variable = true;
+				return false;
+			end
+			)
+		},
+		body = function(test)
+			global_check_variable = false;
+			supervisor:check_tree_built();
+			test_equal(global_check_variable, false, "Second handler shouldn't be called");
+			test_equal(supervisor.data, { children={ { children={  }, name="a", parent=nil } } }, "Remove parent from tree");
+		end
 	}
 }
 
