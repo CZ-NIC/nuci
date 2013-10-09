@@ -156,8 +156,10 @@ local function deep_equal(value1, value2)
 		if value1 == value2 then return true; end
 		local function check(t1, t2)
 			for key, value in pairs(t1) do
-				if not deep_equal(value, t2[key]) then
-					return false;
+				if key ~= "parent" then
+					if not deep_equal(value, t2[key]) then
+						return false;
+					end
 				end
 			end
 			return true;

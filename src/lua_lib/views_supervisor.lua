@@ -165,6 +165,9 @@ local function merge_data(values, level)
 		local result = { text = value };
 		if next(children) then
 			result.children = children;
+			for _, child in ipairs(children) do
+				child.parent = result;
+			end
 		end
 		local errors = {};
 		if child_error then
