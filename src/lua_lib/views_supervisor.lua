@@ -275,6 +275,12 @@ local function handle_collisions_rec(node, path, keyset, level)
 	return false;
 end
 
+--[[
+Expected status codes are:
+true - plugin solved collision - is not necessary to call anything else
+false - plugin wasn't able to solve collision - call something else
+nil - and error occured - report error immediately
+]]
 local function handle_single_collision(collision_tree, tree, node, path, keyset)
 	local callbacks = callbacks_find(collision_tree, path);
 	table.sort(callbacks, function (a, b) return a.priority > b.priority end);
