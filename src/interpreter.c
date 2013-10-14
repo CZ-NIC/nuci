@@ -91,6 +91,14 @@ static void check(int result, const char *operation) {
 	}
 }
 
+// Like above, but in child. Don't print with colors.
+static void checkc(int result, const char *operation) {
+	if (result == -1) {
+		fprintf(stderr, "Error during %s: %s", operation, strerror(errno));
+		abort();
+	}
+}
+
 // Helper function to feed data to a pipe
 static bool feed_data(const char *data, size_t *position, size_t len, int pipe) {
 	if (*position == len) {
@@ -179,18 +187,18 @@ static int run_command_lua(lua_State *lua) {
 		 * The child. So, here we close the parental ends of the pipes, and
 		 * install the other ends to stdin, stdout and stderr.
 		 */
-		check(close(in_pipes[1]), "closing parent stdin");
-		check(close(out_pipes[0]), "closing parent stdout");
-		check(close(err_pipes[0]), "closing parent stderr");
-		check(dup2(in_pipes[0], 0), "duping stdin");
-		check(dup2(out_pipes[1], 1), "duping stdout");
-		check(dup2(err_pipes[1], 2), "duping stderr");
+		checkc(close(in_pipes[1]), "closing parent stdin");
+		checkc(close(out_pipes[0]), "closing parent stdout");
+		checkc(close(err_pipes[0]), "closing parent stderr");
+		checkc(dup2(in_pipes[0], 0), "duping stdin");
+		checkc(dup2(out_pipes[1], 1), "duping stdout");
+		checkc(dup2(err_pipes[1], 2), "duping stderr");
 		// The originals are not needed
-		check(close(in_pipes[0]), "closing original stdin");
-		check(close(out_pipes[1]), "closing original stdout");
-		check(close(err_pipes[1]), "closing original stderr");
+		checkc(close(in_pipes[0]), "closing original stdin");
+		checkc(close(out_pipes[1]), "closing original stdout");
+		checkc(close(err_pipes[1]), "closing original stderr");
 		// Run the command
-		check(execvp(command, argv), "exec");
+		checkc(execvp(command, argv), "exec");
 		// We'll never get here. Either exec fails, then check kills us, or we exec.
 	}
 	// OK, we are in the parent now. Close the child ends of pipes.
