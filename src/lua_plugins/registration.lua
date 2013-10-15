@@ -20,11 +20,7 @@ function datastore:user_rpc(rpc)
 		if ecode ~= 0 then
 			return nil, "Can't generate challenge";
 		end
-		local ecode, serial = run_command(nil, 'atsha204cmd', 'serial-number');
-		if ecode ~= 0 then
-			return nil, "Can't get my own serial";
-		end
-		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(serial) .. "-" .. trimr(stdout) .. "</reg-num>";
+		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(stdout) .. "</reg-num>";
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
