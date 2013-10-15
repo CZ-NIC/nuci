@@ -552,11 +552,11 @@ local tests = {
 		name = "false alarm",
 		provider_plugins = {
 			collision_provider(generate_collision_false_alarm("eth0", 20), function(self, tree, node, path, keyset)
-				return nil;
+				return nil, "This handler should not be called.";
 			end
 			),
 			collision_provider(generate_collision_false_alarm("eth1", 10), function(self, tree, node, path, keyset)
-				return nil;
+				return nil, "This handler should not be called";
 			end
 			)
 		},
@@ -574,26 +574,23 @@ local tests = {
 		name = "remove parent",
 		provider_plugins = {
 			collision_provider(generate_collision_simple(42, 42, 20), function(self, tree, node, path, keyset)
-				-- Get my parent's name
-				local parent_name = node.parent.name;
 				for i, child in ipairs(node.parent.parent.children) do
-					if child.name == parent_name then
+					if child == node.parent then
 						table.remove(node.parent.parent.children, i);
+						return true;
 					end
 				end
-				return true;
+				return false;
 			end
 			),
 			collision_provider(generate_collision_simple(43, 43, 10), function(self, tree, node, path, keyset)
-				global_check_variable = true;
-				return false;
+				return nil, "This handler should not be called.";
 			end
 			)
 		},
 		body = function(test)
-			global_check_variable = false;
-			supervisor:check_tree_built();
-			test_equal(global_check_variable, false, "Second handler shouldn't be called");
+			local status, err = supervisor:check_tree_built();
+			test_equal(status, true, "Second handler shouldn't be called");
 			test_equal(supervisor.data, { children={ { children={  }, name="a", parent=nil } } }, "Remove parent from tree");
 		end
 	}
