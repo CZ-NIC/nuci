@@ -4,7 +4,7 @@ require("nutils");
 local datastore = datastore('registration.yin');
 
 -- Where we get the challenge
-local challenge_url = 'https://test-dev.securt.cz/challenge.cgi';
+local challenge_url = 'https://api.turris.cz/challenge.cgi';
 
 function datastore:user_rpc(rpc)
 	if rpc == 'get' then
