@@ -45,10 +45,15 @@ end
 -- TODO: Function to set up these from plugins
 --[[
 Override the default mapping config file name => daemon to restart.
-It can contain either nil (disable restart for that config) or name
-of the daemon to restart.
+It can contain either false (disable restart for that config) or name
+of the daemon to restart, or a table, in which case it is custom command
+to use.
 ]]
-local restart_overrides = {};
+local restart_overrides = {
+	system = 'sysntpd',
+	dhcp = 'dnsmasq',
+	wireless = {'wifi'}
+};
 
 local function restart_daemons()
 	if os.getenv("NUCI_DONT_RESTART") == "1" then
@@ -60,7 +65,7 @@ local function restart_daemons()
 		local override = restart_overrides[config];
 		if override ~= nil then
 			if override then
-				to_restart[override] = true;
+				to_restart[override] = override;
 			end
 		else
 			to_restart[config] = true;
@@ -68,11 +73,20 @@ local function restart_daemons()
 	end
 	-- Go through them and restart them one by one, if they exist.
 	for daemon in pairs(to_restart) do
-		local file = "/etc/init.d/" .. daemon;
-		if file_executable(file) then
-			local result, stdout, stderr = run_command(nil, file, 'reload');
+		if type(daemon) == 'table' then
+			nlog(NLOG_DEBUG, "Post-commit action: ", daemon[1]);
+			local result, stdout, stderr = run_command(nil, unpack(daemon));
 			if result ~= 0 then
-				error("Daemon " .. daemon .. " failed to restart: " .. stderr);
+				error("Failed a post-commit action: " .. daemon[1]);
+			end
+		else
+			local file = "/etc/init.d/" .. daemon;
+			nlog(NLOG_DEBUG, "Restarting ", daemon);
+			if file_executable(file) then
+				local result, stdout, stderr = run_command(nil, file, 'reload');
+				if result ~= 0 then
+					error("Daemon " .. daemon .. " failed to restart: " .. stderr);
+				end
 			end
 		end
 	end
