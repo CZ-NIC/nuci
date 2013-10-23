@@ -69,7 +69,7 @@ end
 
 function datastore:user_rpc(rpc)
 	if rpc == 'check' then
-		local code, stdout, stderr = run_command(nil, 'updater.sh');
+		local code, stdout, stderr = run_command(nil, 'sh', '-c', 'updater.sh &');
 		if code ~= 0 then
 			return nil, "Failed to run the updater: " .. stderr;
 		end
