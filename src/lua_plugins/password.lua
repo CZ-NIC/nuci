@@ -32,6 +32,7 @@ function datastore:user_rpc(rpc, data)
 		if ecode ~= 0 then
 			return nil, "Failed to set password: " .. stderr;
 		end
+		return '<ok/>';
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
