@@ -572,7 +572,8 @@ char *interpreter_process_user_rpc(struct interpreter *interpreter, lua_datastor
 		flag_error(interpreter, true, -1);
 		return NULL;
 	} else { //all is OK an I have result
-		return strdup(lua_tostring(lua, -2));
+		const char *str = lua_tostring(lua, -2);
+		return strdup(str ? str : "");
 	}
 }
 
