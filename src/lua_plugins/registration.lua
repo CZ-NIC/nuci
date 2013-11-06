@@ -20,7 +20,7 @@ function datastore:user_rpc(rpc)
 		if ecode ~= 0 then
 			return nil, "Can't generate challenge";
 		end
-		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(stdout) .. "</reg-num>";
+		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(stdout:sub(1, 8)) .. "</reg-num>";
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
