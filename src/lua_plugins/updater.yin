@@ -15,6 +15,7 @@
     <config value='false'/>
     <leaf name='running'>
       <type name='enumeration'>
+        <enum name='startup'/>
         <enum name='initial sleep'/>
         <enum name='get package listlist'/>
         <enum name='remove'/>
