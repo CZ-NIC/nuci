@@ -24,7 +24,7 @@
         <enum name='examine'/>
       </type>
       <description>
-        <text>If present, the updater is currently running. The content describes its current activity. The last-activity is relevant to the currently running updater and the last item in there is the one being worked on right now.</text>
+        <text>If present, the updater is currently running. The content describes its current activity. The last_activity is relevant to the currently running updater and the last item in there is the one being worked on right now.</text>
       </description>
     </leaf>
     <leaf name='failed'>
@@ -33,7 +33,7 @@
         <text>If present, the last run of updater failed. The content is the reason.</text>
       </description>
     </leaf>
-    <container name='last-activity'>
+    <container name='last_activity'>
       <description>
         <text>Describes what happened during the last run of the updater (if known). It may be present, but empty ‒ the last time the updater run, it had nothing to do.</text>
       </description>
