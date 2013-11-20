@@ -29,8 +29,7 @@ function datastore:get()
 end
 
 local function systohc()
-	-- TODO: Check the RTC is really there on the final hardware (#2724)
-	local code, stdout, stderr = run_command(nil, 'sh', '-c', 'if [ -e /dev/misc/rtc ] ; then hwclock -u -w ; fi');
+	local code, stdout, stderr = run_command(nil, 'sh', '-c', 'if [ -e /dev/rtc0 ] ; then hwclock -u -w ; fi');
 	if code == 0 then
 		return '<ok/>';
 	else
