@@ -107,9 +107,7 @@ function datastore:user_rpc(rpc, data)
 		-- Run the ntp
 		local code, stdout, stderr = run_command(nil, 'ntpd', '-n', '-q', unpack(server_params));
 		if code == 0 then
-			return "<ok/>";
-		else
-			return nil, "Failed to run ntpd: " .. stderr;
+			return systohc();
 		end
 	else
 		return nil, {
