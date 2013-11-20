@@ -52,7 +52,9 @@ to use.
 local restart_overrides = {
 	system = 'sysntpd',
 	dhcp = 'dnsmasq',
-	wireless = {'wifi'}
+	wireless = {'wifi'},
+	-- Some things in the network config need full restart instead of reload
+	network = {'/etc/init.d/network', 'restart'}
 };
 
 local function restart_daemons()
