@@ -54,7 +54,8 @@ local restart_overrides = {
 	dhcp = 'dnsmasq',
 	wireless = {'wifi'},
 	-- Some things in the network config need full restart instead of reload
-	network = {'/etc/init.d/network', 'restart'}
+	-- Reload dnsmasq after network change, as it may be sitting on the old network setup
+	network = {'sh', '-c', '/etc/init.d/network restart && /etc/init.d/dnsmasq reload'}
 };
 
 local function restart_daemons()
