@@ -29,7 +29,7 @@ function datastore:get()
 end
 
 local function systohc()
-	local code, stdout, stderr = run_command(nil, 'sh', '-c', 'if [ -e /dev/rtc0 ] ; then hwclock -u -w ; fi');
+	local code, stdout, stderr = run_command(nil, 'sh', '-c', 'if [ -e /dev/rtc0 ] ; then hwclock -u -w -f /dev/rtc0 ; fi');
 	if code == 0 then
 		return '<ok/>';
 	else
