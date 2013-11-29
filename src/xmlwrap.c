@@ -1,7 +1,6 @@
 /*
 * Copyright (C) 2012 Alvin Difuntorum <alvinpd09@gmail.com>
-* Copyright (C) 2013 Robin Obůrka <robin.oburka@nic.cz>
-* Copyright (C) 2013 Michal Vaner <michal.vaner@nic.cz>
+* Copyright (C) 2013 CZ.NIC z.s.p.o. (http://www.nic.cz)
 *
 * Note: This file is sub-licensed, that is why we have two license headers.
 *

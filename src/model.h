@@ -1,5 +1,5 @@
 /*
- * Copyright 2013, CZ.NIC
+ * Copyright 2013, CZ.NIC z.s.p.o. (http://www.nic.cz/)
  *
  * This file is part of NUCI configuration server.
  *
