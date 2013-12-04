@@ -3,7 +3,7 @@
   <error-type xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">application</error-type>
   <error-tag xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">operation-not-supported</error-tag>
   <error-severity xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">error</error-severity>
-  <error-message xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">Deleting (or replacing) whole configs is not possible</error-message>
+  <error-message xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">Deleting whole configs is not possible</error-message>
   <error-info xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
    <bad-element xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">config</bad-element>
    <bad-namespace xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">http://www.nic.cz/ns/router/uci-raw</bad-namespace>
