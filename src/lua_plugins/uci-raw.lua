@@ -309,7 +309,7 @@ function uci_datastore:set_config(config, defop, deferr)
 			-- Configs can't be added or removed.
 			remove = function()
 				return {
-					msg="Deleting (or replacing) whole configs is not possible",
+					msg="Deleting whole configs is not possible",
 					tag="operation-not-supported",
 					info_badelem='config',
 					info_badns=self.model_ns
