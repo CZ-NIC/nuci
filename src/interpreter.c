@@ -334,6 +334,9 @@ static int uci_list_configs_lua(lua_State *lua) {
 	lua_newtable(lua);
 	int tindex = lua_gettop(lua);
 	for (char **config = configs; *config; config ++) {
+		size_t len = strlen(*config);
+		if (len >= 7 && (strcmp(*config + len - 7, ".backup") == 0))
+			continue; // A .backup file created by opkg
 		lua_pushnumber(lua, idx ++);
 		lua_pushstring(lua, *config);
 		lua_settable(lua, tindex);
