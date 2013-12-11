@@ -1,0 +1,7 @@
+NUCI
+====
+
+NUCI (Networked UCI) is a daemon for accessing OpenWRT configuration through
+network with the netconf protocol.
+
+Internally, it consists from lua plugins providing netconf modules.
