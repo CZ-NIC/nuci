@@ -2,7 +2,6 @@ NUCI_PLUGINS := \
 	stats \
 	uci-raw \
 	nethist \
-	supervisor_test \
 	registration \
 	updater \
 	time \
