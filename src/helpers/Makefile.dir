@@ -1,0 +1,3 @@
+SCRIPTS += src/helpers/nuci-helper-config-restore
+
+nuci-helper-config-restore_SOURCE = config-restore.sh

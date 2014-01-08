@@ -22,3 +22,4 @@ DOCS += src/plugins \
 
 include $(S)/src/lua_lib/Makefile.dir
 include $(S)/src/lua_plugins/Makefile.dir
+include $(S)/src/helpers/Makefile.dir
