@@ -24,6 +24,7 @@ local datastore = datastore("maintain.yin");
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
+
 	if rpc == 'reboot' then
 		local ecode, stdout, stderr = run_command(nil, 'reboot');
 		if ecode ~= 0 then
@@ -36,6 +37,15 @@ function datastore:user_rpc(rpc, data)
 			return nil, "Failed to create backup: " .. stderr;
 		end
 		return '<data xmlns="' .. self.model_ns .. '">' .. stdout .. '</data>';
+	elseif rpc == 'config-restore' then
+		nlog(NLOG_INFO, "Restoring config");
+		local data_node = find_node_name_ns(root, 'data', self.model_ns);
+		local data = data_node:text();
+		local ecode, stdout, stderr = run_command(data, 'nuci-helper-config-restore');
+		if ecode ~= 0 then
+			return nil, "Failed to restore backup: " .. stderr;
+		end
+		return '<ok/>';
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
