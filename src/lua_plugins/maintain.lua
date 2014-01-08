@@ -30,7 +30,7 @@ function datastore:user_rpc(rpc, data)
 			return nil, "Failed to reboot: " .. stderr;
 		end
 		return '<ok/>';
-	if rpc == 'config-backup' then
+	elseif rpc == 'config-backup' then
 		local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'tar c /etc/config/ | bzip2 -9c | base64');
 		if ecode ~= 0 then
 			return nil, "Failed to create backup: " .. stderr;
