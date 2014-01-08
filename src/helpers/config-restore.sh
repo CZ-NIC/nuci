@@ -21,6 +21,7 @@ set -e
 
 cd /
 base64 -d | bzip -cd | tar xp
+/etc/init.d/network restart
 
 # Run the updater and reboot in the background
 (
