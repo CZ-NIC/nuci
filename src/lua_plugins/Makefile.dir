@@ -5,7 +5,8 @@ NUCI_PLUGINS := \
 	registration \
 	updater \
 	time \
-	password
+	password \
+	maintain
 
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 

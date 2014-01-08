@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="updater" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/maintain"/>
+  <prefix value="maintain"/>
+  <rpc name='reboot'>
+    <description>
+      <text>Restarts the router</text>
+    </description>
+  </rpc>
+  <rpc name='backup'>
+    <description>
+      <text>Returns a block of data that can be later used as input for restore. Internally, it is base64 encoded tar.xz archive containing the /etc/config.</text>
+    </description>
+    <output>
+      <leaf name='data'>
+        <type name='binary'/>
+      </leaf>
+    </output>
+  </rpc>
+  <rpc name='restore'>
+    <description>
+      <text>Installs configuration previously backed up by the backup RPC. After that, it restarts network, runs updater in the background (just like the check command in the updater module) and reboots the router after that.
+
+If there's a problem, it stops at the problem and might not reboot the device as a result.
+
+The updater and reboot runs in background. The %&lt;ok&gt; answer is sent before starting the updater.</text>
+    </description>
+    <input>
+      <leaf name='data'>
+        <type name='binary'/>
+      </leaf>
+    </input>
+  </rpc>
+</module>
