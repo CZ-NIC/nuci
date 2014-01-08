@@ -24,7 +24,13 @@ local datastore = datastore("maintain.yin");
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
-	do
+	if rpc == 'reboot' then
+		local ecode, stdout, stderr = run_command(nil, 'reboot');
+		if ecode ~= 0 then
+			return nil, "Failed to reboot: " .. stderr;
+		end
+		return '<ok/>';
+	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
 			app_tag = 'unknown-element',
