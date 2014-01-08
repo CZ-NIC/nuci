@@ -8,7 +8,7 @@
       <text>Restarts the router</text>
     </description>
   </rpc>
-  <rpc name='backup'>
+  <rpc name='config-backup'>
     <description>
       <text>Returns a block of data that can be later used as input for restore. Internally, it is base64 encoded tar.xz archive containing the /etc/config.</text>
     </description>
@@ -18,7 +18,7 @@
       </leaf>
     </output>
   </rpc>
-  <rpc name='restore'>
+  <rpc name='config-restore'>
     <description>
       <text>Installs configuration previously backed up by the backup RPC. After that, it restarts network, runs updater in the background (just like the check command in the updater module) and reboots the router after that.
 
