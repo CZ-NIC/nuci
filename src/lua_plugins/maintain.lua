@@ -26,7 +26,7 @@ function datastore:user_rpc(rpc, data)
 	local root = xml:root();
 
 	if rpc == 'reboot' then
-		local ecode, stdout, stderr = run_command(nil, 'reboot');
+		local ecode, stdout, stderr = run_command(nil, 'sh', '-c', '(sleep 1; reboot) >/dev/null 2>&1 </dev/null &');
 		if ecode ~= 0 then
 			return nil, "Failed to reboot: " .. stderr;
 		end
