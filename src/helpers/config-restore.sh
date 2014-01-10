@@ -21,15 +21,18 @@ set -e
 
 cd /
 base64 -d | bzip -cd | tar xp
-/etc/init.d/network restart
+uci get network.lan.ipaddr
+
+if [ '!' -d /tmp/update-state ] ; then
+	# There's a short race condition here, but this should be rare enough, so we don't complicate the script
+	echo startup > /tmp/update-state/state
+fi
 
 # Run the updater and reboot in the background
 (
+	sleep 1
+	/etc/init.d/network restart
+	sleep 5 # Time for the network to start up
 	updater.sh -n
 	reboot
 ) & >/dev/null 2>&1 &
-
-# Wait for the updater to start up, then we can terminate.
-while [ '!' -d /tmp/update-state ] ; do
-	:
-done

@@ -18,6 +18,7 @@ along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 require("datastore");
+require("nutils");
 
 local datastore = datastore("maintain.yin");
 
@@ -45,7 +46,12 @@ function datastore:user_rpc(rpc, data)
 		if ecode ~= 0 then
 			return nil, "Failed to restore backup: " .. stderr;
 		end
-		return '<ok/>';
+		local addr = trimr(stdout);
+		if addr ~= '' then
+			return '<new-ip xmlns="' .. self.model_ns .. '">' .. xml_escape(addr) .. '</new-ip>';
+		else
+			return '<ok/>';
+		end
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",

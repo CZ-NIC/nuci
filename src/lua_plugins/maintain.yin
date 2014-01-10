@@ -31,5 +31,11 @@ The updater and reboot runs in background. The %&lt;ok&gt; answer is sent before
         <type name='binary'/>
       </leaf>
     </input>
+    <output>
+      <leaf name='new-ip'>
+        <type name='string'/> <!--TODO: Get through the yang mess and find out how to use an ip-address type -->
+        <mandatory value='false'/>
+      </leaf>
+    </output>
   </rpc>
 </module>
