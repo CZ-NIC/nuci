@@ -47,6 +47,7 @@ function datastore:user_rpc(rpc, data)
 			return nil, "Failed to restore backup: " .. stderr;
 		end
 		local addr = trimr(stdout);
+		nlog(NLOG_DEBUG, "New ip is ", addr);
 		if addr ~= '' then
 			return '<new-ip xmlns="' .. self.model_ns .. '">' .. xml_escape(addr) .. '</new-ip>';
 		else
