@@ -36,4 +36,4 @@ fi
 	sleep 5 # Time for the network to start up
 	updater.sh -n
 	reboot
-) & >/dev/null 2>&1 &
+) >/dev/null 2>&1 &
