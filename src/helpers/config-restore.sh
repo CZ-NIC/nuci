@@ -25,6 +25,7 @@ uci get network.lan.ipaddr
 
 if [ '!' -d /tmp/update-state ] ; then
 	# There's a short race condition here, but this should be rare enough, so we don't complicate the script
+	mkdir -p /tmp/update-state
 	echo startup > /tmp/update-state/state
 fi
 
