@@ -20,7 +20,7 @@
 set -e
 
 cd /
-base64 -d | bzip -cd | tar xp
+base64 -d | bzip2 -cd | tar xp
 uci get network.lan.ipaddr
 
 if [ '!' -d /tmp/update-state ] ; then
