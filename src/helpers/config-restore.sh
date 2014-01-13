@@ -30,7 +30,7 @@ fi
 
 # Run the updater and reboot in the background
 (
-	sleep 1
+	sleep 2
 	/etc/init.d/network restart
 	sleep 5 # Time for the network to start up
 	updater.sh -n
