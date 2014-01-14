@@ -21,19 +21,20 @@ require("uci");
 require("datastore");
 require("nutils");
 
+local get_next_line = function(content, position)
+	local s, e = content:find('\n', position, true);
+	if not s then
+		return nil, nil;
+	end
+	local line, position_out;
+	line = content:sub(position, s - 1);
+	position_out = e + 1;
+
+	return line, position_out;
+end
+
 -- Implementations of "procedure" command-type
 local function cmd_interfaces(node)
-	local get_next_line = function(content, position)
-		local s, e = content:find('\n', position, true);
-		if not s then
-			return nil, nil;
-		end
-		local line, position_out;
-		line = content:sub(position, s - 1);
-		position_out = e + 1;
-
-		return line, position_out;
-	end
 	local is_address = function(s)
 		local available_types = { "inet", "inet6", "link" };
 		for _,t in pairs(available_types) do
@@ -242,6 +243,43 @@ local function cmd_interfaces(node)
 	return true;
 end
 
+function switches(node)
+	local ecode, stdout, stderr = run_command(nil, 'swconfig', 'list');
+	if ecode ~= 0 then
+		return nil, 'swconfig failed: ' .. stderr;
+	end
+
+	local line, position = get_next_line(stdout, 1);
+	while line do
+		local name = line:gmatch('Found: ([^ ]*) -')();
+		if not name then
+			return nil, 'Malformed output from swconfig: ' .. line;
+		end
+		local sw = node:add_child('switch');
+		sw:add_child('name'):set_text(name);
+		local ecode_switch, stdout_switch, stderr_switch = run_command(nil, 'swconfig', 'dev', name, 'show');
+		if ecode_switch ~= 0 then
+			return nil, "Can't get info about switch " .. name;
+		end
+		local line_switch, position_switch = get_next_line(stdout_switch, 1);
+		while line_switch do
+			if line_switch:find('link: port:') then
+				local port, link = line_switch:gmatch('link: port:(%d*) link:([^ ]*)')();
+				local port_node = sw:add_child('port');
+				port_node:add_child('number'):set_text(port);
+				port_node:add_child('link'):set_text(link);
+				local speed = line_switch:gmatch('speed:(%d*)')();
+				if speed then
+					port_node:add_child('speed'):set_text(speed);
+				end
+			end
+			line_switch, position_switch = get_next_line(stdout_switch, position_switch);
+		end
+		line, position = get_next_line(stdout, position);
+	end
+	return true;
+end
+
 -- Define the commands and their mapping to XML elements.
 local commands = {
 	{
@@ -301,6 +339,10 @@ local commands = {
 				node:add_child(name):set_text(xml_escape(value));
 			end
 		end
+	},
+	{
+		element = "switches",
+		procedure = switches
 	}
 };
 
