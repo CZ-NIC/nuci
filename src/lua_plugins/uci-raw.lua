@@ -69,11 +69,11 @@ end
 
 local function list_config(cursor, config)
 	local result = '<config><name>' .. xml_escape(config) .. '</name>';
+	cdata = cursor:get_all(config);
 	if not cdata then
 		nlog(NLOG_WARN, "Nil in config '" .. config .. "'");
 		return '';
 	end
-	cdata = cursor:get_all(config);
 	-- Sort the data according to their index
 	-- (this might not preserve the order between types, but at least
 	-- preserves the relative order inside one type).
