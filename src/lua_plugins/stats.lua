@@ -1,5 +1,5 @@
 --[[
-Copyright 2013, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2013-2014, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -207,6 +207,11 @@ local function cmd_interfaces(node)
 		if num and name then
 			iface_node = node:add_child('interface');
 			iface_node:add_child('name'):set_text(name);
+			if line:find('state UP') then
+				iface_node:add_child('up');
+			elseif line:find('state DOWN') then
+				iface_node:add_child('down');
+			end
 			-- Try bridge
 			local brstatus, err = process_bridge(iface_node:add_child('bridge'), name);
 			if brstatus == nil then
