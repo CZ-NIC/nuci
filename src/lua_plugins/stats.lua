@@ -283,8 +283,14 @@ end
 -- Define the commands and their mapping to XML elements.
 local commands = {
 	{
-		element = "board-name",
-		shell = "dmesg | grep -i machine | sed 's/is /|/g' | cut -d '|' -f 2"
+		element = 'board-name',
+		file = '/proc/cpuinfo',
+		postprocess = function (node, out)
+			local name = out:gmatch("model%s*:%s*([^%s][^\n]*)")();
+			if name then
+				node:set_text(name);
+			end
+		end
 	},
 	{
 		element = "hostname",
