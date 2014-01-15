@@ -400,6 +400,11 @@ local commands = {
 	{
 		element = "switches",
 		procedure = switches
+	},
+	{
+		element = 'serial-number',
+		cmd = 'atsha204cmd',
+		params = {'serial-number'}
 	}
 };
 
