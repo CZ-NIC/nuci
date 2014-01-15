@@ -33,8 +33,50 @@ local get_next_line = function(content, position)
 	return line, position_out;
 end
 
+local board;
+
+local networks = {
+	Turris = {
+		eth0 = 'unused',
+		eth1 = 'internal',
+		eth2 = 'external'
+	},
+	['TP-Link TL-WDR4900 v1'] = {
+		eth0 = 'internal'
+	}
+};
+
+local switch_ports = {
+	Turris = {
+		switch0 = {
+			[0] = 'internal',
+			[1] = 'external',
+			[2] = 'external',
+			[3] = 'external',
+			[4] = 'external',
+			[5] = 'external',
+			[6] = 'unused'
+		}
+	},
+	['TP-Link TL-WDR4900 v1'] = {
+		switch0 = {
+			[0] = 'internal',
+			[1] = 'external',
+			[2] = 'external',
+			[3] = 'external',
+			[4] = 'external',
+			[5] = 'external',
+			[6] = 'unused'
+		}
+	}
+};
+
 -- Implementations of "procedure" command-type
 local function cmd_interfaces(node)
+	local network_defs;
+	if board then
+		network_defs = networks[board];
+	end
 	local is_address = function(s)
 		local available_types = { "inet", "inet6", "link" };
 		for _,t in pairs(available_types) do
@@ -208,6 +250,7 @@ local function cmd_interfaces(node)
 		if num and name then
 			iface_node = node:add_child('interface');
 			iface_node:add_child('name'):set_text(name);
+			iface_node:add_child('use'):set_text(network_defs[name] or 'unknown');
 			if line:find('state UP') then
 				iface_node:add_child('up');
 			elseif line:find('state DOWN') then
@@ -249,12 +292,18 @@ function switches(node)
 		return nil, 'swconfig failed: ' .. stderr;
 	end
 
+	local switch_defs = {};
+	if board then
+		switch_defs = switch_ports[board];
+	end
+
 	local line, position = get_next_line(stdout, 1);
 	while line do
 		local name = line:gmatch('Found: ([^ ]*) -')();
 		if not name then
 			return nil, 'Malformed output from swconfig: ' .. line;
 		end
+		local port_defs = switch_defs[name] or {};
 		local sw = node:add_child('switch');
 		sw:add_child('name'):set_text(name);
 		local ecode_switch, stdout_switch, stderr_switch = run_command(nil, 'swconfig', 'dev', name, 'show');
@@ -268,6 +317,7 @@ function switches(node)
 				local port_node = sw:add_child('port');
 				port_node:add_child('number'):set_text(port);
 				port_node:add_child('link'):set_text(link);
+				port_node:add_child('use'):set_text(port_defs[port+0] or 'unknown');
 				local speed = line_switch:gmatch('speed:(%d*)')();
 				if speed then
 					port_node:add_child('speed'):set_text(speed);
@@ -289,6 +339,7 @@ local commands = {
 			local name = out:gmatch("model%s*:%s*([^%s][^\n]*)")();
 			if name then
 				node:set_text(name);
+				board = name;
 			end
 		end
 	},
