@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="network" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+	<yang-version value="1"/>
+	<namespace uri="http://www.nic.cz/ns/router/network"/>
+	<prefix value="network"/>
+  <rpc name='ping'>
+    <description>
+      <text>Ping a remote host. Block until the ping is done and report if it was successful, and if so, details. Note that failure to resolve or ping the host is not taken as a NETCONF-level error.</text>
+    </description>
+    <input>
+      <leaf name='host'>
+        <type name='string'/>
+        <mandatory value='true'/>
+        <description>
+          <text>The host to ping, either as IPv4/6 address or host name.</text>
+        </description>
+      </leaf>
+      <leaf name='timeout'>
+        <type name='uint16'/>
+        <description>
+          <text>The timeout after which ping must exit. If not present, it is infinite. You want to set at least one of timeout or count.</text>
+        </description>
+      </leaf>
+      <leaf name='count'>
+        <type name='uint16'/>
+        <description>
+          <text>The number of pings to send. If not present, it is infinite.</text>
+        </description>
+      </leaf>
+      <leaf name='IPv6'>
+        <type name='empty'/>
+        <description>
+          <text>Force using of IPv6 to ping. Mutually exclusive with &lt;IPv4/&gt;</text>
+        </description>
+      </leaf>
+      <leaf name='IPv4'>
+        <type name='empty'/>
+        <description>
+          <text>Force using of IPv4 to ping. Mutually exclusive with &lt;IPv6/&gt;.</text>
+        </description>
+      </leaf>
+    </input>
+    <output>
+      <container name='data'>
+        <description>
+          <text>The answer container.</text>
+        </description>
+        <leaf name='success'>
+          <type name='empty'/>
+          <description>
+            <text>If present, at least one ping was sent and aswered successfully ‒ the host is up and reachable.
+          </text>
+        </description>
+        <leaf name='address'>
+          <type name='string'/>
+          <description>
+            <text>The address as resolved by ping. If not present, the address couldn't be resolved.</text>
+          </description>
+        </leaf>
+        <leaf name='sent'>
+          <type name='uint16'/>
+          <description>
+            <text>Number of pings sent. Present only if the address was resolved.</text>
+          </description>
+        </leaf>
+        <leaf name='received'/>
+          <type name='uint16'/>
+          <description>
+            <text>Number of pings received. Present only if the address was resolved.</text>
+          </description>
+        </leaf>
+        <container name='rtt'>
+          <description>
+            <text>The round-time trip statistigs. Present if at least one ping was answered.</text>
+          </description>
+          <leaf name='min'>
+            <type name='decimal64'/>
+            <description>
+              <text>The lowest time for ping to get answered, in milliseconds.</text>
+            </description>
+          </leaf>
+          <leaf name='max'>
+            <type name='decimal64'/>
+            <description>
+              <text>The highest time for ping to get answered (considering only the pings that got answered), in milliseconds.</text>
+            </description>
+          </leaf>
+          <leaf name='avg'>
+            <type name='decimal64'/>
+            <description>
+              <text>The average time for ping to get answered (considering only the pings that got answered), in milliseconds.</text>
+            </description>
+          </leaf>
+        </container>
+        <list name='packet'>
+          <description>
+            <text>Info about one packet that was sent and received. They are listed in the order of answers as they came.</text>
+          </description>
+          <leaf name='seq'>
+            <type name='uint16'/>
+            <description>
+              <text>Serial number of the packet. Note that the serial numbers received might miss some numbers (because the pings got lost) or be reordered by the network.</text>
+            </description>
+          </leaf>
+          <leaf name='ttl'>
+            <type name='uint8'/>
+            <description>
+              <text>The time to live of the packet that returned.</text>
+            </description>
+          </leaf>
+          <leaf name='time'>
+            <type name='decimal64'/>
+            <description>
+              <text>The time it took for the answer to arrive, in milliseconds.</text>
+            </description>
+          </leaf>
+        </list>
+      </container>
+    </output>
+  </rpc>
+</module>
