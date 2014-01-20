@@ -13,4 +13,14 @@
       <text>A request to provide current response to the today's challenge of the day. Used for registration of the box.</text>
     </description>
   </rpc>
+  <rpc name='serial'>
+    <output>
+      <leaf name='serial'>
+        <type name='string'/>
+      </leaf>
+    </output>
+    <description>
+      <text>A request to provide serial number of the device (not part of statistics due to slow way of getting it).</text>
+    </description>
+  </rpc>
 </module>

@@ -37,9 +37,15 @@ function datastore:user_rpc(rpc)
 		]]
 		local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k ' .. challenge_url .. ' | atsha204cmd challenge-response');
 		if ecode ~= 0 then
-			return nil, "Can't generate challenge";
+			return nil, "Can't generate challenge:" .. stderr;
 		end
 		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(stdout:sub(1, 8)) .. "</reg-num>";
+	elseif rpc == 'serial' then
+		local ecode, stdout, stderr = run_command(nil, 'atsha204cmd', 'serial-number');
+		if ecode ~= 0 then
+			return nil, "Can't get serial numebr: " .. stderr;
+		end
+		return "<serial xmlns='" .. self.model_ns .. "'>" .. trimr(stdout) .. "</serial>";
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
