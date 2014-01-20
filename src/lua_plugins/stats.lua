@@ -21,18 +21,6 @@ require("uci");
 require("datastore");
 require("nutils");
 
-local get_next_line = function(content, position)
-	local s, e = content:find('\n', position, true);
-	if not s then
-		return nil, nil;
-	end
-	local line, position_out;
-	line = content:sub(position, s - 1);
-	position_out = e + 1;
-
-	return line, position_out;
-end
-
 local board;
 
 local networks = {
@@ -120,12 +108,8 @@ local function cmd_interfaces(node)
 			node:add_child('id'):set_text(bridge_id);
 			node:add_child('stp-state'):set_text(stp_state);
 			local asc_ifaces_node = node:add_child('associated-interfaces');
-			local ifline;
-			local ifposition = 1;
-			ifline, ifposition = get_next_line(stdout, ifposition);
-			while ifline do
+			for ifline in lines(stdout) do
 				asc_ifaces_node:add_child('interface'):set_text(ifline);
-				ifline, ifposition = get_next_line(stdout, ifposition);
 			end
 
 
@@ -207,10 +191,7 @@ local function cmd_interfaces(node)
 
 		local clients_node = node:add_child('clients'); -- node for new clients
 		local client_node; -- node for current client
-		local line;
-		local position = 1;
-		line, position = get_next_line(stdout, position);
-		while line do
+		for line in lines(stdout) do
 			local station = line:gmatch("Station%s+(%S+)")();
 			if station then -- new client start
 				client_node = clients_node:add_child('client');
@@ -226,8 +207,6 @@ local function cmd_interfaces(node)
 				data = line:gmatch("rx bitrate:%s+(%S+)")();
 				if data then client_node:add_child('rx-bitrate'):set_text(data); end
 			end
-
-			line, position = get_next_line(stdout, position);
 		end
 
 		return true;
@@ -241,10 +220,7 @@ local function cmd_interfaces(node)
 
 	--Parse ip output
 	local iface_node; --node for new interface and its address list
-	local line;
-	local position = 1;
-	line, position = get_next_line(stdout, position);
-	while line do
+	for line in lines(stdout) do
 		-- Check if it is first line defining new interface
 		local num, name = line:gmatch('(%d*):%s+([^:@]*)[:@]')();
 		if num and name then
@@ -279,8 +255,6 @@ local function cmd_interfaces(node)
 				end
 				-- else: do nothing, it's some uninteresting garbage
 		end
-		-------------------------------------------------------
-		line, position = get_next_line(stdout, position);
 	end
 
 	return true;
@@ -297,8 +271,7 @@ function switches(node)
 		switch_defs = switch_ports[board];
 	end
 
-	local line, position = get_next_line(stdout, 1);
-	while line do
+	for line in lines(stdout) do
 		local name = line:gmatch('Found: ([^ ]*) -')();
 		if not name then
 			return nil, 'Malformed output from swconfig: ' .. line;
@@ -310,8 +283,7 @@ function switches(node)
 		if ecode_switch ~= 0 then
 			return nil, "Can't get info about switch " .. name;
 		end
-		local line_switch, position_switch = get_next_line(stdout_switch, 1);
-		while line_switch do
+		for line_switch in lines(stdout_switch) do
 			if line_switch:find('link: port:') then
 				local port, link = line_switch:gmatch('link: port:(%d*) link:([^ ]*)')();
 				local port_node = sw:add_child('port');
@@ -323,9 +295,7 @@ function switches(node)
 					port_node:add_child('speed'):set_text(speed);
 				end
 			end
-			line_switch, position_switch = get_next_line(stdout_switch, position_switch);
 		end
-		line, position = get_next_line(stdout, position);
 	end
 	return true;
 end

@@ -52,6 +52,20 @@ function split(str)
 	return str:gmatch('%S+');
 end
 
+-- Split string into lines (return iterator)
+function lines(str)
+	local position = 1;
+	return function ()
+		local s, e = str:find('\n', position, true);
+		if not s then
+			return nil;
+		end
+		local result = str:sub(position, s - 1);
+		position = e + 1;
+		return result;
+	end;
+end
+
 --[[
 Extract the list of expected keys in the model node.
 The model node should yang description of a list (specially, it should contain
