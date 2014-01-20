@@ -1,3 +1,9 @@
-SCRIPTS += src/helpers/nuci-helper-config-restore
+HELPERS := config-restore config-backup
+SCRIPTS += $(addprefix src/helpers/nuci-helper-,$(HELPERS))
 
-nuci-helper-config-restore_SOURCE = config-restore.sh
+define HELPER_VAR
+nuci-helper-$(1)_SOURCE := $(1).sh
+
+endef
+
+$(call $(foreach HELPER,$(HELPERS),$$(call HELPER_VAR,$(HELPER))))
