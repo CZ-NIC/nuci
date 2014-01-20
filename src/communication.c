@@ -283,6 +283,10 @@ void comm_start_loop(const struct srv_config *config) {
 					 * into everything.
 					 */
 					if (xml_part) {
+						if (strncmp("<?xml ", xml_part, 6) == 0) {
+							xml_part = strstr(xml_part, "?>");
+							xml_part = strchr(xml_part, '<');
+						}
 						const char *format = "<rpc-reply xmlns='urn:ietf:params:xml:ns:netconf:base:1.0'>%s</rpc-reply>";
 						int size = snprintf(NULL, 0, format, xml_part);
 						xml = malloc(size + 1);
