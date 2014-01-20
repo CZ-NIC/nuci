@@ -68,7 +68,7 @@ local function cmd_interfaces(node)
 	local is_address = function(s)
 		local available_types = { "inet", "inet6", "link" };
 		for _,t in pairs(available_types) do
-			if s:gmatch(t)() then
+			if s:match(t) then
 				return true;
 			end
 		end
@@ -138,8 +138,8 @@ local function cmd_interfaces(node)
 					type AP
 					wiphy 0
 					channel 11 (2462 MHz) HT20]];
-		local mode = stdout:gmatch("type%s+(%S+)")();
-		local channel, frequency = stdout:gmatch("channel%s+(%S+)%s+%((%S+).*%)")();
+		local mode = stdout:match("type%s+(%S+)");
+		local channel, frequency = stdout:match("channel%s+(%S+)%s+%((%S+).*%)");
 
 		if mode then node:add_child('mode'):set_text(mode); end
 		if channel then node:add_child('channel'):set_text(channel); end
@@ -192,19 +192,19 @@ local function cmd_interfaces(node)
 		local clients_node = node:add_child('clients'); -- node for new clients
 		local client_node; -- node for current client
 		for line in lines(stdout) do
-			local station = line:gmatch("Station%s+(%S+)")();
+			local station = line:match("Station%s+(%S+)");
 			if station then -- new client start
 				client_node = clients_node:add_child('client');
 				client_node:add_child('mac'):set_text(station);
 			else -- client's data
 				local data;
-				data = line:gmatch("signal:%s+(%S+)")();
+				data = line:match("signal:%s+(%S+)");
 				if data then client_node:add_child('signal'):set_text(data); end
 
-				data = line:gmatch("tx bitrate:%s+(%S+)")();
+				data = line:match("tx bitrate:%s+(%S+)");
 				if data then client_node:add_child('tx-bitrate'):set_text(data); end
 
-				data = line:gmatch("rx bitrate:%s+(%S+)")();
+				data = line:match("rx bitrate:%s+(%S+)");
 				if data then client_node:add_child('rx-bitrate'):set_text(data); end
 			end
 		end
@@ -222,7 +222,7 @@ local function cmd_interfaces(node)
 	local iface_node; --node for new interface and its address list
 	for line in lines(stdout) do
 		-- Check if it is first line defining new interface
-		local num, name = line:gmatch('(%d*):%s+([^:@]*)[:@]')();
+		local num, name = line:match('(%d*):%s+([^:@]*)[:@]');
 		if num and name then
 			iface_node = node:add_child('interface');
 			iface_node:add_child('name'):set_text(name);
@@ -245,7 +245,7 @@ local function cmd_interfaces(node)
 		else
 			-- OK, it isn't first line of new interface
 			-- Try to get address
-			local addr_type, addr = line:gmatch('%s+(%S+)%s+(%S+)')();
+			local addr_type, addr = line:match('%s+(%S+)%s+(%S+)');
 				if addr_type and addr then
 					if is_address(addr_type) then
 						local addr_node = iface_node:add_child('address');
@@ -272,7 +272,7 @@ function switches(node)
 	end
 
 	for line in lines(stdout) do
-		local name = line:gmatch('Found: ([^ ]*) -')();
+		local name = line:match('Found: ([^ ]*) -');
 		if not name then
 			return nil, 'Malformed output from swconfig: ' .. line;
 		end
@@ -285,12 +285,12 @@ function switches(node)
 		end
 		for line_switch in lines(stdout_switch) do
 			if line_switch:find('link: port:') then
-				local port, link = line_switch:gmatch('link: port:(%d*) link:([^ ]*)')();
+				local port, link = line_switch:match('link: port:(%d*) link:([^ ]*)');
 				local port_node = sw:add_child('port');
 				port_node:add_child('number'):set_text(port);
 				port_node:add_child('link'):set_text(link);
 				port_node:add_child('use'):set_text(port_defs[port+0] or 'unknown');
-				local speed = line_switch:gmatch('speed:(%d*)')();
+				local speed = line_switch:match('speed:(%d*)');
 				if speed then
 					port_node:add_child('speed'):set_text(speed);
 				end
@@ -306,7 +306,7 @@ local commands = {
 		element = 'board-name',
 		file = '/proc/cpuinfo',
 		postprocess = function (node, out)
-			local name = out:gmatch("model%s*:%s*([^%s][^\n]*)")();
+			local name = out:match("model%s*:%s*([^%s][^\n]*)");
 			if name then
 				node:set_text(name);
 				board = name;
