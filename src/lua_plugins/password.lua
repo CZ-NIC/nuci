@@ -39,7 +39,7 @@ function datastore:user_rpc(rpc, data)
 		local user_node = find_node_name_ns(root, 'user', self.model_ns);
 		if not user_node then
 			return nil, {
-				msg = "Missing the <user> parameter, don't whose password to set",
+				msg = "Missing the <user> parameter, don't know whose password to set",
 				app_tag = 'data-missing',
 				info_badelem = 'user',
 				info_badns = self.model_ns
