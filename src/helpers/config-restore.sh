@@ -19,8 +19,20 @@
 
 set -e
 
-cd /
+DIR=/tmp/restore-$$
+mkdir -p "$DIR"
+trap 'rm -rf "$DIR"' EXIT INT QUIT TERM ABRT
+cd "$DIR"
 base64 -d | bzip2 -cd | tar xp
+# Here we have a special-case/hack for foris password. It was requested NOT to restore the
+# password, as potentially confusing action. So we unpack the backed-up configuration,
+# extract the current password and implant it into the configuration. Then we just copy
+# the configs and overwrite the current ones.
+PASSWD="$(uci get foris.auth.password)"
+uci -c "$DIR/etc/config" set foris.auth.password="$PASSWD"
+cp -rf "$DIR/etc/config" /etc
+rm -rf "$DIR"
+trap - EXIT INT QUIT TERM ABRT
 uci get network.lan.ipaddr
 
 if [ '!' -d /tmp/update-state ] ; then
