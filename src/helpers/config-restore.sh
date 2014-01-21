@@ -30,6 +30,7 @@ base64 -d | bzip2 -cd | tar xp
 # the configs and overwrite the current ones.
 PASSWD="$(uci get foris.auth.password)"
 uci -c "$DIR/etc/config" set foris.auth.password="$PASSWD"
+uci -c "$DIR/etc/config" commit
 cp -rf "$DIR/etc/config" /etc
 rm -rf "$DIR"
 trap - EXIT INT QUIT TERM ABRT
