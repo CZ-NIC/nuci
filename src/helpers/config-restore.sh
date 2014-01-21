@@ -33,7 +33,8 @@ uci -c "$DIR/etc/config" set foris.auth.password="$PASSWD"
 cp -rf "$DIR/etc/config" /etc
 rm -rf "$DIR"
 trap - EXIT INT QUIT TERM ABRT
-uci get network.lan.ipaddr
+# It is legal for the address not to be there, so don't fail on it
+uci get network.lan.ipaddr || true
 
 if [ '!' -d /tmp/update-state ] ; then
 	# There's a short race condition here, but this should be rare enough, so we don't complicate the script
