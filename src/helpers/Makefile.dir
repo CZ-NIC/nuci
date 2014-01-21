@@ -6,4 +6,4 @@ nuci-helper-$(1)_SOURCE := $(1).sh
 
 endef
 
-$(call $(foreach HELPER,$(HELPERS),$$(call HELPER_VAR,$(HELPER))))
+$(eval $(foreach HELPER,$(HELPERS),$(call HELPER_VAR,$(HELPER))))
