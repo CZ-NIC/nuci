@@ -72,6 +72,11 @@ local function parse_file(file, node)
 				iface_node:add_child('name'):set_text(items[3]);
 				iface_node:add_child('rx'):set_text(items[4]);
 				iface_node:add_child('tx'):set_text(items[5]);
+			elseif items[2] == "temperature" then
+				prev_item = items[2];
+				local temp_node = snap_node:add_child('temperature');
+				temp_node:add_child('board'):set_text(items[3]);
+				temp_node:add_child('cpu'):set_text(items[4]);
 			end
 		end
 
