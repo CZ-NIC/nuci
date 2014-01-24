@@ -41,6 +41,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 /**
  * Our own error handler for pcall calls.
@@ -100,6 +101,7 @@ static int register_datastore_provider_lua(lua_State *lua) {
 	lua_pushvalue(lua, 1);
 	lua_datastore datastore = luaL_ref(lua, LUA_REGISTRYINDEX); // Copy the object to the registry
 	register_datastore_provider(model_file, datastore);
+	nlog(NLOG_DEBUG, "Registered %s as %d", name, datastore);
 	return 0; // No results
 }
 
@@ -199,6 +201,8 @@ static int run_command_lua(lua_State *lua) {
 	check(pipe(err_pipes), "creating stderr pipe");
 
 	// Start the sub process
+	struct timespec orig_time, new_time;
+	clock_gettime(CLOCK_MONOTONIC, &orig_time);
 	pid_t pid = fork();
 	check(pid, "forking run_command");
 	if (pid == 0) {
@@ -262,6 +266,8 @@ static int run_command_lua(lua_State *lua) {
 	// Get the exit status of the call.
 	int status;
 	check(waitpid(pid, &status, 0), "waiting for sub-process");
+	clock_gettime(CLOCK_MONOTONIC, &new_time);
+	nlog(NLOG_DEBUG, "Command %s took %ld ms", command, (new_time.tv_sec - orig_time.tv_sec) * 1000 + (new_time.tv_nsec - orig_time.tv_nsec) / 1000000);
 	// Output the data.
 	lua_pushnumber(lua, status);
 	lua_pushlstring(lua, output_data, output_read);
@@ -527,10 +533,14 @@ const char *interpreter_get(struct interpreter *interpreter, lua_datastore datas
 	lua_pushvalue(lua, -2); // The first parameter of a method is the object it is called on
 	// Single parameter - the object.
 	// Two results - the string and error. In case of success, the second is nil.
+	struct timespec orig_time, new_time;
+	clock_gettime(CLOCK_MONOTONIC, &orig_time);
 	if (lua_pcall(lua, 1, 2, errfunc_index) != 0) {
 		flag_error(interpreter, true, -1);
 		return NULL;
 	}
+	clock_gettime(CLOCK_MONOTONIC, &new_time);
+	nlog(NLOG_DEBUG, "Method %s of datastore %d took %ld ms", method, datastore, (new_time.tv_sec - orig_time.tv_sec) * 1000 + (new_time.tv_nsec - orig_time.tv_nsec) / 1000000);
 	// Convert the error only if there's one.
 	if (!lua_isnil(lua, -1)) {
 		flag_error(interpreter, true, -1);
