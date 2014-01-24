@@ -377,10 +377,14 @@ local commands = {
 			end
 		end
 	},
+	--[[
+	Disabled due to being very slow and slowing down the whole <get/>. We don't use it just now,
+	so we can speed up the foris wizard.
 	{
 		element = "switches",
 		procedure = switches
 	},
+	]]
 	{
 		element = "wireless-cards",
 		cmd = 'iw',
