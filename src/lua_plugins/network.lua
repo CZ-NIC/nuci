@@ -104,6 +104,34 @@ function datastore:user_rpc(rpc, data)
 			packet:add_child('time'):set_text(time);
 		end
 		return result:strdump();
+	elseif rpc == 'check' then
+		local ecode, stdout, stderr = run_command(nil, 'nuci-helper-checkconn');
+		if ecode ~= 0 then
+			return nil, "Couldn't check network: " .. stderr;
+		end
+		function feature_present(name)
+			return stdout:match(name);
+		end
+		local result = xmlwrap.new_xml_doc('connection', self.model_ns);
+		local connection = result:root();
+		function check_feature(name, tag)
+			local text = 'false';
+			if feature_present(name) then
+				text = 'true';
+			end
+			connection:add_child(tag):set_text(text);
+		end
+		check_feature('V4', 'IPv4-connectivity');
+		check_feature('V6', 'IPv6-connectivity');
+		check_feature('GATE4', 'IPv4-gateway');
+		check_feature('GATE6', 'IPv6-gateway');
+		check_feature('DNS', 'DNS');
+		local dnssec = 'false';
+		if not feature_present('BADSEC') then
+			dnssec = 'true';
+		end
+		connection:add_child('DNSSEC'):set_text(dnssec);
+		return result:strdump();
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",

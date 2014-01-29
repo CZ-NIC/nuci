@@ -125,37 +125,37 @@
     <output>
       <container name='connection'>
         <leaf name='IPv4-connectivity'>
-          <type name='empty'/>
+          <type name='boolean'/>
           <description>
             <text>There are hosts reachable over the IPv4 network.</text>
           </description>
         </leaf>
         <leaf name='IPv6-connectivity'>
-          <type name='empty'/>
+          <type name='boolean'/>
           <description>
             <text>There are hosts reachable over the IPv6 network.</text>
           </description>
         </leaf>
         <leaf name='IPv4-gateway'>
-          <type name='empty'/>
+          <type name='boolean'/>
           <description>
             <text>The IPv4 gateway is reachable.</text>
           </description>
         </leaf>
         <leaf name='IPv6-gateway'>
-          <type name='empty'/>
+          <type name='boolean'/>
           <description>
             <text>The IPv6 gateway is reachable.</text>
           </description>
         </leaf>
         <leaf name='DNS'>
-          <type name='empty'/>
+          <type name='boolean'/>
           <description>
             <text>DNS resolution works.</text>
           </description>
         </leaf>
         <leaf name='DNSSEC'>
-          <type name='empty'/>
+          <type name='boolean'/>
           <description>
             <text>DNS is protected with DNSSEC.</text>
           </description>
