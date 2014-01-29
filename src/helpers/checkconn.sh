@@ -25,7 +25,7 @@ IP='217.31.205.50 198.41.0.4 199.7.83.42 8.8.8.8'
 GATEWAY=$(route -n | grep '^0\.0\.0\.0' | sed -e 's/^0\.0\.0\.0 *//;s/ .*//')
 GATEWAY6=$(route -n -A inet6 | grep '^::/0' | sed -e 's/^::\/0 *//;s/ .*//')
 IP6='2001:1488:0:3::2 2001:500:3::42 2001:500:2d::d 2606:2800:220:6d:26bf:1447:1097:aa7'
-NAMES='api.turris.cz www.nic.cz c.root-servers.net.'
+NAMES='api.turris.cz www.nic.cz c.root-servers.net'
 BAD_NAMES='www.rhybar.cz' # Any others?
 TIME=2
 
@@ -41,10 +41,22 @@ do_check() {
 	done
 }
 
+do_check_dns() {
+	MESSAGE="$1"
+	shift
+	for ADDRESS in "$@" ; do
+		(
+			if ping -q -w"$TIME" "$ADDRESS" | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" ; then
+				echo "$MESSAGE"
+			fi
+		) &
+	done
+}
+
 do_check V4 $IP
 do_check V6 $IP6
-do_check DNS $NAMES
-do_check BADSEC $BAD_NAMES
 do_check GATE4 $GATEWAY
 do_check GATE6 $GATEWAY6
+do_check_dns DNS $NAMES
+do_check_dns BADSEC $BAD_NAMES
 wait
