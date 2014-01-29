@@ -118,4 +118,49 @@
       </container>
     </output>
   </rpc>
+  <rpc name='check'>
+    <description>
+      <text>Check if the device is connected to the Internet and which connection features are available.</text>
+    </description>
+    <output>
+      <container name='connection'>
+        <leaf name='IPv4-connectivity'>
+          <type name='empty'/>
+          <description>
+            <text>There are hosts reachable over the IPv4 network.</text>
+          </description>
+        </leaf>
+        <leaf name='IPv6-connectivity'>
+          <type name='empty'/>
+          <description>
+            <text>There are hosts reachable over the IPv6 network.</text>
+          </description>
+        </leaf>
+        <leaf name='IPv4-gateway'>
+          <type name='empty'/>
+          <description>
+            <text>The IPv4 gateway is reachable.</text>
+          </description>
+        </leaf>
+        <leaf name='IPv6-gateway'>
+          <type name='empty'/>
+          <description>
+            <text>The IPv6 gateway is reachable.</text>
+          </description>
+        </leaf>
+        <leaf name='DNS'>
+          <type name='empty'/>
+          <description>
+            <text>DNS resolution works.</text>
+          </description>
+        </leaf>
+        <leaf name='DNSSEC'>
+          <type name='empty'/>
+          <description>
+            <text>DNS is protected with DNSSEC.</text>
+          </description>
+        </leaf>
+      </container>
+    </output>
+  </rpc>
 </module>
