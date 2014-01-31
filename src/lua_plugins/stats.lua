@@ -351,7 +351,6 @@ local commands = {
 		element = "temperature",
 		cmd = "thermometer",
 		postprocess = function (node, out)
-			node:add_child('pokus'):set_text('Jsem tu');
 			for where, temp in out:gmatch('(%w+):%s(%d+)') do
 				node:add_child(where:lower()):set_text(xml_escape(temp));
 			end
