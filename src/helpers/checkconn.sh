@@ -60,6 +60,17 @@ do_check_dns() {
 	done
 }
 
+# Unfortunately, even with -w, ping can take a LONG time. So we launch a safety-kill and let it run on background.
+# (Double-backgrounded so wait doesn't wait for that one)
+run_timer() {
+	MAIN=$$
+	(
+		sleep 3 && kill "$MAIN"
+	) &
+}
+
+run_timer >/dev/null 2>&1 &
+
 do_check V4 $IP
 do_check V6 $IP6
 do_check GATE4 $GATEWAY

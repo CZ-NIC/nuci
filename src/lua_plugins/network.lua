@@ -106,9 +106,12 @@ function datastore:user_rpc(rpc, data)
 		return result:strdump();
 	elseif rpc == 'check' then
 		local ecode, stdout, stderr = run_command(nil, 'nuci-helper-checkconn');
+	--[[	Don't check for ecode ‒ it may kill itself sometimes, which is bad, but we
+		still want the results it got so far
 		if ecode ~= 0 then
 			return nil, "Couldn't check network: " .. stderr;
 		end
+	]]
 		function feature_present(name)
 			return stdout:match(name);
 		end
