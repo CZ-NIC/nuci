@@ -45,6 +45,7 @@ do_check() {
 				echo "$MESSAGE"
 			fi
 		) &
+		KILL="$KILL $!"
 	done
 }
 
@@ -57,19 +58,18 @@ do_check_dns() {
 				echo "$MESSAGE"
 			fi
 		) &
+		KILL="$KILL $!"
 	done
 }
 
 # Unfortunately, even with -w, ping can take a LONG time. So we launch a safety-kill and let it run on background.
 # (Double-backgrounded so wait doesn't wait for that one)
+KILL=$$
 run_timer() {
-	MAIN=$$
 	(
-		sleep 3 && kill "$MAIN"
+		sleep 3 && kill $KILL
 	) &
 }
-
-run_timer >/dev/null 2>&1 &
 
 do_check V4 $IP
 do_check V6 $IP6
@@ -77,4 +77,7 @@ do_check GATE4 $GATEWAY
 do_check GATE6 $GATEWAY6
 do_check_dns DNS $NAMES
 do_check_dns BADSEC $BAD_NAMES
+
+run_timer >/dev/null 2>&1 &
+
 wait
