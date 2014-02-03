@@ -28,6 +28,8 @@ if [ "$YEAR" -lt "2000" ] ; then
 	ntpd -n -q -p 217.31.205.226 || true # If this fails due to network problems, don't abort the script just yet
 fi
 
+/etc/init.d/unbound restart # Clean the cache
+
 IP='217.31.205.50 198.41.0.4 199.7.83.42 8.8.8.8'
 GATEWAY=$(route -n | grep '^0\.0\.0\.0' | sed -e 's/^0\.0\.0\.0 *//;s/ .*//')
 GATEWAY6=$(route -n -A inet6 | grep '^::/0' | sed -e 's/^::\/0 *//;s/ .*//')
