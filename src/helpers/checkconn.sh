@@ -56,7 +56,7 @@ do_check_dns() {
 	shift
 	for ADDRESS in "$@" ; do
 		(
-			if ping -q -w"$TIME" "$ADDRESS" | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" >/dev/null 2>&1 ; then
+			if ping -q -w"$TIME" "$ADDRESS" 2>/dev/null | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" >/dev/null 2>&1 ; then
 				echo "$MESSAGE"
 			fi
 		) &
