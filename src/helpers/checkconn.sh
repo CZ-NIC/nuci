@@ -43,7 +43,7 @@ do_check() {
 	shift
 	for ADDRESS in "$@" ; do
 		(
-			if ping -q -w"$TIME" "$ADDRESS" >/dev/null ; then
+			if ping -q -w"$TIME" "$ADDRESS" >/dev/null 2>&1 ; then
 				echo "$MESSAGE"
 			fi
 		) &
@@ -56,7 +56,7 @@ do_check_dns() {
 	shift
 	for ADDRESS in "$@" ; do
 		(
-			if ping -q -w"$TIME" "$ADDRESS" | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" ; then
+			if ping -q -w"$TIME" "$ADDRESS" | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" >/dev/null 2>&1 ; then
 				echo "$MESSAGE"
 			fi
 		) &
