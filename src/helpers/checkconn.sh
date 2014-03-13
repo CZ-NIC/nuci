@@ -32,7 +32,7 @@ fi
 
 IP='217.31.205.50 198.41.0.4 199.7.83.42 8.8.8.8'
 GATEWAY=$(route -n | grep '^0\.0\.0\.0' | sed -e 's/^0\.0\.0\.0 *//;s/ .*//')
-GATEWAY6=$(route -n -A inet6 | grep '^::/0' | sed -e 's/^::\/0 *//;s/ .*//')
+GATEWAY6=$(route -n -A inet6 | grep '^::/0' | sed -e 's/^::\/0 *//;s/ *$//g;s/ .* /%/')
 IP6='2001:1488:0:3::2 2001:500:3::42 2001:500:2d::d 2606:2800:220:6d:26bf:1447:1097:aa7'
 NAMES='api.turris.cz www.nic.cz c.root-servers.net'
 BAD_NAMES='www.rhybar.cz' # Any others?
@@ -43,7 +43,8 @@ do_check() {
 	shift
 	for ADDRESS in "$@" ; do
 		(
-			if ping -q -w"$TIME" "$ADDRESS" >/dev/null 2>&1 ; then
+			ADDR="$(echo "$ADDRESS" | sed -e 's/%/ -I/')"
+			if ping -q -w"$TIME" $ADDR >/dev/null 2>&1 ; then
 				echo "$MESSAGE"
 			fi
 		) &
