@@ -77,6 +77,11 @@ local function parse_file(file, node)
 				local temp_node = snap_node:add_child('temperature');
 				temp_node:add_child('board'):set_text(items[3]);
 				temp_node:add_child('cpu'):set_text(items[4]);
+			elseif items[2] == "fs" then
+				prev_item = items[2];
+				local temp_node = snap_node:add_child('rootfs');
+				temp_node:add_child('used'):set_text(items[3]);
+				temp_node:add_child('available'):set_text(items[4]);
 			end
 		end
 
