@@ -38,18 +38,18 @@
         <text>Describes what happened during the last run of the updater (if known). It may be present, but empty ‒ the last time the updater run, it had nothing to do.</text>
       </description>
       <presence value='Present if the updater has run from the last restart'/>
-      <list name='install'>
+      <leaf-list name='install'>
         <type name='string'/>
         <description>
           <text>A package is/was installed.</text>
         </description>
-      </list>
-      <list name='remove'>
+      </leaf-list>
+      <leaf-list name='remove'>
         <type name='string'/>
         <description>
           <text>A package is/was uninstalled.</text>
         </description>
-      </list>
+      </leaf-list>
     </container>
   </container>
 </module>
