@@ -38,6 +38,8 @@ function send_message(subject, severity, text)
 	return '<ok/>';
 end
 
+local severities = { reboot = true, error = true, update = true };
+
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
@@ -46,6 +48,14 @@ function datastore:user_rpc(rpc, data)
 		local data, err = extract_multi_texts(root, {'subject', 'severity', 'body'});
 		if err then
 			return nil, err;
+		end
+		if not severities[data[2]] then
+			return {
+				msg = 'Unknown message severity: ' .. data[2],
+				app_tag = 'invalid-value',
+				info_badelem = 'severity',
+				info_badns = self.model_ns
+			};
 		end
 		return send_message(data[1], data[2], data[3]);
 	elseif rpc == 'test' then
