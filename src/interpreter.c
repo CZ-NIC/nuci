@@ -357,12 +357,11 @@ static int file_executable_lua(lua_State *lua) {
 	// Extract params
 	int param_count = lua_gettop(lua);
 	if (param_count != 1)
-		luaL_error(lua, "stat expects 1 parameter, %d given", param_count);
+		luaL_error(lua, "file_executable expects 1 parameter, %d given", param_count);
 	const char *path = lua_tostring(lua, -1);
 	struct stat buffer;
 	// Run stat
-	int result = stat(path, &buffer);
-	if (result == -1) {
+	if (stat(path, &buffer) == -1) {
 		if (errno == ENOENT)
 			return 0;
 		else
@@ -370,6 +369,63 @@ static int file_executable_lua(lua_State *lua) {
 	}
 	lua_pushboolean(lua, S_ISREG(buffer.st_mode) && (buffer.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)));
 	return 1;
+}
+
+static int dir_content(lua_State *lua) {
+	// Extract the parameter - name of the directory
+	int param_count = lua_gettop(lua);
+	if (param_count != 1)
+		luaL_error(lua, "dir_content expects 1 parameter (directory path), %d given", param_count);
+	const char *path = lua_tostring(lua, -1);
+	DIR *dir = opendir(path);
+	if (!dir)
+		return luaL_error(lua, strerror(errno));
+	lua_newtable(lua);
+	struct dirent *dirent;
+	errno = 0;
+	lua_Integer index = 1;
+	while((dirent = readdir(dir))) {
+		lua_pushinteger(lua, index++); // Prepare the index where to put the next value
+		lua_createtable(lua, 0, 3); // local t = {};
+		// Compute and set the file name
+		lua_pushliteral(lua, "filename");
+		size_t len = strlen(path) + strlen(dirent->d_name) + 2; // One for '\0', one for '/'.
+		char filename[len];
+		size_t print_len = snprintf(filename, len, "%s/%s", path, dirent->d_name);
+		assert(len == print_len);
+		lua_pushstring(lua, filename);
+		lua_settable(lua, -3); // t.filename = filename;
+		// Some info about the file
+		struct stat buffer;
+		if (stat(filename, &buffer) == -1) {
+			return luaL_error(lua, strerror(errno));
+		}
+		lua_pushliteral(lua, "type");
+		char ftype = '?';
+		if (buffer.st_mode & S_IFSOCK) {
+			ftype = 's';
+		} else if (buffer.st_mode & S_IFLNK) {
+			ftype = 'l';
+		} else if (buffer.st_mode & S_IFREG) {
+			ftype = 'f';
+		} else if (buffer.st_mode & S_IFBLK) {
+			ftype = 'b';
+		} else if (buffer.st_mode & S_IFDIR) {
+			ftype = 'd';
+		} else if (buffer.st_mode & S_IFCHR) {
+			ftype = 'c';
+		} else if (buffer.st_mode & S_IFIFO) {
+			ftype = '|';
+		}
+		lua_pushlstring(lua, &ftype, 1);
+		lua_settable(lua, -3); // t.type = ftype
+		lua_pushliteral(lua, "size");
+		lua_settable(lua, -3); // table.insert(result, t); (combined with the prepared index above)
+	}
+	if (errno != 0)
+		return luaL_error(lua, strerror(errno));
+	closedir(dir);
+	return 1; // There's one table on top of the stack
 }
 
 static int nlog_lua(lua_State *lua) {
@@ -421,6 +477,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "uci_list_configs", uci_list_configs_lua);
 	add_func(result, "handle_runtime_error", lua_handle_runtime_error);
 	add_func(result, "file_executable", file_executable_lua);
+	add_func(result, "dir_content", dir_content);
 	add_func(result, "nlog", nlog_lua);
 	add_const(result, "NLOG_FATAL", NLOG_FATAL);
 	add_const(result, "NLOG_ERROR", NLOG_ERROR);
