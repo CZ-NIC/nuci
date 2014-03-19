@@ -47,6 +47,23 @@ function find_node_name_ns(node, name, ns)
 	end);
 end
 
+function extract_multi_texts(root, names, ns)
+	result = {}
+	for i, name in pairs(names) do
+		local node = find_node_name_ns(root, name, ns)
+		if not node then
+			return nil, {
+				msg = "Missing <" .. name .. ">",
+				app_tag = 'data-missing',
+				info_badelem = name,
+				info_badns = ns
+			};
+		end
+		result[i] = node:text();
+	end
+	return result;
+end
+
 -- split the string into words
 function split(str)
 	return str:gmatch('%S+');

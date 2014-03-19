@@ -18,17 +18,39 @@ along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 require("datastore");
+require("nutils");
 
 local datastore = datastore("user-notify.yin");
+
+local dir = '/tmp/user-notify'
+local test_dir = '/tmp/user-notify-test'
+
+function send_message(subject, severity, text)
+	local wdir = dir;
+	if severity == 'test' then
+		wdir = test_dir
+	end;
+	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
+	local ecode, stdout, stderr = run_command(text, 'user-notify-send', '-s', severity, '-S', subject, '-d', wdir, '-t');
+	if ecode ~= 0 then
+		return "Failed to send: " .. stderr;
+	end
+	return '<ok/>';
+end
 
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
 
 	if rpc == 'message' then
-		return '<ok/>';
+		local data, err = extract_multi_texts(root, {'subject', 'severity', 'body'});
+		if err then
+			return nil, err;
+		end
+		return send_message(data[1], data[2], data[3]);
 	elseif rpc == 'test' then
-		return '<ok/>';
+		nlog(NLOG_INFO, "Sending test message");
+		return send_message('Test', 'test', ':-)');
 	elseif rpc == 'display' then
 		return '<ok/>';
 	else
