@@ -35,6 +35,7 @@ function send_message(subject, severity, text)
 	if ecode ~= 0 then
 		return "Failed to send: " .. stderr;
 	end
+	-- TODO: Delete the message if it's test, or leave it up for that thing?
 	return '<ok/>';
 end
 
@@ -57,11 +58,24 @@ function datastore:user_rpc(rpc, data)
 				info_badns = self.model_ns
 			};
 		end
+		nlog(NLOG_INFO, "Sending message " .. data[1]);
 		return send_message(data[1], data[2], data[3]);
 	elseif rpc == 'test' then
 		nlog(NLOG_INFO, "Sending test message");
 		return send_message('Test', 'test', ':-)');
 	elseif rpc == 'display' then
+		local ids = {};
+		for mid in root:iterate() do
+			local name, ns = mid:name();
+			if name == 'message-id' and ns == self.model_ns then
+				local id = mid:text();
+				table.insert(ids, id);
+			end
+		end
+		local ecode, stdout, stderr = run_command(nil, 'user-notify-display', unpack(ids));
+		if ecode ~= 0 then
+			return nil, "Error marking messages as displayed: " .. stderr;
+		end
 		return '<ok/>';
 	else
 		return nil, {
