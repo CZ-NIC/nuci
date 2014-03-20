@@ -403,10 +403,14 @@ local commands = {
 					parse = false;
 				elseif parse then
 					local freq, channel, power = line:match('^%s*%* (%d+) MHz %[(%d+)%] %((.-)%)');
+					local radar = line:match('radar detection');
 					if freq then
 						local chandef = phy:add_child('channel');
 						chandef:add_child('number'):set_text(channel);
 						chandef:add_child('frequency'):set_text(freq);
+						if radar then
+							chandef:add_child('radar')
+						end
 						local power_value = power:match('([%d%.]+) dBm');
 						if power_value then
 							chandef:add_child('max-power'):set_text(power_value);
