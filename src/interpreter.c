@@ -404,23 +404,24 @@ static int dir_content(lua_State *lua) {
 			return luaL_error(lua, strerror(errno));
 		}
 		lua_pushliteral(lua, "type");
-		char ftype = '?';
-		if (buffer.st_mode & S_IFSOCK) {
-			ftype = 's';
-		} else if (buffer.st_mode & S_IFLNK) {
-			ftype = 'l';
-		} else if (buffer.st_mode & S_IFREG) {
-			ftype = 'f';
-		} else if (buffer.st_mode & S_IFBLK) {
-			ftype = 'b';
-		} else if (buffer.st_mode & S_IFDIR) {
-			ftype = 'd';
-		} else if (buffer.st_mode & S_IFCHR) {
-			ftype = 'c';
-		} else if (buffer.st_mode & S_IFIFO) {
-			ftype = '|';
+		char ftype[2] = "?";
+		unsigned typeflag = buffer.st_mode & S_IFMT;
+		if (typeflag == S_IFSOCK) {
+			*ftype = 's';
+		} else if (typeflag == S_IFLNK) {
+			*ftype = 'l';
+		} else if (typeflag == S_IFREG) {
+			*ftype = 'f';
+		} else if (typeflag == S_IFBLK) {
+			*ftype = 'b';
+		} else if (typeflag == S_IFDIR) {
+			*ftype = 'd';
+		} else if (typeflag == S_IFCHR) {
+			*ftype = 'c';
+		} else if (typeflag == S_IFIFO) {
+			*ftype = '|';
 		}
-		lua_pushlstring(lua, &ftype, 1);
+		lua_pushstring(lua, ftype);
 		lua_settable(lua, -3); // t.type = ftype
 		lua_pushliteral(lua, "size");
 		lua_pushinteger(lua, buffer.st_size);
