@@ -134,7 +134,7 @@ function datastore:get()
 	-- FIXME: Locking
 	local ok, dirs = pcall(function() return dir_content(dir) end);
 	if not ok then
-		nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist");
+		nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist: " .. dirs);
 		return '';
 	end
 	local result = '';
