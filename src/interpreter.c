@@ -385,6 +385,9 @@ static int dir_content(lua_State *lua) {
 	errno = 0;
 	lua_Integer index = 1;
 	while((dirent = readdir(dir))) {
+		if (strcmp(".", dirent->d_name) == 0 || strcmp("..", dirent->d_name) == 0) {
+			continue; // These are special directories „self“ and „up“. Don't include in output.
+		}
 		lua_pushinteger(lua, index++); // Prepare the index where to put the next value
 		lua_createtable(lua, 0, 3); // local t = {};
 		// Compute and set the file name
@@ -392,7 +395,7 @@ static int dir_content(lua_State *lua) {
 		size_t len = strlen(path) + strlen(dirent->d_name) + 2; // One for '\0', one for '/'.
 		char filename[len];
 		size_t print_len = snprintf(filename, len, "%s/%s", path, dirent->d_name);
-		assert(len == print_len);
+		assert(len == print_len + 1 /* '\0' is not counted in result of snprintf */);
 		lua_pushstring(lua, filename);
 		lua_settable(lua, -3); // t.filename = filename;
 		// Some info about the file
@@ -420,6 +423,8 @@ static int dir_content(lua_State *lua) {
 		lua_pushlstring(lua, &ftype, 1);
 		lua_settable(lua, -3); // t.type = ftype
 		lua_pushliteral(lua, "size");
+		lua_pushinteger(lua, buffer.st_size);
+		lua_settable(lua, -3); // t.size = size
 		lua_settable(lua, -3); // table.insert(result, t); (combined with the prepared index above)
 	}
 	if (errno != 0)
