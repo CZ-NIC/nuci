@@ -89,17 +89,17 @@ end
 
 function datastore:message(dir, root)
 	function getcontent(name)
-		local file, err = io.open(dir + '/' + name);
+		local file, err = io.open(dir .. '/' .. name);
 		if not file then return
 			nil, err;
 		end
 		local result = file:read("*a");
 		file:close();
-		return result;
+		return trimr(result);
 	end
 	function exists(name)
 		-- This is not really check for existence of file, but it is OK for our use ‒ the file should be readable if it exists
-		local file, err = io.open(dir + '/' + name);
+		local file, err = io.open(dir .. '/' .. name);
 		if file then
 			file:close();
 			return true;
@@ -141,7 +141,7 @@ function datastore:get()
 	local xml = xmlwrap.new_xml_doc('messages', self.model_ns);
 	local root = xml:root();
 	for _, dir in ipairs(dirs) do
-		if dir.filename:match('/[%d%-]+/?$') and dir.type == 'f' then -- Check it is message, not lockdir.
+		if dir.filename:match('/[%d%-]+/?$') and dir.type == 'd' then -- Check it is message, not lockdir.
 			local err = self:message(dir.filename, root);
 			if err then
 				nlog(NLOG_ERROR, "Message in " .. dir .. " is broken: " .. err);
