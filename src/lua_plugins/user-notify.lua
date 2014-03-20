@@ -87,8 +87,68 @@ function datastore:user_rpc(rpc, data)
 	end
 end
 
+function datastore:message(dir, root)
+	function getcontent(name)
+		local file, err = io.open(dir + '/' + name);
+		if not file then return
+			nil, err;
+		end
+		local result = file:read("*a");
+		file:close();
+		return result;
+	end
+	function exists(name)
+		-- This is not really check for existence of file, but it is OK for our use ‒ the file should be readable if it exists
+		local file, err = io.open(dir + '/' + name);
+		if file then
+			file:close();
+			return true;
+		else
+			return false;
+		end
+	end
+	local subject, suerr = getcontent('subject');
+	local severity, seerr = getcontent('severity');
+	local body, berr = getcontent('body');
+	local err = suerr or serr or berr;
+	if err then
+		return err;
+	end
+	local sent = exists('sent');
+	local displayed = exists('displayed');
+	local id = dir:match('[^/]+$');
+	local mnode = root:add_child('message');
+	mnode:add_child('id'):set_text(id);
+	mnode:add_child('subject'):set_text(subject);
+	mnode:add_child('body'):set_text(body);
+	mnode:add_child('severity'):set_text(severity);
+	if sent then
+		mnode:add_child('sent');
+	end
+	if displayed then
+		mnode:add_child('displayed');
+	end
+end
+
 function datastore:get()
-	return '';
+	-- FIXME: Locking
+	local ok, dirs = pcall(function() return dir_content(dir) end);
+	if not ok then
+		nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist");
+		return '';
+	end
+	local result = '';
+	local xml = xmlwrap.new_xml_doc('messages', self.model_ns);
+	local root = xml:root();
+	for _, dir in ipairs(dirs) do
+		if dir.filename:match('/[%d%-]+/?$') and dir.type == 'f' then -- Check it is message, not lockdir.
+			local err = self:message(dir.filename, root);
+			if err then
+				nlog(NLOG_ERROR, "Message in " .. dir .. " is broken: " .. err);
+			end
+		end
+	end
+	return xml:strdump();
 end
 
 register_datastore_provider(datastore);
