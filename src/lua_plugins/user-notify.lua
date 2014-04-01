@@ -25,13 +25,13 @@ local datastore = datastore("user-notify.yin");
 local dir = '/tmp/user-notify'
 local test_dir = '/tmp/user-notify-test'
 
-function send_message(subject, severity, text)
+function send_message(severity, text)
 	local wdir = dir;
 	if severity == 'test' then
 		wdir = test_dir
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
-	local ecode, stdout, stderr = run_command(text, 'user-notify-send', '-s', severity, '-S', subject, '-d', wdir, '-t');
+	local ecode, stdout, stderr = run_command(text, 'user-notify-send', '-s', severity, '-d', wdir, '-t');
 	if ecode ~= 0 then
 		return "Failed to send: " .. stderr;
 	end
@@ -46,7 +46,7 @@ function datastore:user_rpc(rpc, data)
 	local root = xml:root();
 
 	if rpc == 'message' then
-		local data, err = extract_multi_texts(root, {'subject', 'severity', 'body'});
+		local data, err = extract_multi_texts(root, {'severity', 'body'});
 		if err then
 			return nil, err;
 		end
@@ -107,10 +107,9 @@ function datastore:message(dir, root)
 			return false;
 		end
 	end
-	local subject, suerr = getcontent('subject');
 	local severity, seerr = getcontent('severity');
 	local body, berr = getcontent('body');
-	local err = suerr or serr or berr;
+	local err = serr or berr;
 	if err then
 		return err;
 	end
@@ -119,7 +118,6 @@ function datastore:message(dir, root)
 	local id = dir:match('[^/]+$');
 	local mnode = root:add_child('message');
 	mnode:add_child('id'):set_text(id);
-	mnode:add_child('subject'):set_text(subject);
 	mnode:add_child('body'):set_text(body);
 	mnode:add_child('severity'):set_text(severity);
 	if sent then
