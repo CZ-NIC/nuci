@@ -39,7 +39,7 @@ function send_message(severity, text)
 	return '<ok/>';
 end
 
-local severities = { reboot = true, error = true, update = true };
+local severities = { restart = true, error = true, update = true, news = true };
 
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
