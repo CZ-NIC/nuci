@@ -109,12 +109,12 @@ function datastore:message(dir, root)
 		end
 	end
 	local severity, seerr = getcontent('severity');
-	local body, berr = getcontent('body');
+	local body, berr = getcontent('message');
 	local err = serr or berr;
 	if err then
 		return err;
 	end
-	local sent = exists('sent');
+	local sent = exists('sent_by_email');
 	local displayed = exists('displayed');
 	local id = dir:match('[^/]+$');
 	local mnode = root:add_child('message');
