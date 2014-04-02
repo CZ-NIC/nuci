@@ -22,16 +22,17 @@ require("nutils");
 
 local datastore = datastore("user-notify.yin");
 
-local dir = '/tmp/user-notify'
-local test_dir = '/tmp/user-notify-test'
+local dir = '/tmp/user_notify'
+local test_dir = '/tmp/user_notify_test'
 
 function send_message(severity, text)
 	local wdir = dir;
 	if severity == 'test' then
 		wdir = test_dir
+		severity = error
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
-	local ecode, stdout, stderr = run_command(text, 'user-notify-send', '-s', severity, '-d', wdir, '-t');
+	local ecode, stdout, stderr = run_command('user-notify-send', '-t', '-d', wdir, '-s', severity, text);
 	if ecode ~= 0 then
 		return "Failed to send: " .. stderr;
 	end
@@ -50,19 +51,19 @@ function datastore:user_rpc(rpc, data)
 		if err then
 			return nil, err;
 		end
-		if not severities[data[2]] then
+		if not severities[data[1]] then
 			return {
-				msg = 'Unknown message severity: ' .. data[2],
+				msg = 'Unknown message severity: ' .. data[1],
 				app_tag = 'invalid-value',
 				info_badelem = 'severity',
 				info_badns = self.model_ns
 			};
 		end
 		nlog(NLOG_INFO, "Sending message " .. data[1]);
-		return send_message(data[1], data[2], data[3]);
+		return send_message(data[1], data[2]);
 	elseif rpc == 'test' then
 		nlog(NLOG_INFO, "Sending test message");
-		return send_message('Test', 'test', ':-)');
+		return send_message('test', 'Test test test! :-)');
 	elseif rpc == 'display' then
 		local ids = {};
 		for mid in root:iterate() do
