@@ -47,7 +47,7 @@ function datastore:user_rpc(rpc, data)
 	local root = xml:root();
 
 	if rpc == 'message' then
-		local data, err = extract_multi_texts(root, {'severity', 'body'});
+		local data, err = extract_multi_texts(root, {'severity', 'body'}, self.model_ns);
 		if err then
 			return nil, err;
 		end
