@@ -29,10 +29,10 @@ function send_message(severity, text)
 	local wdir = dir;
 	if severity == 'test' then
 		wdir = test_dir
-		severity = error
+		severity = 'error'
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
-	local ecode, stdout, stderr = run_command('user-notify-send', '-t', '-d', wdir, '-s', severity, text);
+	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text);
 	if ecode ~= 0 then
 		return "Failed to send: " .. stderr;
 	end
