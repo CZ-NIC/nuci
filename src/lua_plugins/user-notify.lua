@@ -141,7 +141,7 @@ function datastore:get()
 	local ok, dirs = pcall(function() return dir_content(dir) end);
 	if not ok then
 		nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist: " .. dirs);
-		unlock;
+		unlock();
 		return '';
 	end
 	local result = '';
@@ -155,7 +155,7 @@ function datastore:get()
 			end
 		end
 	end
-	unlock;
+	unlock();
 	return xml:strdump();
 end
 
