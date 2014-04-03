@@ -28,8 +28,8 @@ local test_dir = '/tmp/user_notify_test'
 function send_message(severity, text)
 	local wdir = dir;
 	if severity == 'test' then
-		wdir = test_dir
-		severity = 'error'
+		wdir = test_dir;
+		severity = 'error';
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
 	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text);
@@ -131,10 +131,17 @@ function datastore:message(dir, root)
 end
 
 function datastore:get()
-	-- FIXME: Locking
+	local ecode = run_command(nil, 'sh', '-c', 'mkdir -p ' .. dir .. ' ; while ! mkdir ' .. dir .. '/.locked ; do sleep 1 ; done');
+	if ecode ~= 0 then
+		return nil, "Couldn't lock message storage";
+	end
+	local function unlock()
+		run_command(nil, 'sh', '-c', 'rm -rf ' .. dir .. '/.locked');
+	end
 	local ok, dirs = pcall(function() return dir_content(dir) end);
 	if not ok then
 		nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist: " .. dirs);
+		unlock;
 		return '';
 	end
 	local result = '';
@@ -148,6 +155,7 @@ function datastore:get()
 			end
 		end
 	end
+	unlock;
 	return xml:strdump();
 end
 
