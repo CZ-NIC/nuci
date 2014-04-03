@@ -36,7 +36,6 @@ function send_message(severity, text)
 	if ecode ~= 0 then
 		return "Failed to send: " .. stderr;
 	end
-	-- TODO: Delete the message if it's test, or leave it up for that thing?
 	return '<ok/>';
 end
 
@@ -63,7 +62,9 @@ function datastore:user_rpc(rpc, data)
 		return send_message(data[1], data[2]);
 	elseif rpc == 'test' then
 		nlog(NLOG_INFO, "Sending test message");
-		return send_message('test', 'Test test test! :-)');
+		local result = send_message('test', 'Test test test! :-)');
+		run_command(nil, 'sh', '-c', 'rm -rf ' .. test_dir);
+		return result;
 	elseif rpc == 'display' then
 		local ids = {};
 		for mid in root:iterate() do
