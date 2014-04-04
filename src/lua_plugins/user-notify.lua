@@ -148,7 +148,7 @@ function datastore:get()
 			if dir.filename:match('/[%d%-]+/?$') and dir.type == 'd' then -- Check it is message, not lockdir.
 				local err = self:message(dir.filename, root);
 				if err then
-					nlog(NLOG_ERROR, "Message in " .. dir .. " is broken: " .. err);
+					nlog(NLOG_ERROR, "Message in " .. dir.filename .. " is broken: " .. err);
 				end
 			end
 		end
