@@ -135,28 +135,31 @@ function datastore:get()
 	if ecode ~= 0 then
 		return nil, "Couldn't lock message storage";
 	end
-	local function unlock()
-		run_command(nil, 'sh', '-c', 'rm -rf ' .. dir .. '/.locked');
-	end
-	local ok, dirs = pcall(function() return dir_content(dir) end);
-	if not ok then
-		nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist: " .. dirs);
-		unlock();
-		return '';
-	end
-	local result = '';
-	local xml = xmlwrap.new_xml_doc('messages', self.model_ns);
-	local root = xml:root();
-	for _, dir in ipairs(dirs) do
-		if dir.filename:match('/[%d%-]+/?$') and dir.type == 'd' then -- Check it is message, not lockdir.
-			local err = self:message(dir.filename, root);
-			if err then
-				nlog(NLOG_ERROR, "Message in " .. dir .. " is broken: " .. err);
+	local ok, result = pcall(function()
+		local ok, dirs = pcall(function() return dir_content(dir) end);
+		if not ok then
+			nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist: " .. dirs);
+			return '';
+		end
+		local result = '';
+		local xml = xmlwrap.new_xml_doc('messages', self.model_ns);
+		local root = xml:root();
+		for _, dir in ipairs(dirs) do
+			if dir.filename:match('/[%d%-]+/?$') and dir.type == 'd' then -- Check it is message, not lockdir.
+				local err = self:message(dir.filename, root);
+				if err then
+					nlog(NLOG_ERROR, "Message in " .. dir .. " is broken: " .. err);
+				end
 			end
 		end
+		return xml:strdump();
+	end);
+	run_command(nil, 'sh', '-c', 'rm -rf ' .. dir .. '/.locked');
+	if ok then
+		return result;
+	else
+		return nil, result;
 	end
-	unlock();
-	return xml:strdump();
 end
 
 register_datastore_provider(datastore);
