@@ -34,7 +34,7 @@ function send_message(severity, text)
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
 	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text);
 	if ecode ~= 0 then
-		return "Failed to send: " .. stderr;
+		return nil, "Failed to send: " .. stderr;
 	end
 	return '<ok/>';
 end
@@ -51,7 +51,7 @@ function datastore:user_rpc(rpc, data)
 			return nil, err;
 		end
 		if not severities[data[1]] then
-			return {
+			return nil, {
 				msg = 'Unknown message severity: ' .. data[1],
 				app_tag = 'invalid-value',
 				info_badelem = 'severity',
@@ -62,9 +62,9 @@ function datastore:user_rpc(rpc, data)
 		return send_message(data[1], data[2]);
 	elseif rpc == 'test' then
 		nlog(NLOG_INFO, "Sending test message");
-		local result = send_message('test', 'Test test test! :-)');
+		local result, err = send_message('test', 'Test test test! :-)');
 		run_command(nil, 'sh', '-c', 'rm -rf ' .. test_dir);
-		return result;
+		return result, err;
 	elseif rpc == 'display' then
 		local ids = {};
 		for mid in root:iterate() do
@@ -92,8 +92,8 @@ end
 function datastore:message(dir, root)
 	function getcontent(name)
 		local file, err = io.open(dir .. '/' .. name);
-		if not file then return
-			nil, err;
+		if not file then
+			return nil, err;
 		end
 		local result = file:read("*a");
 		file:close();
