@@ -29,7 +29,6 @@ function send_message(severity, text)
 	local wdir = dir;
 	if severity == 'test' then
 		wdir = test_dir;
-		severity = 'error';
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
 	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text);
