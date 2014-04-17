@@ -44,7 +44,7 @@ do_check() {
 	for ADDRESS in "$@" ; do
 		(
 			ADDR="$(echo "$ADDRESS" | sed -e 's/%/ -I/')"
-			if ping -q -w"$TIME" $ADDR >/dev/null 2>&1 ; then
+			if busybox ping -q -w"$TIME" $ADDR >/dev/null 2>&1 ; then
 				echo "$MESSAGE"
 			fi
 		) &
@@ -57,7 +57,7 @@ do_check_dns() {
 	shift
 	for ADDRESS in "$@" ; do
 		(
-			if ping -q -w"$TIME" "$ADDRESS" 2>/dev/null | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" >/dev/null 2>&1 ; then
+			if busybox ping -q -w"$TIME" "$ADDRESS" 2>/dev/null | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" >/dev/null 2>&1 ; then
 				echo "$MESSAGE"
 			fi
 		) &
