@@ -67,7 +67,7 @@ function datastore:user_rpc(rpc, data)
 			table.extend(params, {'-4'});
 		end
 		table.extend(params, {hostname});
-		local ecode, stdout, stderr = run_command(nil, 'ping', unpack(params));
+		local ecode, stdout, stderr = run_command(nil, 'busybox', 'ping', unpack(params));
 		nlog(NLOG_DEBUG, "Ping terminated with " .. ecode);
 		local result = xmlwrap.new_xml_doc('data', self.model_ns);
 		local data = result:root();
