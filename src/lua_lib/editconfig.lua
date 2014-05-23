@@ -260,6 +260,9 @@ function editconfig(config, command, model, ns, defop, errop)
 	local command_node = command:root();
 	local model_node = model:root();
 	local ops = {};
+	if defop == 'notset' then
+		defop = 'merge'; -- Compat mode, we didn't have notset before, collapse it.
+	end
 	err = children_perform(config_node, command_node, model_node, ns, defop, errop, ops);
 	return ops, err;
 end
