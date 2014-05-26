@@ -354,11 +354,6 @@ void comm_start_loop(const struct srv_config *config) {
 }
 
 void comm_cleanup(struct srv_config *config) {
-	if (nc_session_get_status(config->session) == NC_SESSION_STATUS_WORKING) {
-		//Close NETCONF connection with the server
-		nc_session_close(config->session, NC_SESSION_TERM_CLOSED);
-	}
-
 	// Cleanup the session structure and free all the allocated resources
 	if (config->session)
 		nc_session_free(config->session);
