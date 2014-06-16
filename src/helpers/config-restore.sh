@@ -20,6 +20,10 @@
 set -e
 
 DIR=/tmp/restore-$$
+DEST='/etc/config'
+if [ "$NUCI_TEST_CONFIG_DIR" ] ; then
+	DEST="$NUCI_TEST_CONFIG_DIR"
+fi
 mkdir -p "$DIR"
 trap 'rm -rf "$DIR"' EXIT INT QUIT TERM ABRT
 cd "$DIR"
@@ -31,11 +35,15 @@ base64 -d | bzip2 -cd | tar xp
 PASSWD="$(uci get foris.auth.password)"
 uci -c "$DIR/etc/config" set foris.auth.password="$PASSWD"
 uci -c "$DIR/etc/config" commit
-cp -rf "$DIR/etc/config" /etc
+cp -rf "$DIR/etc/config"/* "$DEST"
 rm -rf "$DIR"
 trap - EXIT INT QUIT TERM ABRT
 # It is legal for the address not to be there, so don't fail on it
 uci get network.lan.ipaddr || true
+
+if [ "$NUCI_TEST_CONFIG_DIR" ] ; then
+	exit
+fi
 
 if [ '!' -d /tmp/update-state ] ; then
 	# There's a short race condition here, but this should be rare enough, so we don't complicate the script

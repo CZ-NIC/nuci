@@ -20,10 +20,14 @@
 set -e
 
 DIR=/tmp/backup-$$
+SRC=/etc/config
+if [ "$NUCI_TEST_CONFIG_DIR" ] ; then
+	SRC="$NUCI_TEST_CONFIG_DIR"
+fi
 mkdir -p "$DIR"/etc
 trap 'rm -rf "$DIR"' EXIT INT QUIT TERM ABRT
 cd "$DIR"/etc
-cp -r /etc/config .
+cp -r "$SRC" config
 cd ..
 uci -c "$DIR"/etc/config delete foris.auth.password
 uci -c "$DIR"/etc/config commit
