@@ -83,6 +83,12 @@ function datastore:get()
 		last_file:close();
 	end
 
+	local offline_file = io.open('/tmp/offline-update-ready');
+	if offline_file then
+		root:add_child('offline-pending');
+		offline_file:close();
+	end
+
 	return xml:strdump();
 end
 

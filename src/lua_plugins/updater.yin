@@ -51,5 +51,11 @@
         </description>
       </leaf-list>
     </container>
+    <leaf name='offline-pending'>
+      <type name='empty'/>
+      <description>
+        <text>If present, an offline update is pending. Any attempt to run updater now will be aborted and an update is needed.</text>
+      </description>
+    </leaf>
   </container>
 </module>
