@@ -28,6 +28,30 @@ local tags = {
 	R = 'remove'
 };
 
+-- TODO: Read this from some file that's periodically updated from the server
+local lists = {
+	['luci-controls'] = {
+		title = 'LuCI rozšíření',
+		description = 'Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.'
+	},
+	nas = {
+		title = 'NAS',
+		description = 'Služby umožňující připojit disk k routeru a používat jej jako síťové úložiště dat.'
+	},
+	printserver = {
+		title = 'Tiskový server',
+		description = 'Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.'
+	},
+	netutils = {
+		title = 'Rozšíření síťové podpory',
+		description = 'Podpora dalších protokolů a druhů připojení.'
+	},
+	['shell-utils'] = {
+		title = 'Pohodlnější příkazová řádka',
+		description = 'Programy usnadňující používání příkazové řádky (např. bash či vim).'
+	}
+};
+
 function datastore:get()
 	local xml = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
 	local root = xml:root();
@@ -87,6 +111,14 @@ function datastore:get()
 	if offline_file then
 		root:add_child('offline-pending');
 		offline_file:close();
+	end
+
+	for name, list in pairs(lists) do
+		local lnode = root:add_child('pkg-list');
+		lnode:add_child('name'):set_text(name);
+		for name, value in pairs(list) do
+			lnode:add_child(name):set_text(value);
+		end
 	end
 
 	return xml:strdump();
