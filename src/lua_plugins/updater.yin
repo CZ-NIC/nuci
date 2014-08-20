@@ -65,18 +65,18 @@
           <text>Name of the list as recorded in the configuration. Machine-readable format. The title is to be shown to user instead.</text>
         </description>
       </leaf>
-      <leaf name='title'>
+      <leaf-list name='title'>
         <type name='string'/>
         <description>
-          <text>Human-readable name of the list.</text>
+          <text>Human-readable name of the list. There may be multiple in different languages, distinguished by xml:lang attribute.</text>
         </description>
-      </leaf>
-      <leaf name='description'>
+      </leaf-list>
+      <leaf-list name='description'>
         <type name='string'/>
         <description>
-          <text>Description of the list as to be shown to the user.</text>
+          <text>Description of the list as to be shown to the user. There may be multiple in different languages. The xml:lang attribute is used to distinguish them.</text>
         </description>
-      </leaf>
+      </leaf-list>
       <description>
         <text>List of available package lists the user might request to be installed. Each provides some kind of functionality (like NAS). To get one, it needs to be recorded in configuration and the updater run.</text>
       </description>

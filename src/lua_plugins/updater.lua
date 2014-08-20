@@ -31,24 +31,34 @@ local tags = {
 -- TODO: Read this from some file that's periodically updated from the server
 local lists = {
 	['luci-controls'] = {
-		title = 'LuCI rozšíření',
-		description = 'Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.'
+		title_cs = 'LuCI rozšíření',
+		description_cs = 'Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.',
+		title_en = 'LuCI extensions',
+		description_en = 'Several additional tabs and controls for the advanced LuCI interface.'
 	},
 	nas = {
-		title = 'NAS',
-		description = 'Služby umožňující připojit disk k routeru a používat jej jako síťové úložiště dat.'
+		title_cs = 'NAS',
+		title_en = 'NAS',
+		description_cs = 'Služby umožňující připojit disk k routeru a používat jej jako síťové úložiště dat.',
+		description_en = 'Services allowing to connect a disk to the router and use it as network data store.'
 	},
 	printserver = {
-		title = 'Tiskový server',
-		description = 'Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.'
+		title_cs = 'Tiskový server',
+		title_en = 'Print server',
+		description_cs = 'Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.',
+		description_en = 'Services allowing to connect a printer to the router and use it for remote printing.'
 	},
 	netutils = {
-		title = 'Rozšíření síťové podpory',
-		description = 'Podpora dalších protokolů a druhů připojení.'
+		title_cs = 'Rozšíření síťové podpory',
+		title_en = 'Extensions of network protocols',
+		description_cs = 'Podpora dalších protokolů a druhů připojení.',
+		description_en = 'Support for additional protocols and connection types.'
 	},
 	['shell-utils'] = {
-		title = 'Pohodlnější příkazová řádka',
-		description = 'Programy usnadňující používání příkazové řádky (např. bash či vim).'
+		title_cs = 'Pohodlnější příkazová řádka',
+		title_en = 'More comfortable command line',
+		description_cs = 'Programy usnadňující používání příkazové řádky (např. bash či vim).',
+		description_en = 'Programs making life in command line slightly easier (like bash or vim).'
 	}
 };
 
@@ -117,7 +127,10 @@ function datastore:get()
 		local lnode = root:add_child('pkg-list');
 		lnode:add_child('name'):set_text(name);
 		for name, value in pairs(list) do
-			lnode:add_child(name):set_text(value);
+			local tp, lang = name:match('(.*)_(.*)');
+			local node = lnode:add_child(tp);
+			node:set_text(value);
+			node:set_attribute('xml:lang', lang);
 		end
 	end
 
