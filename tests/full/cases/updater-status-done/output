@@ -8,28 +8,38 @@
    </last_activity>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">nas</name>
-    <title xmlns="http://www.nic.cz/ns/router/updater">NAS</title>
-    <description xmlns="http://www.nic.cz/ns/router/updater">Služby umožňující připojit disk k routeru a používat jej jako síťové úložiště dat.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">NAS</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Services allowing to connect a disk to the router and use it as network data store.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">NAS</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Služby umožňující připojit disk k routeru a používat jej jako síťové úložiště dat.</description>
    </pkg-list>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">luci-controls</name>
-    <title xmlns="http://www.nic.cz/ns/router/updater">LuCI rozšíření</title>
-    <description xmlns="http://www.nic.cz/ns/router/updater">Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">LuCI rozšíření</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Several additional tabs and controls for the advanced LuCI interface.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">LuCI extensions</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.</description>
    </pkg-list>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">shell-utils</name>
-    <title xmlns="http://www.nic.cz/ns/router/updater">Pohodlnější příkazová řádka</title>
-    <description xmlns="http://www.nic.cz/ns/router/updater">Programy usnadňující používání příkazové řádky (např. bash či vim).</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Pohodlnější příkazová řádka</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Programs making life in command line slightly easier (like bash or vim).</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">More comfortable command line</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Programy usnadňující používání příkazové řádky (např. bash či vim).</description>
    </pkg-list>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">printserver</name>
-    <title xmlns="http://www.nic.cz/ns/router/updater">Tiskový server</title>
-    <description xmlns="http://www.nic.cz/ns/router/updater">Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Tiskový server</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Services allowing to connect a printer to the router and use it for remote printing.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Print server</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.</description>
    </pkg-list>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">netutils</name>
-    <title xmlns="http://www.nic.cz/ns/router/updater">Rozšíření síťové podpory</title>
-    <description xmlns="http://www.nic.cz/ns/router/updater">Podpora dalších protokolů a druhů připojení.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Rozšíření síťové podpory</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Support for additional protocols and connection types.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Extensions of network protocols</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Podpora dalších protokolů a druhů připojení.</description>
    </pkg-list>
   </updater>
  </data>
