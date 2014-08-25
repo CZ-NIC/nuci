@@ -162,6 +162,11 @@ get()::
 get_config()::
   Similar to `get()`, but instead of state data, it should return the
   current content of configuration.
++
+If you read from uci (with `get_uci_cursor()`), be sure to reset it
+afterwards with `reset_uci_cursor()`, so the transaction is not kept
+open and new changes from other sources are seen.
+
 set_config(config, defop, deferr)::
   This implements the `<edit-config/>` netconf method. The `config` is
   the fragment of XML inside the `<config/>` parameter of the method,

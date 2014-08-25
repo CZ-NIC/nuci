@@ -5,7 +5,7 @@ set -ex
 TMP=$(tempfile)
 CASE="$1"
 
-valgrind -v --error-exitcode=1 ./tests/test_runner "$CASE/script.lua" > "$TMP"
+./tests/test_runner "$CASE/script.lua" > "$TMP"
 diff "$CASE/output" "$TMP"
 
 rm -f "$TMP"

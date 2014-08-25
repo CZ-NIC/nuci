@@ -502,12 +502,14 @@ function datastore:get()
 		if command.procedure then
 			local out, err = command.procedure(node);
 			if not out then
+				reset_uci_cursor();
 				return nil, err;
 			end
 		else
 			local out, err = get_output(command);
 			--test errors
 			if not out then
+				reset_uci_cursor();
 				return nil, err;
 			end
 			--run postproccess function
@@ -520,7 +522,7 @@ function datastore:get()
 			end
 		end
 	end
-
+	reset_uci_cursor();
 	return doc:strdump();
 end
 

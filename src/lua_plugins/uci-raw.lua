@@ -94,6 +94,7 @@ function uci_datastore:get_config()
 		result = result .. list_config(cursor, config);
 	end
 	result = result .. '</uci>';
+	reset_uci_cursor();
 	return result;
 end
 

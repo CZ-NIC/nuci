@@ -30,6 +30,7 @@ function datastore:get()
 	get_uci_cursor():foreach("system", "system", function(s)
 		timezone = s.timezone;
 	end);
+	reset_uci_cursor();
 
 	local code, local_time, stderr = run_command(nil, 'date', '-Iseconds');
 	if code ~= 0 then
@@ -107,6 +108,7 @@ function datastore:user_rpc(rpc, data)
 		-- If none are given, use the ones from config
 		if #servers == 0 then
 			servers = get_uci_cursor():get("system", "ntp", "server");
+			reset_uci_cursor();
 		end
 		-- Do we have any?
 		if not servers or #servers == 0 then
