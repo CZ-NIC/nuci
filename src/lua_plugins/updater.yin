@@ -17,7 +17,7 @@
       <type name='enumeration'>
         <enum name='startup'/>
         <enum name='initial sleep'/>
-        <enum name='get package listlist'/>
+        <enum name='get list'/>
         <enum name='remove'/>
         <enum name='install'/>
         <enum name='cooldown'/>
@@ -48,6 +48,12 @@
         <type name='string'/>
         <description>
           <text>A package is/was uninstalled.</text>
+        </description>
+      </leaf-list>
+      <leaf-list name='download'>
+        <type name='string'/>
+        <description>
+          <text>A package that is being/was downloaded, in preparation to install it.</text>
         </description>
       </leaf-list>
     </container>

@@ -25,7 +25,8 @@ local state_dir = '/tmp/update-state';
 
 local tags = {
 	I = 'install',
-	R = 'remove'
+	R = 'remove',
+	D = 'download'
 };
 
 -- TODO: Read this from some file that's periodically updated from the server
@@ -99,7 +100,7 @@ function datastore:get()
 		root:add_child('failed'):set_text(failure);
 	end
 
-	local last_file = io.open(state_dir .. '/log');
+	local last_file = io.open(state_dir .. '/log2');
 	if last_file then
 		local last_act = root:add_child('last_activity');
 		for line in last_file:lines() do
