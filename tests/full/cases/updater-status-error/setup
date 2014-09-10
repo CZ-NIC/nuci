@@ -4,7 +4,7 @@ export NUCI_TEST_PLUGIN_LIST=updater,init
 
 mkdir /tmp/update-state
 echo 'Died of old age' >/tmp/update-state/last_error
-cat >/tmp/update-state/log <<ENDLOG
+cat >/tmp/update-state/log2 <<ENDLOG
 I package
 I another
 R garbage
