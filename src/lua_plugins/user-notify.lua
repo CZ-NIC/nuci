@@ -121,8 +121,8 @@ function datastore:message(dir, root)
 	mnode:add_child('id'):set_text(id);
 	mnode:add_child('body'):set_text(body);
 	mnode:add_child('severity'):set_text(severity);
-	local atime, mtime, ctime = file_times(dir .. '/' .. 'body');
-	mnode:add_child('timestam'):set_text(math.floor(mtime));
+	local atime, mtime, ctime = file_times(dir .. '/' .. 'message');
+	mnode:add_child('timestamp'):set_text(math.floor(mtime));
 	if sent then
 		mnode:add_child('sent');
 	end
