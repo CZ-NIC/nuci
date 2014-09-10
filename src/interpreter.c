@@ -456,6 +456,26 @@ static int nlog_lua(lua_State *lua) {
 	return 0;
 }
 
+static void push_time(lua_State *lua, struct timespec time) {
+	lua_Number number = time.tv_sec + (time.tv_nsec / 1000000.0);
+	lua_pushnumber(lua, number);
+}
+
+static int file_times_lua(lua_State *lua) {
+	int param_count = lua_gettop(lua);
+	if (param_count != 1)
+		luaL_error(lua, "file_times expects exactly 1 parameter, %d given", param_count);
+	const char *path = lua_tostring(lua, -1);
+	struct stat buffer;
+	// Run stat
+	if (stat(path, &buffer) == -1)
+		return luaL_error(lua, strerror(errno));
+	push_time(lua, buffer.st_atim);
+	push_time(lua, buffer.st_mtim);
+	push_time(lua, buffer.st_ctim);
+	return 3;
+}
+
 struct interpreter {
 	lua_State *state;
 	bool last_error; // Was there error?
@@ -485,6 +505,7 @@ struct interpreter *interpreter_create(void) {
 	add_func(result, "file_executable", file_executable_lua);
 	add_func(result, "dir_content", dir_content);
 	add_func(result, "nlog", nlog_lua);
+	add_func(result, "file_times", file_times_lua);
 	add_const(result, "NLOG_FATAL", NLOG_FATAL);
 	add_const(result, "NLOG_ERROR", NLOG_ERROR);
 	add_const(result, "NLOG_WARN", NLOG_WARN);
