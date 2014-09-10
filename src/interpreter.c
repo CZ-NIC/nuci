@@ -457,7 +457,7 @@ static int nlog_lua(lua_State *lua) {
 }
 
 static void push_time(lua_State *lua, struct timespec time) {
-	lua_Number number = time.tv_sec + (time.tv_nsec / 1000000.0);
+	lua_Number number = time.tv_sec + (time.tv_nsec / 1000000000.0);
 	lua_pushnumber(lua, number);
 }
 
