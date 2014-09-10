@@ -78,6 +78,12 @@
       <leaf name='displayed'>
         <type name='empty'/>
       </leaf>
+      <leaf name='timestamp'>
+        <type name='uint64'/>
+        <description>
+          <text>Unix timestamp when the message was created.</text>
+        </description>
+      </leaf>
     </list>
   </container>
 </module>
