@@ -24,6 +24,7 @@ docs/
 src/nuci
 tests/test_runner
 tools/test_gui/test_gui
+src/helpers/nuci-helper-*
 
 #Link to documentation output in build
 build/buildsystem.html
