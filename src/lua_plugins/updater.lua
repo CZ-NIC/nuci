@@ -60,6 +60,12 @@ local lists = {
 		title_en = 'More comfortable command line',
 		description_cs = 'Programy usnadňující používání příkazové řádky (např. bash či vim).',
 		description_en = 'Programs making life in command line slightly easier (like bash or vim).'
+	},
+	majordomo = {
+		title_cs = 'Majordomo',
+		title_en = 'Majordomo',
+		description_cs = 'Software pro sledování spojení jednotlivých zařízení v síti.',
+		description_en = 'Software for monitoring connections of devices in local network.'
 	}
 };
 
