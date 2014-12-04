@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="smrt" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/smrt"/>
+  <prefix value="smrt"/>
+   <container name='smrt'>
+    <description>
+      <text>Describes the state of the SMRT modems in the system.</text>
+    </description>
+    <config value='false'/>
+    <list name='interface'>
+      <description>
+        <text>Single interface on which the SMRT modem is connected.</text>
+      </description>
+      <key name='name'/>
+      <leaf name='name'>
+        <type name='string'/>
+        <description>
+          <text>Name of the interface</text>
+        </description>
+      </leaf>
+      <leaf name='status'>
+        <type name='enumeration'>
+          <enum name='presence query'/>
+          <enum name='upload firmware'/>
+          <enum name='version query'/>
+          <enum name='config'/>
+          <enum name='activate'/>
+          <enum name='disabled'/>
+          <enum name='CRC error'/>
+          <enum name='idle'/>
+          <enum name='handshake'/>
+          <enum name='training'/>
+          <enum name='no signal'/>
+          <enum name='online'/>
+          <enum name='reset'/>
+          <enum name='not present'/>
+        </type>
+        <description>
+          <text>The status of the modem.</text>
+        </description>
+      </leaf>
+      <leaf name='standard'>
+        <type name='enumeration'>
+          <enum name='T1.413'/>
+          <enum name='G992_1'/>
+          <enum name='G992_2'/>
+          <enum name='G992_3'/>
+          <enum name='G992_4'/>
+          <enum name='G992_5'/>
+          <enum name='G993_2'/>
+        </type>
+      </leaf>
+      <leaf name='annex'>
+        <type name='enumeration'>
+          <enum name='A'/>
+          <enum name='B'/>
+          <enum name='C'/>
+          <enum name='I'/>
+          <enum name='J'/>
+          <enum name='L1'/>
+          <enum name='L2'/>
+          <enum name='M'/>
+        </type>
+      </leaf>
+      <leaf name='power-state'>
+        <tye name='uint8'/>
+      </leaf>
+      <container name='max-speed'>
+        <leaf name='up'>
+          <type name='uint32'/>
+        </leaf>
+        <leaf name='down'>
+          <type name='uint32'/>
+        </leaf>
+      </container>
+      <container name='cur-speed'>
+        <leaf name='up'>
+          <type name='uint32'/>
+        </leaf>
+        <leaf name='down'>
+          <type name='uint32'/>
+        </leaf>
+      </container>
+      <container name='power'>
+        <leaf name='up'>
+          <type name='uint16'/>
+        </leaf>
+        <leaf name='down'>
+          <type name='uint16'/>
+        </leaf>
+      </container>
+    </list>
+  </container>
+</module>
