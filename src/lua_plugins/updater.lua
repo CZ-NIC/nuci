@@ -66,6 +66,12 @@ local lists = {
 		title_en = 'Majordomo',
 		description_cs = 'Software pro sledování spojení jednotlivých zařízení v síti.',
 		description_en = 'Software for monitoring connections of devices in local network.'
+	},
+	squid = {
+		title_cs = 'Squid',
+		title_en = 'Squid',
+		description_cs = 'HTTP cachující proxy Squid.',
+		description_en = 'HTTP caching proxy Squid.'
 	}
 };
 
