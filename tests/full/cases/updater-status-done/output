@@ -7,6 +7,13 @@
     <remove xmlns="http://www.nic.cz/ns/router/updater">garbage</remove>
    </last_activity>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">squid</name>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Squid</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">HTTP caching proxy Squid.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Squid</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">HTTP cachující proxy Squid.</description>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">nas</name>
     <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">NAS</title>
     <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Services allowing to connect a disk to the router and use it as network data store.</description>
