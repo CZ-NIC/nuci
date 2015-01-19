@@ -328,6 +328,10 @@ local commands = {
 		shell = "cat /etc/openwrt_release  | grep DISTRIB_DESCRIPTION | cut -d '\"' -f 2"
 	},
 	{
+		element = 'turris-os-version',
+		file = '/etc/turris-version'
+	},
+	{
 		element = "local-time",
 		cmd = "date",
 		params = {'+%s'}
