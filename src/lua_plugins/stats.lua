@@ -304,14 +304,7 @@ end
 local commands = {
 	{
 		element = 'board-name',
-		file = '/proc/cpuinfo',
-		postprocess = function (node, out)
-			local name = out:match("model%s*:%s*([^%s][^\n]*)");
-			if name then
-				node:set_text(name);
-				board = name;
-			end
-		end
+		file = '/tmp/sysinfo/board_name'
 	},
 	{
 		element = "hostname",
