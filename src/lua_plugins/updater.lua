@@ -72,6 +72,12 @@ local lists = {
 		title_en = 'Squid',
 		description_cs = 'HTTP cachující proxy Squid.',
 		description_en = 'HTTP caching proxy Squid.'
+	},
+	cacerts = {
+		title_cs = 'Certifikáty kořenových autorit',
+		title_en = 'CA root certificates',
+		description_cs = 'Seznam certifikátů důvěryhodných autorit pro SSL/TLS (přejato z Debianu)',
+		description_en = 'List of trusted CA certificates for SSL/TLS (borrowed from Debian)'
 	}
 };
 
