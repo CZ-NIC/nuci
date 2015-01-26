@@ -33,6 +33,8 @@ local networks = {
 		eth0 = 'internal'
 	}
 };
+networks['rtrs01'] = networks['Turris'];
+networks['rtrs02'] = networks['Turris'];
 
 local switch_ports = {
 	Turris = {
@@ -43,7 +45,7 @@ local switch_ports = {
 			[3] = 'external',
 			[4] = 'external',
 			[5] = 'external',
-			[6] = 'unused'
+			[6] = 'internal'
 		}
 	},
 	['TP-Link TL-WDR4900 v1'] = {
@@ -58,12 +60,16 @@ local switch_ports = {
 		}
 	}
 };
+switch_ports['rtrs01'] = switch_ports['Turris'];
+switch_ports['rtrs02'] = switch_ports['Turris'];
 
 -- Implementations of "procedure" command-type
 local function cmd_interfaces(node)
 	local network_defs;
 	if board then
 		network_defs = networks[board];
+	else
+		network_defs = {}
 	end
 	local is_address = function(s)
 		local available_types = { "inet", "inet6", "link" };
@@ -304,7 +310,15 @@ end
 local commands = {
 	{
 		element = 'board-name',
-		file = '/tmp/sysinfo/board_name'
+		file = '/tmp/sysinfo/board_name',
+		postprocess = function (node, out)
+			board = out;
+			node:set_text(out);
+		end
+	},
+	{
+		element = 'model',
+		file = 'tmp/sysinfo/model'
 	},
 	{
 		element = "hostname",
