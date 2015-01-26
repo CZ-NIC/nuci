@@ -65,11 +65,9 @@ switch_ports['rtrs02'] = switch_ports['Turris'];
 
 -- Implementations of "procedure" command-type
 local function cmd_interfaces(node)
-	local network_defs;
+	local network_defs = {};
 	if board then
 		network_defs = networks[board];
-	else
-		network_defs = {}
 	end
 	local is_address = function(s)
 		local available_types = { "inet", "inet6", "link" };
@@ -312,13 +310,16 @@ local commands = {
 		element = 'board-name',
 		file = '/tmp/sysinfo/board_name',
 		postprocess = function (node, out)
-			board = out;
-			node:set_text(out);
+			board = trimr(out);
+			node:set_text(board);
 		end
 	},
 	{
 		element = 'model',
-		file = 'tmp/sysinfo/model'
+		file = '/tmp/sysinfo/model',
+		postprocess = function (node, out)
+			node:set_text(trimr(out));
+		end
 	},
 	{
 		element = "hostname",
