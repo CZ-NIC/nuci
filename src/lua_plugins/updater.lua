@@ -78,6 +78,12 @@ local lists = {
 		title_en = 'CA root certificates',
 		description_cs = 'Seznam certifikátů důvěryhodných autorit pro SSL/TLS (přejato z Debianu)',
 		description_en = 'List of trusted CA certificates for SSL/TLS (borrowed from Debian)'
+	},
+	tor = {
+		title_cs = 'Tor',
+		title_en = 'Tor',
+		description_cs = 'Služba umožňující zvýšení anonymity na internetu',
+		description_en = 'Service to increase anonymity on the Internet'
 	}
 };
 
