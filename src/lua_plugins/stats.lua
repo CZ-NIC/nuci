@@ -35,6 +35,7 @@ local networks = {
 };
 networks['rtrs01'] = networks['Turris'];
 networks['rtrs02'] = networks['Turris'];
+networks['turris'] = networks['Turris'];
 
 local switch_ports = {
 	Turris = {
@@ -62,11 +63,12 @@ local switch_ports = {
 };
 switch_ports['rtrs01'] = switch_ports['Turris'];
 switch_ports['rtrs02'] = switch_ports['Turris'];
+switch_ports['turris'] = switch_ports['Turris'];
 
 -- Implementations of "procedure" command-type
 local function cmd_interfaces(node)
 	local network_defs = {};
-	if board then
+	if board and networks[board] then
 		network_defs = networks[board];
 	end
 	local is_address = function(s)
@@ -271,7 +273,7 @@ function switches(node)
 	end
 
 	local switch_defs = {};
-	if board then
+	if board and switch_ports[board] then
 		switch_defs = switch_ports[board];
 	end
 
