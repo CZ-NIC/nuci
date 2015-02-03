@@ -84,6 +84,12 @@ local lists = {
 		title_en = 'Tor',
 		description_cs = 'Služba umožňující zvýšení anonymity na internetu',
 		description_en = 'Service to increase anonymity on the Internet'
+	},
+	honeypot = {
+		title_cs = 'SSH Honeypot',
+		title_en = 'SSH Honeypot',
+		description_cs = 'Past na roboty zkoušející hesla na SSH',
+		description_en = 'Trap for password-guessing robots on SSH'
 	}
 };
 
