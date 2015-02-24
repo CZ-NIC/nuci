@@ -28,6 +28,13 @@
     <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">HTTP cachující proxy Squid.</description>
    </pkg-list>
    <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">webcam</name>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Webová kamera</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Support to capture image with web camera</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Web camera</title>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Podpora pro snímání obrazu pomocí webové kamery</description>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
     <name xmlns="http://www.nic.cz/ns/router/updater">honeypot</name>
     <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">SSH Honeypot</title>
     <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Trap for password-guessing robots on SSH</description>

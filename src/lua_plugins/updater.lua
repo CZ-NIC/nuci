@@ -90,6 +90,12 @@ local lists = {
 		title_en = 'SSH Honeypot',
 		description_cs = 'Past na roboty zkoušející hesla na SSH',
 		description_en = 'Trap for password-guessing robots on SSH'
+	},
+	webcam = {
+		title_cs = 'Webová kamera',
+		title_en = 'Web camera',
+		description_cs = 'Podpora pro snímání obrazu pomocí webové kamery',
+		description_en = 'Support to capture image with web camera'
 	}
 };
 
