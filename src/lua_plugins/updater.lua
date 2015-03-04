@@ -1,5 +1,5 @@
 --[[
-Copyright 2013, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2013-2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -29,77 +29,12 @@ local tags = {
 	D = 'download'
 };
 
--- TODO: Read this from some file that's periodically updated from the server
-local lists = {
-	['luci-controls'] = {
-		title_cs = 'LuCI rozšíření',
-		description_cs = 'Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.',
-		title_en = 'LuCI extensions',
-		description_en = 'Several additional tabs and controls for the advanced LuCI interface.'
-	},
-	nas = {
-		title_cs = 'NAS',
-		title_en = 'NAS',
-		description_cs = 'Služby umožňující připojit disk k routeru a používat jej jako síťové úložiště dat.',
-		description_en = 'Services allowing to connect a disk to the router and use it as network data store.'
-	},
-	printserver = {
-		title_cs = 'Tiskový server',
-		title_en = 'Print server',
-		description_cs = 'Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.',
-		description_en = 'Services allowing to connect a printer to the router and use it for remote printing.'
-	},
-	netutils = {
-		title_cs = 'Rozšíření síťové podpory',
-		title_en = 'Extensions of network protocols',
-		description_cs = 'Podpora dalších protokolů a druhů připojení.',
-		description_en = 'Support for additional protocols and connection types.'
-	},
-	['shell-utils'] = {
-		title_cs = 'Pohodlnější příkazová řádka',
-		title_en = 'More comfortable command line',
-		description_cs = 'Programy usnadňující používání příkazové řádky (např. bash či vim).',
-		description_en = 'Programs making life in command line slightly easier (like bash or vim).'
-	},
-	majordomo = {
-		title_cs = 'Majordomo',
-		title_en = 'Majordomo',
-		description_cs = 'Software pro sledování spojení jednotlivých zařízení v síti.',
-		description_en = 'Software for monitoring connections of devices in local network.'
-	},
-	squid = {
-		title_cs = 'Squid',
-		title_en = 'Squid',
-		description_cs = 'HTTP cachující proxy Squid.',
-		description_en = 'HTTP caching proxy Squid.'
-	},
-	cacerts = {
-		title_cs = 'Certifikáty kořenových autorit',
-		title_en = 'CA root certificates',
-		description_cs = 'Seznam certifikátů důvěryhodných autorit pro SSL/TLS (přejato z Debianu)',
-		description_en = 'List of trusted CA certificates for SSL/TLS (borrowed from Debian)'
-	},
-	tor = {
-		title_cs = 'Tor',
-		title_en = 'Tor',
-		description_cs = 'Služba umožňující zvýšení anonymity na internetu',
-		description_en = 'Service to increase anonymity on the Internet'
-	},
-	honeypot = {
-		title_cs = 'SSH Honeypot',
-		title_en = 'SSH Honeypot',
-		description_cs = 'Past na roboty zkoušející hesla na SSH',
-		description_en = 'Trap for password-guessing robots on SSH'
-	},
-	webcam = {
-		title_cs = 'Webová kamera',
-		title_en = 'Web camera',
-		description_cs = 'Podpora pro snímání obrazu pomocí webové kamery',
-		description_en = 'Support to capture image with web camera'
-	}
-};
-
 function datastore:get()
+	local lists_ok, lists_error = pcall(loadfile('/usr/share/updater/definitions'))
+	if not lists_ok then
+		nlog(NLOG_ERROR, "Failed to load user list definitions: " .. lists_error);
+		lists = {};
+	end
 	local xml = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
 	local root = xml:root();
 
