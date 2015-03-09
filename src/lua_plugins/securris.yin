@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="securris" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/securris"/>
+  <prefix value="securris"/>
+  <typedef name="zone-name">
+    <description>
+      <text>Name of a zone.</text>
+    </description>
+    <type name="string"/>
+  </typedef>
+  <typedef name="device-id">
+    <description>
+      <text>
+        24-bit numeric ID of a Securris device.
+      </text>
+    </description>
+    <type name="uint32">
+      <range value="0..16777215"/>
+    </type>
+  </typedef>
+  <rpc name="zone-arm">
+    <description>
+      <text>Arm/disarm a zone.</text>
+    </description>
+    <input>
+      <leaf name="zone-name">
+        <mandatory value="true"/>
+        <type name="zone-name"/>
+        <description>
+          <text>Name of the zone.</text>
+        </description>
+      </leaf>
+      <leaf name="status">
+        <type name="boolean"/>
+        <default value="true"/>
+        <description>
+          <text>
+            The desired status of the zone: 'true' means armed,
+            'false' disarmed.
+          </text>
+        </description>
+      </leaf>
+    </input>
+  </rpc>
+  <rpc name="siren">
+    <description>
+      <text>
+        Control the sound and LED status of a siren.
+      </text>
+    </description>
+    <input>
+      <leaf name="id">
+        <mandatory value="true"/>
+        <type name="device-id"/>
+        <description>
+          <text>ID of the siren.</text>
+        </description>
+      </leaf>
+      <leaf name="sound">
+        <type name="boolean"/>
+        <default value="false"/>
+        <description>
+          <text>
+            Turn on or off the sound of the siren. 
+          </text>
+        </description>
+      </leaf>
+      <leaf name="sound-type">
+        <type name="enumeration">
+          <enum name="continuous"/>
+          <enum name="fast-beeps"/>
+          <enum name="slow-beeps"/>
+        </type>
+        <default value="continuous"/>
+        <description>
+          <text>Beep frequency of the sound.</text>
+        </description>
+      </leaf>
+      <leaf name="led">
+        <type name="boolean"/>
+        <default value="false"/>
+        <description>
+          <text>
+            Turn on or off the siren LED. 
+          </text>
+        </description>
+      </leaf>
+    </input>
+  </rpc>
+  <rpc name="pair">
+    <description>
+      <text>Control transmission of the pairing signal.</text>
+    </description>
+    <input>
+      <leaf name="transmit">
+        <type name="boolean"/>
+        <default value="true"/>
+        <description>
+          <text>Turn on or off pairing transmission.</text>
+        </description>
+      </leaf>
+    </input>
+  </rpc>
+  <rpc name="dump">
+    <description>
+      <text>Dump status information.</text>
+    </description>
+    <input>
+      <leaf name="format">
+        <type name="enumeration">
+          <enum name="text">
+            <description>
+              <text>Plain text.</text>
+            </description>
+          </enum>
+          <enum name="json"/>
+        </type>
+        <default value="json"/>
+        <description>
+          <text>Format of the status data.</text>
+        </description>
+      </leaf>
+    </input>
+    <output>
+      <leaf name="status">
+        <mandatory value="true"/>
+        <type name="string"/>
+      </leaf>
+    </output>
+  </rpc>
+  <rpc name="relay">
+    <description>
+      <text>
+        Control a relay.
+      </text>
+    </description>
+    <input>
+      <leaf name="id">
+        <mandatory value="true"/>
+        <type name="device-id"/>
+        <description>
+          <text>ID of the relay.</text>
+        </description>
+      </leaf>
+      <leaf name="status">
+        <type name="boolean"/>
+        <default value="false"/>
+        <description>
+          <text>
+            Turn the relay on or off. 
+          </text>
+        </description>
+      </leaf>
+    </input>
+  </rpc>
+  <rpc name="halt">
+    <description>
+      <text>Terminate the Securris application.</text>
+    </description>
+  </rpc>
+  <rpc name="reload-config">
+    <description>
+      <text>Reload configuration from an UCI file.</text>
+    </description>
+    <input>
+      <leaf name="file-name">
+	<type name="string"/>
+	<default value="/etc/config/securris"/>
+	<description>
+	  <text>
+	    Name of a file to read the configuration from.
+	  </text>
+	</description>
+      </leaf>
+    </input>
+  </rpc>
+</module>
