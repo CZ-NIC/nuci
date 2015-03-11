@@ -3,6 +3,9 @@
   <yang-version value="1"/>
   <namespace uri="http://www.nic.cz/ns/router/securris"/>
   <prefix value="securris"/>
+
+  <!-- Typedefs -->
+
   <typedef name="zone-name">
     <description>
       <text>Name of a zone.</text>
@@ -19,7 +22,26 @@
       <range value="0..16777215"/>
     </type>
   </typedef>
-  <rpc name="zone-arm">
+  <typedef name="dump-format">
+    <description>
+      <text>
+	Possible formats of operational state dumps.
+      </text>
+    </description>
+    <type name="enumeration">
+      <enum name="json"/>
+      <enum name="text">
+        <description>
+          <text>Plain text.</text>
+        </description>
+      </enum>
+      <enum name="xml"/>
+    </type>
+  </typedef>
+
+  <!-- RPCs -->
+
+  <rpc name="zone-arming">
     <description>
       <text>Arm/disarm a zone.</text>
     </description>
@@ -46,17 +68,10 @@
   <rpc name="siren">
     <description>
       <text>
-        Control the sound and LED status of a siren.
+        Control the sound and LED status of a paired siren.
       </text>
     </description>
     <input>
-      <leaf name="id">
-        <mandatory value="true"/>
-        <type name="device-id"/>
-        <description>
-          <text>ID of the siren.</text>
-        </description>
-      </leaf>
       <leaf name="sound">
         <type name="boolean"/>
         <default value="false"/>
@@ -104,45 +119,49 @@
   </rpc>
   <rpc name="dump">
     <description>
-      <text>Dump status information.</text>
+      <text>Dump operational state data.</text>
     </description>
     <input>
       <leaf name="format">
-        <type name="enumeration">
-          <enum name="text">
-            <description>
-              <text>Plain text.</text>
-            </description>
-          </enum>
-          <enum name="json"/>
-        </type>
-        <default value="json"/>
+	<type name="dump-format"/>
+        <default value="text"/>
         <description>
-          <text>Format of the status data.</text>
+          <text>
+	    Desired format of the state data.
+	  </text>
         </description>
       </leaf>
     </input>
     <output>
-      <leaf name="status">
-        <mandatory value="true"/>
-        <type name="string"/>
+      <leaf name="format">
+	<type name="dump-format"/>
       </leaf>
+      <choice name="state-data">
+	<leaf name="content">
+	  <when condition="../format != 'xml'"/>
+          <type name="string"/>
+	  <description>
+	    <text>
+	      For 'json' and 'text' formats, a simple string is returned.
+	    </text>
+	  </description>
+	</leaf>
+	<anyxml name="securris-state">
+	  <description>
+	    <text>For 'xml' format, the contents is defined by the
+	    YANG module 'securris-state'.</text>
+	  </description>
+	</anyxml>
+      </choice>
     </output>
   </rpc>
   <rpc name="relay">
     <description>
       <text>
-        Control a relay.
+        Control a paired relay.
       </text>
     </description>
     <input>
-      <leaf name="id">
-        <mandatory value="true"/>
-        <type name="device-id"/>
-        <description>
-          <text>ID of the relay.</text>
-        </description>
-      </leaf>
       <leaf name="status">
         <type name="boolean"/>
         <default value="false"/>
@@ -151,27 +170,6 @@
             Turn the relay on or off. 
           </text>
         </description>
-      </leaf>
-    </input>
-  </rpc>
-  <rpc name="halt">
-    <description>
-      <text>Terminate the Securris application.</text>
-    </description>
-  </rpc>
-  <rpc name="reload-config">
-    <description>
-      <text>Reload configuration from an UCI file.</text>
-    </description>
-    <input>
-      <leaf name="file-name">
-	<type name="string"/>
-	<default value="/etc/config/securris"/>
-	<description>
-	  <text>
-	    Name of a file to read the configuration from.
-	  </text>
-	</description>
       </leaf>
     </input>
   </rpc>
