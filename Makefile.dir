@@ -28,7 +28,7 @@ $(O)/lua_plugins/%.yin:
 	$(Q)xmllint $< >/dev/null
 	$(Q)cp $< $@
 
-LUA_NAME := $(shell for lua in lua lua5.1 ; do if pkg-config $$lua ; then echo $$lua ; break ; fi ; done)
+LUA_NAME := $(shell for lua in lua5.1 lua ; do if pkg-config $$lua ; then echo $$lua ; break ; fi ; done)
 
 # List of all makefiles in direct subdirectories. If a new subdirectory is
 # made, it goes here.
