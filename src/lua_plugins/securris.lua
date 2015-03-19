@@ -72,6 +72,29 @@ function datastore:zone_arming(root)
 		zone = node:text();
 	else
 		nlog(NLOG_ERROR, "Missing parameter");
+		--[[
+		FIXME:
+		This is wrong.
+		• You just invented an <error> element that should exist in the netconf
+		  namespace. However, there's none such in this context (however, there's
+		  <rpc-error>).
+		• This would let the rest of nuci think the operation was successful.
+		  It would continue processing as usual instead of using error handling.
+		  In case of custom RPC, the difference is not large (maybe just logging), but
+		  it would give the wrong example and there's a difference with <get>,
+		  where it would continue running gets of other plugins.
+		• Having „Missing parameter“ in log is nice, but the client of nuci
+	          needs to see the actual error.
+
+		Please provide full error description as an object, as described in
+		../plugins.txt. Eg:
+		return nil, {
+			msg = "Missing <zone-name> parameter.",
+			app_tag = "data-missing",
+			info_badelem = "zone-name",
+			info_badns = self.model_ns
+		};
+		]]
 		return "<error/>";
 	end
 	node = find_node_name_ns(root, 'status', self.model_ns);
@@ -87,11 +110,18 @@ function datastore:zone_arming(root)
 			status = "false";
 		else
 			nlog(NLOG_ERROR, "Invalid parameter");
+			-- FIXME: See above.
 			return "<error/>";
 		end
 	end
 	nlog(NLOG_INFO, "Arming zone " .. zone .. " " .. status);
 	local response = send_to_socket(cmd .. " " .. zone .. " " .. status .. "\n");
+	--[[
+	FIXME:
+	I don't think the netconf's <ok> element has a „response“ attribute.
+	The proper way would be to define some other element for the response
+	in our own namespace (eg. in self.model_ns, and update it in the yin file).
+	]]
 	return "<ok response=\"" .. response .. "\"/>";
 end
 
@@ -106,6 +136,7 @@ function datastore:siren(root)
 			sound = "off";
 		else
 			nlog(NLOG_ERROR, "Invalid parameter");
+			-- FIXME: See above.
 			return "<error/>";
 		end
 	end
@@ -130,6 +161,7 @@ function datastore:siren(root)
 			elseif text == 'continuous' then
 			else
 				nlog(NLOG_ERROR, "Invalid parameter");
+				-- FIXME: See above.
 				return "<error/>";
 			end
 		else
@@ -148,11 +180,13 @@ function datastore:siren(root)
 			led = "off";
 		else
 			nlog(NLOG_ERROR, "Invalid parameter");
+			-- FIXME: See above.
 			return "<error/>";
 		end
 	end
 	nlog(NLOG_INFO, "Setting LED " .. led);
 	local response3 = send_to_socket("led " .. led .. "\n");
+	-- FIXME: See above.
 	return "<ok response=\"" .. response1 .. ", " .. response2 .. ", " .. response3 .. "\"/>";
 end
 
@@ -168,6 +202,7 @@ function datastore:pair(root)
 	end
 	nlog(NLOG_INFO, "Setting pairing mode");
 	local response = send_to_socket("pair " .. transmit .. "\n");
+	-- FIXME: See above
 	return "<ok response=\"" .. response .. "\"/>";
 end
 
@@ -197,6 +232,7 @@ function datastore:relay(root)
 	end
 	nlog(NLOG_INFO, "Setting relay " .. status);
 	local response = send_to_socket("relay " .. status .. "\n");
+	-- FIXME: See above
 	return "<ok response=\"" .. response .. "\"/>";
 end
 
