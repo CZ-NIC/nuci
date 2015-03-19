@@ -25,7 +25,7 @@
   <typedef name="dump-format">
     <description>
       <text>
-	Possible formats of operational state dumps.
+        Possible formats of operational state dumps.
       </text>
     </description>
     <type name="enumeration">
@@ -123,35 +123,35 @@
     </description>
     <input>
       <leaf name="format">
-	<type name="dump-format"/>
+        <type name="dump-format"/>
         <default value="text"/>
         <description>
           <text>
-	    Desired format of the state data.
-	  </text>
+            Desired format of the state data.
+          </text>
         </description>
       </leaf>
     </input>
     <output>
       <leaf name="format">
-	<type name="dump-format"/>
+        <type name="dump-format"/>
       </leaf>
       <choice name="state-data">
-	<leaf name="content">
-	  <when condition="../format != 'xml'"/>
+        <leaf name="content">
+          <when condition="../format != 'xml'"/>
           <type name="string"/>
-	  <description>
-	    <text>
-	      For 'json' and 'text' formats, a simple string is returned.
-	    </text>
-	  </description>
-	</leaf>
-	<anyxml name="securris-state">
-	  <description>
-	    <text>For 'xml' format, the contents is defined by the
-	    YANG module 'securris-state'.</text>
-	  </description>
-	</anyxml>
+          <description>
+            <text>
+              For 'json' and 'text' formats, a simple string is returned.
+            </text>
+          </description>
+        </leaf>
+        <anyxml name="securris-state">
+          <description>
+            <text>For 'xml' format, the contents is defined by the
+            YANG module 'securris-state'.</text>
+          </description>
+        </anyxml>
       </choice>
     </output>
   </rpc>
@@ -167,7 +167,7 @@
         <default value="false"/>
         <description>
           <text>
-            Turn the relay on or off. 
+            Turn the relay on or off.
           </text>
         </description>
       </leaf>
