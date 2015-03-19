@@ -1,5 +1,5 @@
 --[[
-Copyright 2014, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -18,7 +18,7 @@ along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 require("datastore");
-require("nutils"); -- viz src/lua_lib
+require("nutils");
 
 local datastore = datastore("securris.yin");
 
