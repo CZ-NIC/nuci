@@ -137,7 +137,7 @@ function datastore:siren(root)
 			response1 = send_to_socket("siren on\n");
 		end
 	end
-	
+
 	node = find_node_name_ns(root, 'led', self.model_ns);
 	local led = "off";
 	if node then
@@ -164,7 +164,7 @@ function datastore:pair(root)
 		if text == 'false' or text == '0' then
 			transmit = "off";
 		end
-		-- TODO: Ošetření chyb
+		-- TODO: Error handling
 	end
 	nlog(NLOG_INFO, "Setting pairing mode");
 	local response = send_to_socket("pair " .. transmit .. "\n");
@@ -200,28 +200,21 @@ function datastore:relay(root)
 	return "<ok response=\"" .. response .. "\"/>";
 end
 
--- RPC je jméno toho rpc, data je ten kus XML jako string.
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
 
 	if rpc == 'zone-arming' then
 		return datastore:zone_arming(root);
-		--return "<ok/>";
 	elseif rpc == 'siren' then
 		return datastore:siren(root);
-		--return "<ok/>";
 	elseif rpc == 'pair' then
 		return datastore:pair(root);
-		--return "<ok/>"; -- String s XML. Mohl bych i sestavit, ale u takto jednoduchého je to jedno.
 	elseif rpc == 'dump' then
 		return datastore:dump(root);
-		--return "<ok/>";
 	elseif rpc == 'relay' then
 		return datastore:relay(root);
-		--return "<ok/>";
 	else
-		-- Vracím strukturu popisující chybu
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
 			app_tag = 'unknown-element',
@@ -232,13 +225,7 @@ function datastore:user_rpc(rpc, data)
 end
 
 function datastore:get()
-	-- Nevím, jak bude vypadat ten status, takže jen nástřel, aby tu něco bylo.
-	--local xml = xmlwrap.new_xml_doc('status', self.model_ns);
-	--local root = xml:root();
-	--root:add_child('alarm'):add_text('666'); -- Alarm na device 666.
-	--return xml:strdump();
 	return send_to_socket("dump xml");
 end
 
--- Přidání do nuci
 register_datastore_provider(datastore);
