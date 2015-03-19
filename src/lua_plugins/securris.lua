@@ -28,16 +28,16 @@ function send_to_socket(text)
 
 	server_connection, err = s:connect("/tmp/securris.sock");
 	if server_connection == nil then
-		nlog(NLOG_ERROR, "Cannot connect to socket.");
-		return nil, { msg = "Cannot connect to socket." };
+		nlog(NLOG_ERROR, "Cannot connect to socket: " .. err);
+		return nil, { msg = "Cannot connect to socket: " .. err};
 	end
 
 	result, err, nsent = s:send(text);
 	if result == nil then
-		nlog(NLOG_ERROR, "Cannot send over socket.");
-		return nil, { msg = "Cannot send over socket." };
+		nlog(NLOG_ERROR, "Cannot send over socket: " .. err);
+		return nil, { msg = "Cannot send over socket: " .. err };
 	end
-	
+
 	result = s:receive("*l");
 	if result ~= "0001 SECURRIS 0.1 Ready" then
 		nlog(NLOG_ERROR, "Securris not ready.");
