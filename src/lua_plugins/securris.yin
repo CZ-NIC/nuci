@@ -173,4 +173,7 @@
       </leaf>
     </input>
   </rpc>
+  <anyxml name="securris-state">
+    <config value="false"/>
+  </anyxml>
 </module>
