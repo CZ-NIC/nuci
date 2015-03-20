@@ -72,32 +72,6 @@ function datastore:zone_arming(root)
 		zone = node:text();
 	else
 		nlog(NLOG_ERROR, "Missing 'zone-name' parameter");
-		--[[
-		FIXME:
-		This is wrong.
-		• You just invented an <error> element that should exist in the netconf
-		  namespace. However, there's none such in this context (however, there's
-		  <rpc-error>).
-			- I didn't know there's anything like netconf namespace to define tags.
-		• This would let the rest of nuci think the operation was successful.
-		  It would continue processing as usual instead of using error handling.
-		  In case of custom RPC, the difference is not large (maybe just logging), but
-		  it would give the wrong example and there's a difference with <get>,
-		  where it would continue running gets of other plugins.
-			- Fixed.
-		• Having „Missing parameter“ in log is nice, but the client of nuci
-	          needs to see the actual error.
-	        - I updated the logging, and fixed the return messages. Is that enough?
-
-		Please provide full error description as an object, as described in
-		../plugins.txt. Eg:
-		return nil, {
-			msg = "Missing <zone-name> parameter.",
-			app_tag = "data-missing",
-			info_badelem = "zone-name",
-			info_badns = self.model_ns
-		};
-		]]
 		return nil, {
 			msg = "Missing <zone-name> parameter.",
 			app_tag = "data-missing",
@@ -270,7 +244,7 @@ function datastore:relay(root)
 		local text = node:text();
 		if text == 'true' then
 			status = "on";
-		elseif text == 'false'
+		elseif text == 'false' then
 			status = "off";
 		else
 			nlog(NLOG_ERROR, "Invalid 'status' parameter");
