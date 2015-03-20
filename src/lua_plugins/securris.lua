@@ -71,20 +71,23 @@ function datastore:zone_arming(root)
 	if node then
 		zone = node:text();
 	else
-		nlog(NLOG_ERROR, "Missing parameter");
+		nlog(NLOG_ERROR, "Missing 'zone-name' parameter");
 		--[[
 		FIXME:
 		This is wrong.
 		• You just invented an <error> element that should exist in the netconf
 		  namespace. However, there's none such in this context (however, there's
 		  <rpc-error>).
+			- I didn't know there's anything like netconf namespace to define tags.
 		• This would let the rest of nuci think the operation was successful.
 		  It would continue processing as usual instead of using error handling.
 		  In case of custom RPC, the difference is not large (maybe just logging), but
 		  it would give the wrong example and there's a difference with <get>,
 		  where it would continue running gets of other plugins.
+			- Fixed.
 		• Having „Missing parameter“ in log is nice, but the client of nuci
 	          needs to see the actual error.
+	        - I updated the logging, and fixed the return messages. Is that enough?
 
 		Please provide full error description as an object, as described in
 		../plugins.txt. Eg:
@@ -95,7 +98,12 @@ function datastore:zone_arming(root)
 			info_badns = self.model_ns
 		};
 		]]
-		return "<error/>";
+		return nil, {
+			msg = "Missing <zone-name> parameter.",
+			app_tag = "data-missing",
+			info_badelem = "zone-name",
+			info_badns = self.model_ns
+		};
 	end
 	node = find_node_name_ns(root, 'status', self.model_ns);
 	local cmd = "arm";
@@ -109,9 +117,13 @@ function datastore:zone_arming(root)
 			cmd = "disarm";
 			status = "false";
 		else
-			nlog(NLOG_ERROR, "Invalid parameter");
-			-- FIXME: See above.
-			return "<error/>";
+			nlog(NLOG_ERROR, "Invalid 'status' parameter");
+			return nil, {
+				msg = "Invalid <status> parameter.",
+				app_tag = "data-invalid",
+				info_badelem = "status",
+				info_badns = self.model_ns
+			};
 		end
 	end
 	nlog(NLOG_INFO, "Arming zone " .. zone .. " " .. status);
@@ -121,6 +133,7 @@ function datastore:zone_arming(root)
 	I don't think the netconf's <ok> element has a „response“ attribute.
 	The proper way would be to define some other element for the response
 	in our own namespace (eg. in self.model_ns, and update it in the yin file).
+		- Please do this, I have no idea where to go with this.
 	]]
 	return "<ok response=\"" .. response .. "\"/>";
 end
@@ -135,9 +148,13 @@ function datastore:siren(root)
 		elseif text == 'false' then
 			sound = "off";
 		else
-			nlog(NLOG_ERROR, "Invalid parameter");
-			-- FIXME: See above.
-			return "<error/>";
+			nlog(NLOG_ERROR, "Invalid 'sound' parameter");
+			return nil, {
+				msg = "Invalid <sound> parameter.",
+				app_tag = "data-invalid",
+				info_badelem = "sound",
+				info_badns = self.model_ns
+			};
 		end
 	end
 	local response1 = "";
@@ -160,9 +177,13 @@ function datastore:siren(root)
 				response2 = send_to_socket("beep slow\n");
 			elseif text == 'continuous' then
 			else
-				nlog(NLOG_ERROR, "Invalid parameter");
-				-- FIXME: See above.
-				return "<error/>";
+				nlog(NLOG_ERROR, "Invalid 'sound-type' parameter");
+				return nil, {
+					msg = "Invalid <sound-type> parameter.",
+					app_tag = "data-invalid",
+					info_badelem = "sound-type",
+					info_badns = self.model_ns
+				};
 			end
 		else
 			nlog(NLOG_INFO, "Turning sound on");
@@ -179,9 +200,13 @@ function datastore:siren(root)
 		elseif text == 'false' then
 			led = "off";
 		else
-			nlog(NLOG_ERROR, "Invalid parameter");
-			-- FIXME: See above.
-			return "<error/>";
+			nlog(NLOG_ERROR, "Invalid 'led' parameter");
+			return nil, {
+				msg = "Invalid <led> parameter.",
+				app_tag = "data-invalid",
+				info_badelem = "led",
+				info_badns = self.model_ns
+			};
 		end
 	end
 	nlog(NLOG_INFO, "Setting LED " .. led);
@@ -195,10 +220,19 @@ function datastore:pair(root)
 	local transmit = "on";
 	if node then
 		local text = node:text();
-		if text == 'false' or text == '0' then
+		if text == 'false' then
 			transmit = "off";
+		elseif text == 'true' then
+			transmit = "on";
+		else
+			nlog(NLOG_ERROR, "Invalid 'transmit' parameter");
+			return nil, {
+				msg = "Invalid <transmit> parameter.",
+				app_tag = "data-invalid",
+				info_badelem = "transmit",
+				info_badns = self.model_ns
+			};
 		end
-		-- TODO: Error handling
 	end
 	nlog(NLOG_INFO, "Setting pairing mode");
 	local response = send_to_socket("pair " .. transmit .. "\n");
@@ -215,6 +249,14 @@ function datastore:dump(root)
 			dump_format = "";
 		elseif text == 'json' then
 			dump_format = "json";
+		else
+			nlog(NLOG_ERROR, "Invalid 'format' parameter");
+			return nil, {
+				msg = "Invalid <format> parameter.",
+				app_tag = "data-invalid",
+				info_badelem = "format",
+				info_badns = self.model_ns
+			};
 		end
 	end
 	nlog(NLOG_INFO, "Dumping " .. dump_format);
@@ -223,11 +265,21 @@ end
 
 function datastore:relay(root)
 	local node = find_node_name_ns(root, 'status', self.model_ns);
-	local status = "false";
+	local status = "off";
 	if node then
 		local text = node:text();
 		if text == 'true' then
-			status = "true";
+			status = "on";
+		elseif text == 'false'
+			status = "off";
+		else
+			nlog(NLOG_ERROR, "Invalid 'status' parameter");
+			return nil, {
+				msg = "Invalid <status> parameter.",
+				app_tag = "data-invalid",
+				info_badelem = "status",
+				info_badns = self.model_ns
+			};
 		end
 	end
 	nlog(NLOG_INFO, "Setting relay " .. status);
