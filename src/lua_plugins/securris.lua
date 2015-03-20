@@ -102,14 +102,8 @@ function datastore:zone_arming(root)
 	end
 	nlog(NLOG_INFO, "Arming zone " .. zone .. " " .. status);
 	local response = send_to_socket(cmd .. " " .. zone .. " " .. status .. "\n");
-	--[[
-	FIXME:
-	I don't think the netconf's <ok> element has a „response“ attribute.
-	The proper way would be to define some other element for the response
-	in our own namespace (eg. in self.model_ns, and update it in the yin file).
-		- Please do this, I have no idea where to go with this.
-	]]
-	return "<ok response=\"" .. response .. "\"/>";
+	-- TODO: Parse response and hadle errors
+	return "<ok/>";
 end
 
 function datastore:siren(root)
@@ -185,8 +179,8 @@ function datastore:siren(root)
 	end
 	nlog(NLOG_INFO, "Setting LED " .. led);
 	local response3 = send_to_socket("led " .. led .. "\n");
-	-- FIXME: See above.
-	return "<ok response=\"" .. response1 .. ", " .. response2 .. ", " .. response3 .. "\"/>";
+	-- TODO: Parse response and hadle errors
+	return "<ok/>";
 end
 
 function datastore:pair(root)
@@ -210,8 +204,8 @@ function datastore:pair(root)
 	end
 	nlog(NLOG_INFO, "Setting pairing mode");
 	local response = send_to_socket("pair " .. transmit .. "\n");
-	-- FIXME: See above
-	return "<ok response=\"" .. response .. "\"/>";
+	-- TODO: Parse response and hadle errors
+	return "<ok/>";
 end
 
 function datastore:dump(root)
@@ -258,8 +252,8 @@ function datastore:relay(root)
 	end
 	nlog(NLOG_INFO, "Setting relay " .. status);
 	local response = send_to_socket("relay " .. status .. "\n");
-	-- FIXME: See above
-	return "<ok response=\"" .. response .. "\"/>";
+	-- TODO: Parse response and hadle errors
+	return "<ok/>";
 end
 
 function datastore:user_rpc(rpc, data)
