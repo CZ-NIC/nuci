@@ -67,11 +67,12 @@ local function list_section(section)
 	return result;
 end
 
-local function list_config(cursor, config)
+function uci_datastore:list_config(cursor, config)
 	local result = '<config><name>' .. xml_escape(config) .. '</name>';
-	cdata = cursor:get_all(config);
+	local cdata, errstr = cursor:get_all(config);
 	if not cdata then
-		nlog(NLOG_WARN, "Nil in config '" .. config .. "'");
+		nlog(NLOG_WARN, "Bad config '" .. config .. "': " .. errstr);
+		self.config_errors[config] = errstr;
 		return '';
 	end
 	-- Sort the data according to their index
@@ -90,8 +91,9 @@ function uci_datastore:get_config()
 	local result = [[<uci xmlns='http://www.nic.cz/ns/router/uci-raw'>]];
 	local configs = uci_list_configs();
 	table.sort(configs);
+	self.config_errors = {}
 	for _, config in ipairs(uci_list_configs()) do
-		result = result .. list_config(cursor, config);
+		result = result .. self:list_config(cursor, config);
 	end
 	result = result .. '</uci>';
 	reset_uci_cursor();
@@ -165,7 +167,7 @@ function uci_datastore:set_config(config, defop, deferr)
 					bad_elemns=self.model_ns
 				},
 				create = {
-					msg="Can't (directly) node " .. name,
+					msg="Can't (directly) create node " .. name,
 					tag="data-exists",
 					bad_elemname=name,
 					bad_elemns=self.model_ns
@@ -320,13 +322,19 @@ function uci_datastore:set_config(config, defop, deferr)
 					info_badns=self.model_ns
 				};
 			end,
-			create = function()
-				return {
-					msg="Creating whole configs is not possible, you have to live with what there is already",
-					tag="operation-not-supported",
-					info_badelem='config',
-					info_badns=self.model_ns
-				};
+			create = function(node)
+				local _, path = self:node_path(node);
+				local cname = path.config_name;
+				if self.config_errors[cname] then
+					return "Error in config '" .. cname .. "': " .. self.config_errors[cname];
+				else
+					return {
+						msg="Creating whole configs is not possible, you have to live with what there is already",
+						tag="operation-not-supported",
+						info_badelem='config',
+						info_badns=self.model_ns
+					};
+				end
 			end,
 			replace = function() end, -- We don't do anything when replacing the config except recurse onto sections
 			-- Recurse on sections, but not names (delete before, create after)
