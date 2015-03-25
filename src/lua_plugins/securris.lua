@@ -210,13 +210,15 @@ end
 
 function datastore:dump(root)
 	local node = find_node_name_ns(root, 'format', self.model_ns);
-	local dump_format = "xml";
+	local dump_format = "";
 	if node then
 		local text = node:text();
 		if text == 'text' then
 			dump_format = "";
 		elseif text == 'json' then
 			dump_format = "json";
+		elseif text == 'xml' then
+			dump_format = "xml";
 		else
 			nlog(NLOG_ERROR, "Invalid 'format' parameter");
 			return nil, {
