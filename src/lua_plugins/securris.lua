@@ -102,7 +102,7 @@ function datastore:zone_arming(root)
 		end
 	end
 	nlog(NLOG_INFO, "Arming zone " .. zone .. " " .. status);
-	local response = send_to_socket(cmd .. " " .. zone .. " " .. status .. "\n");
+	local response = send_to_socket(cmd .. " " .. zone .. "\n");
 	-- TODO: Parse response and hadle errors
 	return "<ok/>";
 end
