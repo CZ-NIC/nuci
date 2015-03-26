@@ -70,7 +70,8 @@ function datastore:zone_arming(root)
 	local zone = nil;
 	if node then
 		zone = node:text();
-	else
+	end
+	if zone == nil or zone == '' then
 		nlog(NLOG_ERROR, "Missing 'zone-name' parameter");
 		return nil, {
 			msg = "Missing <zone-name> parameter.",
