@@ -39,7 +39,7 @@ function send_to_socket(text)
 	end
 
 	result = s:receive("*l");
-	if result ~= "0001 SECURRIS 0.1 Ready" then
+	if string.sub(result, 0, 13) ~= "0001 SECURRIS" then
 		nlog(NLOG_ERROR, "Securris not ready.");
 		return nil, "Securris not ready.";
 	end
