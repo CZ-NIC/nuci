@@ -103,8 +103,16 @@ function datastore:zone_arming(root)
 	end
 	nlog(NLOG_INFO, "Arming zone " .. zone .. " " .. status);
 	local response = send_to_socket(cmd .. " " .. zone .. "\n");
-	-- TODO: Parse response and hadle errors
-	return "<ok/>";
+	
+	if string.sub(response, 0, 2) == "OK" then
+		return "<ok/>";
+	else
+		nlog(NLOG_ERROR, "RPC \"" .. cmd .. " " .. zone .. "\" failed: " .. response);
+		return nil, {
+			msg = "RPC \"" .. cmd .. " " .. zone .. "\" failed: " .. response,
+			app_tag = "securris-error",
+		};
+	end
 end
 
 function datastore:siren(root)
@@ -180,8 +188,32 @@ function datastore:siren(root)
 	end
 	nlog(NLOG_INFO, "Setting LED " .. led);
 	local response3 = send_to_socket("led " .. led .. "\n");
-	-- TODO: Parse response and hadle errors
-	return "<ok/>";
+	
+	if string.sub(response1, 0, 2) == "OK" then
+		if string.sub(response2, 0, 2) == "OK" then
+			if string.sub(response3, 0, 2) == "OK" then
+				return "<ok/>";
+			else
+				nlog(NLOG_ERROR, "RPC \"led " .. led .. "\" failed: " .. response3);
+				return nil, {
+					msg = "RPC \"led " .. led .. "\" failed: " .. response3,
+					app_tag = "securris-error",
+				};
+			end
+		else
+			nlog(NLOG_ERROR, "RPC \"beep <some param>\" failed: " .. response2);
+			return nil, {
+				msg = "RPC \"beep <some param>\" failed: " .. response2,
+				app_tag = "securris-error",
+			};
+		end
+	else
+		nlog(NLOG_ERROR, "RPC \"siren <some param>\" failed: " .. response1);
+		return nil, {
+			msg = "RPC \"siren <some param>\" failed: " .. response1,
+			app_tag = "securris-error",
+		};
+	end
 end
 
 function datastore:pair(root)
@@ -205,8 +237,18 @@ function datastore:pair(root)
 	end
 	nlog(NLOG_INFO, "Setting pairing mode");
 	local response = send_to_socket("pair " .. transmit .. "\n");
-	-- TODO: Parse response and hadle errors
-	return "<ok/>";
+
+	if string.sub(response, 0, 2) == "OK" then
+		return "<ok/>";
+	else
+		nlog(NLOG_ERROR, "RPC \"pair " .. transmit .. "\" failed: " .. response);
+		return nil, {
+			msg = "RPC \"pair " .. transmit .. "\" failed: " .. response,
+			app_tag = "data-invalid",
+			info_badelem = "status",
+			info_badns = self.model_ns
+		};
+	end
 end
 
 function datastore:dump(root)
@@ -231,7 +273,18 @@ function datastore:dump(root)
 		end
 	end
 	nlog(NLOG_INFO, "Dumping " .. dump_format);
-	return send_to_socket("dump " .. dump_format .. "\n");
+	
+	if dump_format == "xml" then
+		return send_to_socket("dump " .. dump_format .. "\n");
+	else
+		local str = send_to_socket("dump " .. dump_format .. "\n");
+		str = string.gsub(str, "'", "&apos;");
+		str = string.gsub(str, "<", "&lt;");
+		str = string.gsub(str, ">", "&gt;");
+		str = string.gsub(str, "&", "&amp;");
+		str = string.gsub(str, '"', "&quot;");
+		return "<content xmlns='http://www.nic.cz/ns/router/securris'>" .. str .. "</content>";
+	end
 end
 
 function datastore:relay(root)
@@ -255,8 +308,18 @@ function datastore:relay(root)
 	end
 	nlog(NLOG_INFO, "Setting relay " .. status);
 	local response = send_to_socket("relay " .. status .. "\n");
-	-- TODO: Parse response and hadle errors
-	return "<ok/>";
+	
+	if string.sub(response, 0, 2) == "OK" then
+		return "<ok/>";
+	else
+		nlog(NLOG_ERROR, "RPC \"relay " .. status .. "\" failed: " .. response);
+		return nil, {
+			msg = "RPC \"relay " .. status .. "\" failed: " .. response,
+			app_tag = "data-invalid",
+			info_badelem = "status",
+			info_badns = self.model_ns
+		};
+	end
 end
 
 function datastore:user_rpc(rpc, data)
