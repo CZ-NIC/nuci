@@ -70,6 +70,7 @@ end
 function uci_datastore:list_config(cursor, config)
 	local result = '<config><name>' .. xml_escape(config) .. '</name>';
 	local cdata, errstr = cursor:get_all(config);
+	errstr = errstr or 'unknown error';
 	if not cdata then
 		nlog(NLOG_WARN, "Bad config '" .. config .. "': " .. errstr);
 		self.config_errors[config] = errstr;
