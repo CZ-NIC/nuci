@@ -153,6 +153,8 @@ function datastore:siren(root)
 				nlog(NLOG_INFO, "Setting beeps to slow");
 				response2 = send_to_socket("beep slow\n");
 			elseif text == 'continuous' then
+				nlog(NLOG_INFO, "Turning continuous sound on");
+				response1 = send_to_socket("siren on\n");
 			else
 				nlog(NLOG_ERROR, "Invalid 'sound-type' parameter");
 				return nil, {
@@ -163,7 +165,7 @@ function datastore:siren(root)
 				};
 			end
 		else
-			nlog(NLOG_INFO, "Turning sound on");
+			nlog(NLOG_INFO, "Turning continuous sound on");
 			response1 = send_to_socket("siren on\n");
 		end
 	end
@@ -190,7 +192,7 @@ function datastore:siren(root)
 	local response3 = send_to_socket("led " .. led .. "\n");
 	
 	if string.sub(response1, 0, 2) == "OK" then
-		if string.sub(response2, 0, 2) == "OK" then
+		if response2 == "" or string.sub(response2, 0, 2) == "OK" then
 			if string.sub(response3, 0, 2) == "OK" then
 				return "<ok/>";
 			else
