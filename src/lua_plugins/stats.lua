@@ -1,5 +1,5 @@
 --[[
-Copyright 2013-2014, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2013-2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -306,8 +306,51 @@ function switches(node)
 	return true;
 end
 
+-- Current timestamp in UTC
+timestamp = 0;
+
 -- Define the commands and their mapping to XML elements.
 local commands = {
+	{
+		element = 'ucollect-sending',
+		file = '/tmp/ucollect-status',
+		postprocess = function (node, out)
+			if out ~= '' then
+				local data = split(out)
+				node:add_child('status'):set_text(data());
+				node:add_child('age'):set_text(timestamp - data());
+			else
+				node:add_child('status'):set_text('offline');
+			end
+		end,
+		nofile_ok = true
+	},
+	{
+		element = 'firewall-sending',
+		file = '/tmp/firewall-turris-status.txt',
+		postprocess = function (node, out)
+			if out ~= '' then
+				for line in lines(out) do
+					local working = line:match('turris firewall working: (%S*)');
+					if working then
+						if working == 'yes' then
+							working = 'online';
+						elseif working == 'no' then
+							working = 'broken';
+						end
+						node:add_child('status'):set_text(working);
+					end
+					local ts = line:match('last working timestamp: (%d*)');
+					if ts then
+						node:add_child('age'):set_text(timestamp - ts);
+					end
+				end
+			else
+				node:add_child('status'):set_text('offline');
+			end
+		end,
+		nofile_ok = true
+	},
 	{
 		element = 'board-name',
 		file = '/tmp/sysinfo/board_name',
@@ -469,6 +512,8 @@ local function get_output(command)
 			end
 			file:close();
 			return out;
+		elseif command.nofile_ok then
+			return '';
 		else
 			return nil, errstr;
 		end
@@ -504,6 +549,12 @@ local datastore = datastore('stats.yin')
 
 function datastore:get()
 	local doc, root, node;
+
+	local code, utc_time, stderr = run_command(nil, 'date', '-Iseconds', '-u', '+%s');
+	if code ~= 0 then
+		return nil, "Could not determine UTC time: " .. stderr;
+	end
+	timestamp = trimr(utc_time);
 
 	--prepare XML subtree
 	doc = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
