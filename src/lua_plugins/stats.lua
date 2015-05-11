@@ -340,7 +340,7 @@ local commands = {
 						end
 						node:add_child('status'):set_text(working);
 					end
-					local ts = line:match('last working timestamp: (%d*)');
+					local ts = line:match('last working timestamp: (%d%d*)');
 					if ts then
 						node:add_child('age'):set_text(timestamp - ts);
 					end
