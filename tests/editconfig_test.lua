@@ -390,12 +390,20 @@ local tests = {
 				model_node_name='container'
 			}
 		}
-	}
-	--[[
+	},
 	["Merge new data with delete inside"]={
-
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><value xc:operation='delete'/></data></edit>]],
+		config=[[<config/>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops={},
+		err = {
+			msg="Missing element in configuration: value",
+			tag="data-missing",
+			info_balelem="value",
+			info_badns="http://example.org/"
+		}
 	}
-	]]
 	--[[
 	TODO: We want more tests. Tests for manipulation with keys, <done>leaf-lists</done>, etc.
 	Also, we want to test further operations, like <done>create</done>, none, etc.
