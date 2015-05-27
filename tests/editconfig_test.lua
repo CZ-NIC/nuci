@@ -371,7 +371,31 @@ local tests = {
 				model_node_name='container'
 			}
 		}
+	},
+	["Merge new data with remove inside"]={
+		command=[[<edit><data xmlns='http://example.org/' xmlns:xc='urn:ietf:params:xml:ns:netconf:base:1.0'><value xc:operation='remove'/></data></edit>]],
+		config=[[<config/>]],
+		model=small_model,
+		ns='http://example.org/',
+		expected_ops={
+			{
+				name='add-tree',
+				command_node_name='data',
+				command_node_hook=function(data)
+					if find_node_name_ns(data, 'value', 'http://example.org/') then
+						return nil;
+					end
+					return true
+				end,
+				model_node_name='container'
+			}
+		}
 	}
+	--[[
+	["Merge new data with delete inside"]={
+
+	}
+	]]
 	--[[
 	TODO: We want more tests. Tests for manipulation with keys, <done>leaf-lists</done>, etc.
 	Also, we want to test further operations, like <done>create</done>, none, etc.
@@ -436,6 +460,13 @@ local function op_matches(op, expected, ns)
 		end
 		if node_text ~= ex_text and ex_text then
 			reason = "Text of " .. node_type .. " differs: " .. (node_text or '(nil)') .. " vs. " .. (ex_text or '(nil)');
+			return nil;
+		end
+		local hook = expected[node_type .. "_node_hook"] or function()
+			return true;
+		end;
+		if not hook(node) then
+			reason = "Hook of " .. node_type .. " failed";
 			return nil;
 		end
 		return true;
