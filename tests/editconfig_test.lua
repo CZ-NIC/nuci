@@ -396,11 +396,10 @@ local tests = {
 		config=[[<config/>]],
 		model=small_model,
 		ns='http://example.org/',
-		expected_ops={},
 		err = {
 			msg="Missing element in configuration: value",
 			tag="data-missing",
-			info_balelem="value",
+			info_badelem="value",
 			info_badns="http://example.org/"
 		}
 	}

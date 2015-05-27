@@ -215,6 +215,35 @@ local function children_perform(config, command, model, ns, defop, errop, ops)
 				add_op('remove-tree', replace_note);
 			end
 			if operation == 'create' or operation == 'replace' then
+				local create_scan;
+				create_scan = function(command_node)
+					for node in command_node:iterate() do
+						local op = node:attribute('operation', netconf_ns);
+						if op == 'remove' then -- It doesn't exist, but don't add it.
+							node:delete();
+							-- Restart the scan of this node because the deletion probably invalidated the iterator
+							return create_scan(command_node);
+						elseif op == 'delete' then
+							local name, ns = node:name();
+							return {
+								msg="Missing element in configuration: " .. name,
+								tag="data-missing",
+								info_badelem=name,
+								info_badns=ns
+							};
+						else
+							local err = create_scan(node);
+							if err then
+								return err;
+							end
+						end
+					end
+					return nil;
+				end
+				local err = create_scan(command_node);
+				if err then
+					return err;
+				end
 				add_op('add-tree', replace_note);
 			end
 			if operation == 'none' then
