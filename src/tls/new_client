@@ -30,4 +30,4 @@ rm "$1".csr
 cd ../ca
 openssl ca -gencrl -out ca.crl -config ../openssl.cnf
 cd ../clients
-cat ../ca/ca.cert "$1".cert "$1".key >"$1".token
+cat "$1".cert "$1".key ../ca/ca.cert >"$1".token
