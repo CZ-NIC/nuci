@@ -1,0 +1,33 @@
+#!/bin/ash
+
+#Copyright 2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+#
+#This file is part of NUCI configuration server.
+#
+#NUCI is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#NUCI is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+mkdir -p clients
+cd clients
+
+echo "Generating TLS certificate for client $1" | logger -p daemon.info -t nuci
+
+echo "$1" | openssl req -new -newkey rsa:4096 -keyout "$1".key -nodes -out "$1".csr -config ../openssl.cnf -extensions usr_client
+openssl ca -out "$1".cert -config ../openssl.cnf -batch -extensions usr_client -infiles "$1".csr
+rm "$1".csr
+cd ../ca
+openssl ca -gencrl -out ca.crl -config ../openssl.cnf
+cd ../clients
+cat ../ca/ca.cert "$1".cert "$1".key >"$1".token

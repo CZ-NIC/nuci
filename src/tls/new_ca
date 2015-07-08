@@ -1,0 +1,42 @@
+#!/bin/ash
+
+#Copyright 2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+#
+#This file is part of NUCI configuration server.
+#
+#NUCI is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#NUCI is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+cd /usr/share/nuci/tls/ca
+
+if [ -f dhparam.pem ] ; then
+	echo 'TLS CA ready' | logger -p daemon.info -t nuci
+	exit
+fi
+
+echo 'Creating TLS CA' | logger -p daemon.info -t nuci
+
+rm -f *
+touch index.txt
+echo 01 >serial
+echo 01 >crlnumber
+echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes
+( ip addr show dev br-lan | grep 'inet ' | sed -e 's/.*inet \([^\/]*\).*/\1/' || echo 'Turris' ) | openssl req -new -newkey rsa:4096 -keyout nuci.key -nodes -out nuci.csr -config ../openssl.cnf
+openssl ca -out nuci.cert -config ../openssl.cnf -batch -infiles nuci.csr
+rm -f nuci.csr
+openssl ca -gencrl -out ca.crl -config ../openssl.cnf
+openssl dhparam -out dhparam.pem 2048
+
+echo 'Creation of TLS CA complete' | logger -p daemon.info -t nuci
