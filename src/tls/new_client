@@ -19,8 +19,7 @@
 
 set -e
 
-mkdir -p clients
-cd clients
+cd /usr/share/nuci/tls/clients
 
 echo "Generating TLS certificate for client $1" | logger -p daemon.info -t nuci
 
