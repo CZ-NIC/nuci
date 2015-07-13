@@ -1,51 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module name="smrt" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+<module name="firewall" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
   <yang-version value="1"/>
   <namespace uri="http://www.nic.cz/ns/router/firewall"/>
   <prefix value="firewall"/>
-  <list name='rule'>
+  <container name='firewall'>
     <description>
-      <text>One turris firewall rule group.</text>
+      <text>Just a top-level element</text>
     </description>
-    <key name='id'/>
-    <leaf name='id'>
-      <type name='string'/>
+    <list name='rule'>
       <description>
-        <text>The internal ID of the rule group. It is usually 8-digit hexadecimal number.</text>
+        <text>One turris firewall rule group.</text>
       </description>
-    </leaf>
-    <leaf name='description'>
-      <type name='string'/>
-      <description>
-        <text>Human readable description of the given rule group. In rare cases it may be missing.</text>
-      </description>
-    </leaf>
-    <list name='file'>
-      <description>
-        <text>A PCAP file with packets captured by this rule group. There may be multiple files for one rule group and they are sorted from newest to oldest.</text>
-      </description>
-      <key name='filename'/>
-      <leaf name='filename'>
+      <key name='id'/>
+      <leaf name='id'>
         <type name='string'/>
         <description>
-          <text>File name where the PCAP is stored in the router's file system. This breaks the encapsulation, but it was decided this is the easiest way for the Foris UI.</text>
+          <text>The internal ID of the rule group. It is usually 8-digit hexadecimal number.</text>
         </description>
       </leaf>
-      <leaf name='last'>
-        <type name='uint64'/>
+      <leaf name='description'>
+        <type name='string'/>
         <description>
-          <text>Unix time stamp of the last modification to the file, in UTC.</text>
+          <text>Human readable description of the given rule group. In rare cases it may be missing.</text>
         </description>
       </leaf>
-      <leaf name='size'>
-        <type name='uint64'/>
+      <list name='file'>
         <description>
-          <text>The size of the PCAP file in bytes.</text>
+          <text>A PCAP file with packets captured by this rule group. There may be multiple files for one rule group and they are sorted from newest to oldest.</text>
         </description>
-      </leaf>
+        <key name='filename'/>
+        <leaf name='filename'>
+          <type name='string'/>
+          <description>
+            <text>File name where the PCAP is stored in the router's file system. This breaks the encapsulation, but it was decided this is the easiest way for the Foris UI.</text>
+          </description>
+        </leaf>
+        <leaf name='last'>
+          <type name='uint64'/>
+          <description>
+            <text>Unix time stamp of the last modification to the file, in UTC.</text>
+          </description>
+        </leaf>
+        <leaf name='size'>
+          <type name='uint64'/>
+          <description>
+            <text>The size of the PCAP file in bytes.</text>
+          </description>
+        </leaf>
+      </list>
     </list>
     <config value='false'/>
-  </list>
+  </container>
   <rpc name='pcap-delete'>
     <description>
       <text>Delete some of the PCAP files holding the captured packets. They'd get rotated eventually, but it may be decided to clean them manually. Every file mathing some of the filter criteria listed is deleted (eg. there's logical OR between the criteria).</text>
