@@ -35,12 +35,6 @@
             <text>File name where the PCAP is stored in the router's file system. This breaks the encapsulation, but it was decided this is the easiest way for the Foris UI.</text>
           </description>
         </leaf>
-        <leaf name='last'>
-          <type name='uint64'/>
-          <description>
-            <text>Unix time stamp of the last modification to the file, in UTC.</text>
-          </description>
-        </leaf>
         <leaf name='size'>
           <type name='uint64'/>
           <description>

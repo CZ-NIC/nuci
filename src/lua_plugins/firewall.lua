@@ -21,7 +21,7 @@ require("datastore");
 
 local datastore = datastore("firewall.yin");
 
-local dir = "/var/log/turris-pcap/";
+local dir = "/var/log/turris-pcap";
 local description = "/tmp/rule-description.txt";
 
 function datastore:get()
@@ -36,7 +36,8 @@ function datastore:get()
 			if name_match then
 				current_rule = name_match;
 				rules[current_rule] = {
-					description = ""
+					description = "",
+					files = {}
 				};
 			elseif desc_match then
 				if current_rule then
@@ -51,12 +52,25 @@ function datastore:get()
 	else
 		nlog(NLOG_WARN, "Description file " .. description .. " couldn't be read: " .. err);
 	end
-	--[[
-	local ok, dirs = pcall(function() return dir_content(dir) end);
-	if not ok then
+	local ok, pcaps = pcall(function() return dir_content(dir) end);
+	if ok then
+		for _, pcap in pairs(pcaps) do
+			local name = pcap.filename:match("^.*/(.-)%.pcap$");
+			if not name then
+				name = pcap.filename:match("^.*/(.-)%.pcap%.%d+$");
+			end
+			if name and pcap.type == 'f' then
+				if not rules[name] then
+					rules[name] = {
+						files = {}
+					};
+				end
+				table.insert(rules[name].files, pcap);
+			end
+		end
+	else
 		nlog(NLOG_WARN, "Directory " .. dir .. " can't be read, it probably doesn't exist: " .. dirs);
 	end
-	]]
 	local names = {};
 	local i = 1;
 	for name in pairs(rules) do
@@ -72,7 +86,12 @@ function datastore:get()
 		if rules[name].description then
 			rule:add_child('description'):set_text(trimr(rules[name].description));
 		end
-		-- TODO: The files
+		table.sort(rules[name].files, function (a, b) return a.filename < b.filename end);
+		for _, file in ipairs(rules[name].files) do
+			local f = rule:add_child('file');
+			f:add_child('filename'):set_text(file.filename);
+			f:add_child('size'):set_text(file.size);
+		end
 	end
 	return xml:strdump();
 end
