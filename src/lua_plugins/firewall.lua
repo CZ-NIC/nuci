@@ -26,11 +26,15 @@ local description = "/tmp/rule-description.txt";
 
 function is_pcap(fileinfo)
 	local name = fileinfo.filename:match("^.*/(.-)%.pcap$");
-	if not name then
+	local primary;
+	if name then
+		primary = true
+	else
 		name = fileinfo.filename:match("^.*/(.-)%.pcap%.%d+$");
+		primary = false;
 	end
 	if name and fileinfo.type == 'f' then
-		return true, name;
+		return true, name, primary;
 	else
 		return nil;
 	end
@@ -48,7 +52,6 @@ function datastore:user_rpc(rpc, data)
 			local name, ns = selector:name();
 			if ns == self.model_ns then
 				local text = selector:text();
-				nlog(NLOG_ERROR, "XXX " .. name);
 				if name == 'all' then
 					all = true;
 				elseif name == 'rule' then
@@ -61,7 +64,6 @@ function datastore:user_rpc(rpc, data)
 						};
 					end
 					rules[text] = true;
-					nlog(NLOG_ERROR, "Rule " .. text);
 				elseif name == 'file' then
 					if not text then
 						return nil, {
@@ -87,15 +89,22 @@ function datastore:user_rpc(rpc, data)
 		if ok then
 			local result_xml = xmlwrap.new_xml_doc('deleted', self.model_ns);
 			local result = result_xml:root();
+			local reload = false;
 			for _, f in pairs(pcaps) do
-				local use, name = is_pcap(f);
-				nlog(NLOG_ERROR, "N " .. name);
+				local use, name, primary = is_pcap(f);
 				if use and (all or files[f.filename] or rules[name]) then
 					local fxml = result:add_child('file');
 					fxml:add_child('filename'):set_text(f.filename);
 					fxml:add_child('rule'):set_text(name);
 					fxml:add_child('size'):set_text(f.size);
 					os.remove(f.filename);
+					reload = reload or primary;
+				end
+			end
+			if reload then
+				local ecode, stdout, stderr = run_command(nil, '/etc/init.d/ulogd', 'reload');
+				if ecode ~= 0 then
+					nlog(NLOG_ERROR, "Failed to reload ulogd to update after pcap deletion: " .. ecode .. "/" .. stderr);
 				end
 			end
 			return result_xml:strdump();
