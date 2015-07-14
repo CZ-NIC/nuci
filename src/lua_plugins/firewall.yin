@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="firewall" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/firewall"/>
+  <prefix value="firewall"/>
+  <container name='firewall'>
+    <description>
+      <text>Just a top-level element</text>
+    </description>
+    <list name='rule'>
+      <description>
+        <text>One turris firewall rule group.</text>
+      </description>
+      <key name='id'/>
+      <leaf name='id'>
+        <type name='string'/>
+        <description>
+          <text>The internal ID of the rule group. It is usually 8-digit hexadecimal number.</text>
+        </description>
+      </leaf>
+      <leaf name='description'>
+        <type name='string'/>
+        <description>
+          <text>Human readable description of the given rule group. In rare cases it may be missing.</text>
+        </description>
+      </leaf>
+      <list name='file'>
+        <description>
+          <text>A PCAP file with packets captured by this rule group. There may be multiple files for one rule group and they are sorted from newest to oldest.</text>
+        </description>
+        <key name='filename'/>
+        <leaf name='filename'>
+          <type name='string'/>
+          <description>
+            <text>File name where the PCAP is stored in the router's file system. This breaks the encapsulation, but it was decided this is the easiest way for the Foris UI.</text>
+          </description>
+        </leaf>
+        <leaf name='size'>
+          <type name='uint64'/>
+          <description>
+            <text>The size of the PCAP file in bytes.</text>
+          </description>
+        </leaf>
+      </list>
+    </list>
+    <config value='false'/>
+  </container>
+  <rpc name='pcap-delete'>
+    <description>
+      <text>Delete some of the PCAP files holding the captured packets. They'd get rotated eventually, but it may be decided to clean them manually. Every file mathing some of the filter criteria listed is deleted (eg. there's logical OR between the criteria).</text>
+    </description>
+    <input>
+      <leaf name='all'>
+        <type name='empty'/>
+        <description>
+          <text>Match all the PCAP files, therefore wipe everything.</text>
+        </description>
+      </leaf>
+      <list name='rule'>
+        <type name='string'/>
+        <description>
+          <text>Match all the PCAP files of a single rule group. There may be multiple &lt;rule/&gt; elements present, matching different rule groups. It is legal to specify non-existent rule group, in which case no files are matched by such element.</text>
+        </description>
+      </list>
+      <list name='file'>
+        <type name='string'/>
+        <description>
+          <text>Specify filename of one of the PCAP files. Files that are not PCAP files, reside elsewhere or don't exist (or just anything that is not related to the firewall PCAPs) are ignored.</text>
+        </description>
+      </list>
+    </input>
+    <output>
+      <container name='deleted'>
+        <description>
+          <text>This contains everything that has been deleted.</text>
+        </description>
+        <list name='file'>
+          <description>
+            <text>Files listed here are the ones deleted.</text>
+          </description>
+          <key name='filename'/>
+          <leaf name='filename'>
+            <type name='string'/>
+            <description>
+              <text>The file name where the file had been before it was deleted.</text>
+            </description>
+          </leaf>
+          <leaf name='size'>
+            <type name='uint64'/>
+            <description>
+              <text>Size of the file at the time of being deleted. Due to a race condition, this may be inaccurate.</text>
+            </description>
+          </leaf>
+          <leaf name='rule'>
+            <type name='string'/>
+            <description>
+              <text>The rule group that generated this PCAP file.</text>
+            </description>
+          </leaf>
+        </list>
+      </container>
+    </output>
+  </rpc>
+</module>

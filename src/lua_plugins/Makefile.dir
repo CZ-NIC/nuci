@@ -10,7 +10,8 @@ NUCI_PLUGINS := \
 	network \
 	user-notify \
 	smrt \
-	securris
+	securris \
+	firewall
 
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 
