@@ -70,30 +70,35 @@
       </list>
     </input>
     <output>
-      <list name='file'>
+      <container name='deleted'>
         <description>
-          <text>Files listed here are the ones deleted.</text>
+          <text>This contains everything that has been deleted.</text>
         </description>
-        <key name='filename'/>
-        <leaf name='filename'>
-          <type name='string'/>
+        <list name='file'>
           <description>
-            <text>The file name where the file had been before it was deleted.</text>
+            <text>Files listed here are the ones deleted.</text>
           </description>
-        </leaf>
-        <leaf name='size'>
-          <type name='uint64'/>
-          <description>
-            <text>Size of the file at the time of being deleted. Due to a race condition, this may be inaccurate.</text>
-          </description>
-        </leaf>
-        <leaf name='rule'>
-          <type name='string'/>
-          <description>
-            <text>The rule group that generated this PCAP file.</text>
-          </description>
-        </leaf>
-      </list>
+          <key name='filename'/>
+          <leaf name='filename'>
+            <type name='string'/>
+            <description>
+              <text>The file name where the file had been before it was deleted.</text>
+            </description>
+          </leaf>
+          <leaf name='size'>
+            <type name='uint64'/>
+            <description>
+              <text>Size of the file at the time of being deleted. Due to a race condition, this may be inaccurate.</text>
+            </description>
+          </leaf>
+          <leaf name='rule'>
+            <type name='string'/>
+            <description>
+              <text>The rule group that generated this PCAP file.</text>
+            </description>
+          </leaf>
+        </list>
+      </container>
     </output>
   </rpc>
 </module>

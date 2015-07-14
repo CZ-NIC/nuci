@@ -24,6 +24,95 @@ local datastore = datastore("firewall.yin");
 local dir = "/var/log/turris-pcap";
 local description = "/tmp/rule-description.txt";
 
+function is_pcap(fileinfo)
+	local name = fileinfo.filename:match("^.*/(.-)%.pcap$");
+	if not name then
+		name = fileinfo.filename:match("^.*/(.-)%.pcap%.%d+$");
+	end
+	if name and fileinfo.type == 'f' then
+		return true, name;
+	else
+		return nil;
+	end
+end
+
+function datastore:user_rpc(rpc, data)
+	local xml = xmlwrap.read_memory(data);
+	local root = xml:root();
+
+	if rpc == 'pcap-delete' then
+		local all = false;
+		local files = {};
+		local rules = {};
+		for selector in root:iterate() do
+			local name, ns = selector:name();
+			if ns == self.model_ns then
+				local text = selector:text();
+				nlog(NLOG_ERROR, "XXX " .. name);
+				if name == 'all' then
+					all = true;
+				elseif name == 'rule' then
+					if not text then
+						return nil, {
+							msg = "Missing rule name",
+							app_tag = 'data-missing',
+							info_badelem = 'rule',
+							info_badns = self.model_ns
+						};
+					end
+					rules[text] = true;
+					nlog(NLOG_ERROR, "Rule " .. text);
+				elseif name == 'file' then
+					if not text then
+						return nil, {
+							msg = "Missing file name",
+							app_tag = 'data-missing',
+							info_badelem = 'file',
+							info_badns = self.model_ns
+						};
+					end
+					files[text] = true;
+				else
+					return nil, {
+						msg = "Unknown selector " .. name,
+						app_tag = 'unknown-element',
+						info_badelem = name,
+						info_badns = self.model_ns
+					};
+				end
+			end
+		end
+		local ok, pcaps = pcall(function() return dir_content(dir) end);
+		local selected = {};
+		if ok then
+			local result_xml = xmlwrap.new_xml_doc('deleted', self.model_ns);
+			local result = result_xml:root();
+			for _, f in pairs(pcaps) do
+				local use, name = is_pcap(f);
+				nlog(NLOG_ERROR, "N " .. name);
+				if use and (all or files[f.filename] or rules[name]) then
+					local fxml = result:add_child('file');
+					fxml:add_child('filename'):set_text(f.filename);
+					fxml:add_child('rule'):set_text(name);
+					fxml:add_child('size'):set_text(f.size);
+					os.remove(f.filename);
+				end
+			end
+			return result_xml:strdump();
+		else
+			nlog(NLOG_DEBUG, "No directory, nothing to delete");
+			return '<deleted xmlns="' .. self.model_ns .. '"/>';
+		end
+	else
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
+	end
+end
+
 function datastore:get()
 	local rules = {};
 	local current_rule;
@@ -55,11 +144,8 @@ function datastore:get()
 	local ok, pcaps = pcall(function() return dir_content(dir) end);
 	if ok then
 		for _, pcap in pairs(pcaps) do
-			local name = pcap.filename:match("^.*/(.-)%.pcap$");
-			if not name then
-				name = pcap.filename:match("^.*/(.-)%.pcap%.%d+$");
-			end
-			if name and pcap.type == 'f' then
+			local use, name = is_pcap(pcap);
+			if use then
 				if not rules[name] then
 					rules[name] = {
 						files = {}
@@ -80,7 +166,7 @@ function datastore:get()
 	table.sort(names);
 	local xml = xmlwrap.new_xml_doc('firewall', self.model_ns);
 	local root = xml:root();
-	for i, name in ipairs(names) do
+	for _, name in ipairs(names) do
 		local rule = root:add_child('rule');
 		rule:add_child('id'):set_text(name);
 		if rules[name].description then
