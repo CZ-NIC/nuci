@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="nuci-tls" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/nuci-tls"/>
+  <prefix value="nuci-tls"/>
+  <typedef name="client-name">
+    <description>
+      <text>What is allowed as a name of client.</text>
+    </description>
+    <type name="string">
+      <pattern value="[a-z0-9_]+"/>
+    </type>
+  </typedef>
+  <container name='ca'>
+    <description>
+      <text>The certification authority info used for authenticating clients connecting to nuci</text>
+    </description>
+    <list name='client'>
+      <key value='name'/>
+      <description>
+        <text>Status of single client access token (certificate+key).</text>
+      </description>
+      <leaf name='name'>
+        <description>
+          <text>The name of the client, as requested by the user.</text>
+        </description>
+        <type name='client-name'/>
+      </leaf>
+      <leaf name='status'>
+        <description>
+          <text>The status of the token.</text>
+        </description>
+        <type name='enumeration'>
+          <enum name='active'/>
+          <enum name='revoked'/> <!-- Revocation is not yet implemented :-( -->
+          <enum name='expired'/> <!-- Unlikely to happen, with 10 years of validity -->
+        </type>
+      </leaf>
+    </list>
+    <config value='false'/>
+  </container>
+  <rpc name='reset-CA'>
+    <description>
+      <text>Drop the whole CA (with authorized clients) and create a new one.</text>
+    </description>
+  </rpc>
+  <rpc name='new-client'>
+    <description>
+      <text>Generate a new client token.</text>
+    </description>
+    <input>
+      <leaf name='name'>
+        <type name='client-name'/>
+        <description>
+          <text>The name of the client to create. It needs to be unique.</text>
+        </description>
+      </leaf>
+    </input>
+  </rpc>
+  <rpc name='get-token'>
+    <description>
+      <text>Download a token allowing a client to authenticate.</text>
+    </description>
+    <input>
+      <leaf name='name'>
+        <type name='client-name'/>
+        <description>
+          <text>The name of the client to download the token for. It must already exist.</text>
+        </description>
+      </leaf>
+    </input>
+    <output>
+      <leaf name='token'>
+        <description>
+          <text>The authentication token. It is in the PEM format and it contains the key, client certificate and CA certificate.</text>
+        </description>
+        <type name='string'/>
+      </leaf>
+    </output>
+  </rpc>
+  <rpc name='revoke-client'>
+    <description>
+      <text>Disallow an existing client from entering.</text>
+    </description>
+    <input>
+      <leaf name='name'>
+        <type name='client-name'/>
+        <description>
+          <text>The name of the client you don't like any more. The client must already exist.</text>
+        </description>
+      </leaf>
+    </input>
+  </rpc>
+</module>
