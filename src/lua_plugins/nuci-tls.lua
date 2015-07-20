@@ -82,7 +82,7 @@ function datastore:user_rpc(rpc, data)
 		if not check_name(name) then
 			return nil, {
 				msg = "Invalid client name: " .. name,
-				app_tag = 'data-invalid',
+				app_tag = 'invalid-value',
 				info_badelem = 'name',
 				info_badns = self.model_ns
 			};
@@ -92,7 +92,7 @@ function datastore:user_rpc(rpc, data)
 		if not file then
 			return nil, {
 				msg = "Client doesn't exist: " .. name,
-				app_tag = 'data-invalid',
+				app_tag = 'invalid-value',
 				info_badelem = 'name',
 				info_badns = self.model_ns
 			};
@@ -114,7 +114,7 @@ function datastore:user_rpc(rpc, data)
 		if not check_name(name) then
 			return nil, {
 				msg = "Invalid client name: " .. name,
-				app_tag = 'data-invalid',
+				app_tag = 'invalid-value',
 				info_badelem = 'name',
 				info_badns = self.model_ns
 			};
@@ -124,7 +124,7 @@ function datastore:user_rpc(rpc, data)
 		if file then
 			return nil, {
 				msg = "Client already exists: " .. name,
-				app_tag = 'data-invalid',
+				app_tag = 'invalid-value',
 				info_badelem = 'name',
 				info_badns = self.model_ns
 			};
@@ -134,6 +134,13 @@ function datastore:user_rpc(rpc, data)
 			return "Failed to create new client: " .. stderr;
 		end
 		return '<ok/>';
+	elseif rpc == 'revoke-client' then
+		return nil, {
+			msg = "Sorry, you will be able to revoke that client in future release",
+			app_tag = 'operation-not-supported',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
