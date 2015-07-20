@@ -22,6 +22,7 @@ require("datastore");
 local datastore = datastore("nuci-tls.yin");
 local dir = '/usr/share/nuci/tls/ca/';
 local token_dir = '/usr/share/nuci/tls/clients/';
+local script_dir = '/usr/share/nuci/tls/';
 local index_file = dir .. 'index.txt';
 local states = {
 	V = 'active',
@@ -99,6 +100,40 @@ function datastore:user_rpc(rpc, data)
 		local result = xmlwrap.new_xml_doc('token', self.model_ns);
 		result:root():set_text(file:read("*a"));
 		return result:strdump();
+	elseif rpc == 'new-client' then
+		local node = find_node_name_ns(root, 'name', self.model_ns);
+		if not node then
+			return nil, {
+				msg = "Missing <name> parameter, which token do you want?",
+				app_tag = 'data-missing',
+				info_badelem = 'name',
+				info_badns = self.model_ns
+			};
+		end
+		local name = node:text();
+		if not check_name(name) then
+			return nil, {
+				msg = "Invalid client name: " .. name,
+				app_tag = 'data-invalid',
+				info_badelem = 'name',
+				info_badns = self.model_ns
+			};
+		end
+		local filename = token_dir .. name .. '.token';
+		local file = io.open(filename);
+		if file then
+			return nil, {
+				msg = "Client already exists: " .. name,
+				app_tag = 'data-invalid',
+				info_badelem = 'name',
+				info_badns = self.model_ns
+			};
+		end
+		local ecode, stdout, stderr = run_command(nil, script_dir .. 'new_client', name);
+		if ecode ~= 0 then
+			return "Failed to create new client: " .. stderr;
+		end
+		return '<ok/>';
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
