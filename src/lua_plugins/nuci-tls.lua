@@ -21,6 +21,7 @@ require("datastore");
 
 local datastore = datastore("nuci-tls.yin");
 local dir = '/usr/share/nuci/tls/ca/';
+local token_dir = '/usr/share/nuci/tls/clients/';
 local index_file = dir .. 'index.txt';
 local states = {
 	V = 'active',
@@ -57,6 +58,55 @@ function datastore:get()
 		end
 	end
 	return xml:strdump();
+end
+
+local function check_name(name)
+	return name:match('^[a-zA-Z0-9_.-]+$');
+end
+
+function datastore:user_rpc(rpc, data)
+	local xml = xmlwrap.read_memory(data);
+	local root = xml:root();
+	if rpc == 'get-token' then
+		local node = find_node_name_ns(root, 'name', self.model_ns);
+		if not node then
+			return nil, {
+				msg = "Missing <name> parameter, which token do you want?",
+				app_tag = 'data-missing',
+				info_badelem = 'name',
+				info_badns = self.model_ns
+			};
+		end
+		local name = node:text();
+		if not check_name(name) then
+			return nil, {
+				msg = "Invalid client name: " .. name,
+				app_tag = 'data-invalid',
+				info_badelem = 'name',
+				info_badns = self.model_ns
+			};
+		end
+		local filename = token_dir .. name .. '.token';
+		local file = io.open(filename);
+		if not file then
+			return nil, {
+				msg = "Client doesn't exist: " .. name,
+				app_tag = 'data-invalid',
+				info_badelem = 'name',
+				info_badns = self.model_ns
+			};
+		end
+		local result = xmlwrap.new_xml_doc('token', self.model_ns);
+		result:root():set_text(file:read("*a"));
+		return result:strdump();
+	else
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
+	end
 end
 
 register_datastore_provider(datastore);
