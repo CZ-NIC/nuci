@@ -164,7 +164,7 @@ function datastore:get()
 			end
 		end
 	else
-		nlog(NLOG_WARN, "Directory " .. dir .. " can't be read, it probably doesn't exist: " .. dirs);
+		nlog(NLOG_WARN, "Directory " .. dir .. " can't be read, it probably doesn't exist: " .. pcaps);
 	end
 	local names = {};
 	local i = 1;
