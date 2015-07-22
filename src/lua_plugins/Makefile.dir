@@ -11,7 +11,8 @@ NUCI_PLUGINS := \
 	user-notify \
 	smrt \
 	securris \
-	firewall
+	firewall \
+	nuci-tls
 
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 

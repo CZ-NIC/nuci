@@ -95,7 +95,7 @@ function datastore:zone_arming(root)
 			nlog(NLOG_ERROR, "Invalid 'status' parameter");
 			return nil, {
 				msg = "Invalid <status> parameter.",
-				app_tag = "data-invalid",
+				app_tag = "invalid-value",
 				info_badelem = "status",
 				info_badns = self.model_ns
 			};
@@ -128,7 +128,7 @@ function datastore:siren(root)
 			nlog(NLOG_ERROR, "Invalid 'sound' parameter");
 			return nil, {
 				msg = "Invalid <sound> parameter.",
-				app_tag = "data-invalid",
+				app_tag = "invalid-value",
 				info_badelem = "sound",
 				info_badns = self.model_ns
 			};
@@ -159,7 +159,7 @@ function datastore:siren(root)
 				nlog(NLOG_ERROR, "Invalid 'sound-type' parameter");
 				return nil, {
 					msg = "Invalid <sound-type> parameter.",
-					app_tag = "data-invalid",
+					app_tag = "invalid-value",
 					info_badelem = "sound-type",
 					info_badns = self.model_ns
 				};
@@ -182,7 +182,7 @@ function datastore:siren(root)
 			nlog(NLOG_ERROR, "Invalid 'led' parameter");
 			return nil, {
 				msg = "Invalid <led> parameter.",
-				app_tag = "data-invalid",
+				app_tag = "invalid-value",
 				info_badelem = "led",
 				info_badns = self.model_ns
 			};
@@ -231,7 +231,7 @@ function datastore:pair(root)
 			nlog(NLOG_ERROR, "Invalid 'transmit' parameter");
 			return nil, {
 				msg = "Invalid <transmit> parameter.",
-				app_tag = "data-invalid",
+				app_tag = "invalid-value",
 				info_badelem = "transmit",
 				info_badns = self.model_ns
 			};
@@ -246,7 +246,7 @@ function datastore:pair(root)
 		nlog(NLOG_ERROR, "RPC \"pair " .. transmit .. "\" failed: " .. response);
 		return nil, {
 			msg = "RPC \"pair " .. transmit .. "\" failed: " .. response,
-			app_tag = "data-invalid",
+			app_tag = "invalid-value",
 			info_badelem = "status",
 			info_badns = self.model_ns
 		};
@@ -268,7 +268,7 @@ function datastore:dump(root)
 			nlog(NLOG_ERROR, "Invalid 'format' parameter");
 			return nil, {
 				msg = "Invalid <format> parameter.",
-				app_tag = "data-invalid",
+				app_tag = "invalid-value",
 				info_badelem = "format",
 				info_badns = self.model_ns
 			};
@@ -302,7 +302,7 @@ function datastore:relay(root)
 			nlog(NLOG_ERROR, "Invalid 'status' parameter");
 			return nil, {
 				msg = "Invalid <status> parameter.",
-				app_tag = "data-invalid",
+				app_tag = "invalid-value",
 				info_badelem = "status",
 				info_badns = self.model_ns
 			};
@@ -317,7 +317,7 @@ function datastore:relay(root)
 		nlog(NLOG_ERROR, "RPC \"relay " .. status .. "\" failed: " .. response);
 		return nil, {
 			msg = "RPC \"relay " .. status .. "\" failed: " .. response,
-			app_tag = "data-invalid",
+			app_tag = "invalid-value",
 			info_badelem = "status",
 			info_badns = self.model_ns
 		};
