@@ -21,6 +21,11 @@ set -e
 
 cd /usr/share/nuci/tls/ca
 
+if [ "$1" = "-f" ] ; then
+	rm -f * ../clients/*
+	shift
+fi
+
 if [ -f dhparam.pem ] ; then
 	echo 'TLS CA ready' | logger -p daemon.info -t nuci
 	exit

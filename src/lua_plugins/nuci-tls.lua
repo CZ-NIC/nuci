@@ -141,6 +141,16 @@ function datastore:user_rpc(rpc, data)
 			info_badelem = rpc,
 			info_badns = self.model_ns
 		};
+	elseif rpc == 'reset-CA' then
+		local ecode, stdout, stderr = run_command(nil, script_dir .. 'new_ca', '-f');
+		if ecode ~= 0 then
+			return "Failed to create new CA: " .. stderr;
+		end
+		local ecode, stdout, stderr = run_command(nil, '/etc/init.d/nuci-tls', 'restart');
+		if ecode ~= 0 then
+			return "Failed to restart nuci-tls for new CA: " .. stderr;
+		end
+		return '<ok/>';
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
