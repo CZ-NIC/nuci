@@ -134,12 +134,12 @@ function datastore:get()
 			if name_match then
 				current_rule = name_match;
 				rules[current_rule] = {
-					description = "",
+					description = {},
 					files = {}
 				};
 			elseif desc_match then
 				if current_rule then
-					rules[current_rule].description = rules[current_rule].description .. desc_match .. ' ';
+					table.insert(rules[current_rule].description, desc_match);
 				else
 					nlog(NLOG_ERROR, "Description line before first name: " .. line);
 				end
@@ -179,7 +179,16 @@ function datastore:get()
 		local rule = root:add_child('rule');
 		rule:add_child('id'):set_text(name);
 		if rules[name].description then
-			rule:add_child('description'):set_text(trimr(rules[name].description));
+			if rules[name].description[1] then
+				local en = rule:add_child('description');
+				en:set_attribute('xml:lang', 'en');
+				en:set_text(trimr(rules[name].description[1]));
+			end
+			if rules[name].description[2] then
+				local en = rule:add_child('description');
+				en:set_attribute('xml:lang', 'cz');
+				en:set_text(trimr(rules[name].description[2]));
+			end
 		end
 		table.sort(rules[name].files, function (a, b) return a.filename < b.filename end);
 		for _, file in ipairs(rules[name].files) do
