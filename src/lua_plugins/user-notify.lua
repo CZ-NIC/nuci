@@ -1,5 +1,5 @@
 --[[
-Copyright 2014, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2014-2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -110,7 +110,13 @@ function datastore:message(dir, root)
 	end
 	local severity, seerr = getcontent('severity');
 	local body, berr = getcontent('message');
-	local err = serr or berr;
+	local body_en, beerr = getcontent('message_en');
+	local body_cz, bcerr = getcontent('message_cz');
+	local err;
+	if berr and (bcerr or berr) then
+		err = bcerr or beerr;
+	end
+	local err = serr or err;
 	if err then
 		return err;
 	end
@@ -119,7 +125,12 @@ function datastore:message(dir, root)
 	local id = dir:match('[^/]+$');
 	local mnode = root:add_child('message');
 	mnode:add_child('id'):set_text(id);
-	mnode:add_child('body'):set_text(body);
+	local ben = mnode:add_child('body');
+	ben:set_text(body_en or body);
+	ben:set_attribute('xml:lang', 'en');
+	local bcz = mnode:add_child('body');
+	bcz:set_text(body_cz or body);
+	bcz:set_attribute('xml:lang', 'cz');
 	mnode:add_child('severity'):set_text(severity);
 	local atime, mtime, ctime = file_times(dir .. '/' .. 'message');
 	mnode:add_child('timestamp'):set_text(math.floor(mtime));
