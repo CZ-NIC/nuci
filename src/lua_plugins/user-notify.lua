@@ -31,7 +31,7 @@ function send_message(severity, text)
 		wdir = test_dir;
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
-	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text);
+	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text.cz or text['-'], text.en or text['-']);
 	if ecode ~= 0 then
 		return nil, "Failed to send: " .. stderr;
 	end
@@ -45,9 +45,25 @@ function datastore:user_rpc(rpc, data)
 	local root = xml:root();
 
 	if rpc == 'message' then
-		local data, err = extract_multi_texts(root, {'severity', 'body'}, self.model_ns);
+		local data, err = extract_multi_texts(root, {'severity'}, self.model_ns);
 		if err then
 			return nil, err;
+		end
+		local texts = {}
+		for child in root:iterate() do
+			local name, ns = child:name();
+			if name == 'body' and ns == self.model_ns then
+				local lang = child:attribute('xml:lang') or '-';
+				texts[lang] = child:text();
+			end
+		end
+		if (not texts['-']) and (not (texts['cz'] and texts['en'])) then
+			return nil, {
+				msg = "Missing message body in at least one langugae",
+				app_tag = 'data-missing',
+				info_badelem = 'body',
+				info_badns = self.model_ns
+			};
 		end
 		if not severities[data[1]] then
 			return nil, {
@@ -58,10 +74,10 @@ function datastore:user_rpc(rpc, data)
 			};
 		end
 		nlog(NLOG_INFO, "Sending message " .. data[1]);
-		return send_message(data[1], data[2]);
+		return send_message(data[1], texts);
 	elseif rpc == 'test' then
 		nlog(NLOG_INFO, "Sending test message");
-		local result, err = send_message('test', 'Test test test! :-)');
+		local result, err = send_message('test', {['-'] = 'Test test test! :-)'});
 		run_command(nil, 'sh', '-c', 'rm -rf ' .. test_dir);
 		return result, err;
 	elseif rpc == 'display' then
