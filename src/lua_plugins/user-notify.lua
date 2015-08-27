@@ -31,7 +31,7 @@ function send_message(severity, text)
 		wdir = test_dir;
 	end;
 	-- -t = trigger sending right now and wait for it to finish (and fail if it does so)
-	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text.cz or text['-'], text.en or text['-']);
+	local ecode, stdout, stderr = run_command(nil, 'create_notification', '-t', '-d', wdir, '-s', severity, text.cs or text['-'], text.en or text['-']);
 	if ecode ~= 0 then
 		return nil, "Failed to send: " .. stderr;
 	end
@@ -57,7 +57,7 @@ function datastore:user_rpc(rpc, data)
 				texts[lang] = child:text();
 			end
 		end
-		if (not texts['-']) and (not (texts['cz'] and texts['en'])) then
+		if (not texts['-']) and (not (texts['cs'] and texts['en'])) then
 			return nil, {
 				msg = "Missing message body in at least one langugae",
 				app_tag = 'data-missing',
@@ -127,7 +127,7 @@ function datastore:message(dir, root)
 	local severity, seerr = getcontent('severity');
 	local body, berr = getcontent('message');
 	local body_en, beerr = getcontent('message_en');
-	local body_cz, bcerr = getcontent('message_cz');
+	local body_cs, bcerr = getcontent('message_cs');
 	local err;
 	if berr and (bcerr or berr) then
 		err = bcerr or beerr;
@@ -144,9 +144,9 @@ function datastore:message(dir, root)
 	local ben = mnode:add_child('body');
 	ben:set_text(body_en or body);
 	ben:set_attribute('xml:lang', 'en');
-	local bcz = mnode:add_child('body');
-	bcz:set_text(body_cz or body);
-	bcz:set_attribute('xml:lang', 'cz');
+	local bcs = mnode:add_child('body');
+	bcs:set_text(body_cs or body);
+	bcs:set_attribute('xml:lang', 'cs');
 	mnode:add_child('severity'):set_text(severity);
 	local atime, mtime, ctime = file_times(dir .. '/' .. 'message');
 	mnode:add_child('timestamp'):set_text(math.floor(mtime));

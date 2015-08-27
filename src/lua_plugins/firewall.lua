@@ -186,7 +186,7 @@ function datastore:get()
 			end
 			if rules[name].description[2] then
 				local en = rule:add_child('description');
-				en:set_attribute('xml:lang', 'cz');
+				en:set_attribute('xml:lang', 'cs');
 				en:set_text(trimr(rules[name].description[2]));
 			end
 		end
