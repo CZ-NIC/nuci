@@ -148,7 +148,12 @@ function datastore:message(dir, root)
 	bcs:set_text(body_cs or body);
 	bcs:set_attribute('xml:lang', 'cs');
 	mnode:add_child('severity'):set_text(severity);
-	local atime, mtime, ctime = file_times(dir .. '/' .. 'message');
+	local ok, atime, mtime, ctime = pcall(function()
+		return file_times(dir .. '/' .. 'message');
+	end);
+	if not ok then
+		atime, mtime, ctime = file_times(dir .. '/' .. 'message_cs');
+	end
 	mnode:add_child('timestamp'):set_text(math.floor(mtime));
 	if sent then
 		mnode:add_child('sent');
