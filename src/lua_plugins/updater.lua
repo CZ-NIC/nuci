@@ -30,9 +30,13 @@ local tags = {
 };
 
 function datastore:get()
+	--[[
+	The file contains lua code, assigning the right table to lists variable.
+	That's why it looks like lists is never assigned in this code.
+	]]
 	local lists_ok, lists_error = pcall(loadfile('/usr/share/updater/definitions'))
 	if not lists_ok then
-		nlog(NLOG_ERROR, "Failed to load user list definitions: " .. lists_error);
+		nlog(NLOG_ERROR, "Failed to load user list definitions: " .. lists_error .. ". file possibly not downloaded yet");
 		lists = {};
 	end
 	local xml = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
