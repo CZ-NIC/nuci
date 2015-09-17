@@ -26,22 +26,35 @@ if [ "$1" = "-f" ] ; then
 	shift
 fi
 
-if [ -f dhparam.pem ] ; then
+if [ -f local-dhparam.pem ] ; then
 	echo 'TLS CA ready' | logger -p daemon.info -t nuci
 	exit
 fi
 
-echo 'Creating TLS CA' | logger -p daemon.info -t nuci
+if [ '!' -f ca.crl ] ; then
+	echo 'Creating TLS CA' | logger -p daemon.info -t nuci
 
-rm -f *
-touch index.txt
-echo 01 >serial
-echo 01 >crlnumber
-echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes
-( ip addr show dev br-lan | grep 'inet ' | sed -e 's/.*inet \([^\/]*\).*/\1/' || echo 'Turris' ) | openssl req -new -newkey rsa:4096 -keyout nuci.key -nodes -out nuci.csr -config ../openssl.cnf
-openssl ca -out nuci.cert -config ../openssl.cnf -batch -infiles nuci.csr
-rm -f nuci.csr
-openssl ca -gencrl -out ca.crl -config ../openssl.cnf
-openssl dhparam -out dhparam.pem 2048
+	rm -f *
+	touch index.txt
+	echo 01 >serial
+	echo 01 >crlnumber
+	echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes
+	( ip addr show dev br-lan | grep 'inet ' | sed -e 's/.*inet \([^\/]*\).*/\1/' || echo 'Turris' ) | openssl req -new -newkey rsa:4096 -keyout nuci.key -nodes -out nuci.csr -config ../openssl.cnf
+	openssl ca -out nuci.cert -config ../openssl.cnf -batch -infiles nuci.csr
+	rm -f nuci.csr
+	openssl ca -gencrl -out ca.crl -config ../openssl.cnf
+	ln -s ../provided-dhparam.pem dhparam.pem
 
-echo 'Creation of TLS CA complete' | logger -p daemon.info -t nuci
+	echo 'Creation of TLS CA complete' | logger -p daemon.info -t nuci
+fi
+
+if [ '!' -f local-dhparam.pem ] ; then
+	echo 'Generating our own dhparams' | logger -p daemon.info -t nuci
+	(
+		openssl dhparam -out local-dhparam.pem 2048
+		rm dhparam.pem
+		ln -s local-dhparam.pem dhparam.pem
+		/etc/init.d/nuci-tls restart
+		echo 'dhparams are ready' | logger -p daemon.info -t nuci
+	) >/dev/null 2>&1 &
+fi
