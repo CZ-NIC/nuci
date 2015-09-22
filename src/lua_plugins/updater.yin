@@ -71,6 +71,12 @@
           <text>Name of the list as recorded in the configuration. Machine-readable format. The title is to be shown to user instead.</text>
         </description>
       </leaf>
+      <leaf name='activated'>
+        <type name='empty'/>
+        <description>
+          <text>Is this pkg-list activated.</text>
+        </description>
+      </leaf>
       <leaf-list name='title'>
         <type name='string'/>
         <description>

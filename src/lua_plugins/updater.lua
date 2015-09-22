@@ -99,9 +99,25 @@ function datastore:get()
 		offline_file:close();
 	end
 
+	-- Load activated lists from uci
+	local activated_set = {}
+	local uci_ok, uci_res = pcall(
+		function() return get_uci_cursor():get("updater", "pkglists", "lists") end
+	)
+	if uci_ok then
+		for idx, user_list in pairs(uci_res) do
+			activated_set[user_list] = true;
+		end
+	else
+		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
+	end
+
 	for name, list in pairs(lists) do
 		local lnode = root:add_child('pkg-list');
 		lnode:add_child('name'):set_text(name);
+		if activated_set[name] then
+			lnode:add_child('activated');
+		end
 		for name, value in pairs(list) do
 			local tp, lang = name:match('(.*)_(.*)');
 			local node = lnode:add_child(tp);
