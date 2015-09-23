@@ -29,6 +29,38 @@ local tags = {
 	D = 'download'
 };
 
+local function remove_xml_header(xml_strdump)
+	local res, _  = xml_strdump:gsub('..xml version="1.0"..', "", 1);
+	return res;
+end
+
+function datastore:get_config()
+	local xml = xmlwrap.new_xml_doc('updater-config', self.model_ns);
+	local root = xml:root();
+	local lists_node = root:add_child('active-lists');
+
+	-- Load activated lists from uci
+	local cursor = get_uci_cursor();
+	local uci_ok, uci_res = pcall(
+		function() return get_uci_cursor():get("updater", "pkglists", "lists") end
+	)
+	if uci_ok then
+		if uci_res then
+			for idx, user_list in pairs(uci_res) do
+				local list_node = lists_node:add_child('user-list');
+				list_node:add_child('name'):set_text(user_list);
+			end
+		else
+			nlog(NLOG_ERROR, "Updater config was not found in uci!");
+		end
+	else
+		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
+	end
+	reset_uci_cursor();
+
+	return remove_xml_header(xml:strdump());
+end
+
 function datastore:get()
 	--[[
 	The file contains lua code, assigning the right table to lists variable.

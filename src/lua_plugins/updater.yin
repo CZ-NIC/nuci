@@ -95,4 +95,31 @@
       <!-- TODO: Make this activeable as configuration, inline? -->
     </list>
   </container>
+  <typedef name="list-name">
+    <description>
+      <text>Type user-list identifiers.</text>
+    </description>
+    <type name="string">
+      <pattern value="[a-z0-9_]+"/>
+    </type>
+  </typedef>
+  <container name="uci-updater">
+    <description>
+      <text>Describes the current updater config</text>
+    </description>
+    <container name="active-lists">
+      <description>
+        <text>List of active package lists that are installed via updater.</text>
+      </description>
+      <list name='user-list'>
+        <key name='name'/>
+        <leaf name='name'>
+          <type name='list-name'/>
+          <description>
+            <text>Name of the list as recorded in the configuration. Machine-readable format.</text>
+          </description>
+        </leaf>
+      </list>
+    </container>
+  </container>
 </module>
