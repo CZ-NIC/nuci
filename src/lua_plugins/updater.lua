@@ -105,12 +105,17 @@ function datastore:get()
 		function() return get_uci_cursor():get("updater", "pkglists", "lists") end
 	)
 	if uci_ok then
-		for idx, user_list in pairs(uci_res) do
-			activated_set[user_list] = true;
+		if uci_res then
+			for idx, user_list in pairs(uci_res) do
+				activated_set[user_list] = true;
+			end
+		else
+			nlog(NLOG_ERROR, "Updater config was not found in uci!");
 		end
 	else
 		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
 	end
+	reset_uci_cursor();
 
 	for name, list in pairs(lists) do
 		local lnode = root:add_child('pkg-list');
