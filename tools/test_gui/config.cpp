@@ -166,7 +166,7 @@ size_t Config::sendRpc(const QString &xml, RpcCallback callback) {
 }
 
 void Config::on_downloadButton_clicked() {
-	sendRpc("<get-config><source><running/></source></get-config>", &Config::configDownloaded);
+	sendRpc("<get-config><source><running/></source><filter type='subtree'><uci xmlns='http://www.nic.cz/ns/router/uci-raw'/></filter></get-config>", &Config::configDownloaded);
 }
 
 void Config::openModel(const QModelIndex &index) {
