@@ -29,26 +29,16 @@ local tags = {
 	D = 'download'
 };
 
-local function remove_xml_header(xml_strdump)
-	local res, _  = xml_strdump:gsub('..xml version="1.0"..', "", 1);
-	return res;
-end
-
-function datastore:get_config()
-	local xml = xmlwrap.new_xml_doc('updater-config', self.model_ns);
-	local root = xml:root();
-	local lists_node = root:add_child('active-lists');
-
+local function get_active_lists(cursor)
 	-- Load activated lists from uci
-	local cursor = get_uci_cursor();
+	local res = {}
 	local uci_ok, uci_res = pcall(
-		function() return get_uci_cursor():get("updater", "pkglists", "lists") end
+		function() return cursor:get("updater", "pkglists", "lists") end
 	)
 	if uci_ok then
 		if uci_res then
 			for idx, user_list in pairs(uci_res) do
-				local list_node = lists_node:add_child('user-list');
-				list_node:add_child('name'):set_text(user_list);
+				res[user_list] = true;
 			end
 		else
 			nlog(NLOG_ERROR, "Updater config was not found in uci!");
@@ -56,9 +46,7 @@ function datastore:get_config()
 	else
 		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
 	end
-	reset_uci_cursor();
-
-	return remove_xml_header(xml:strdump());
+	return res;
 end
 
 function datastore:get()
@@ -132,21 +120,8 @@ function datastore:get()
 	end
 
 	-- Load activated lists from uci
-	local activated_set = {}
-	local uci_ok, uci_res = pcall(
-		function() return get_uci_cursor():get("updater", "pkglists", "lists") end
-	)
-	if uci_ok then
-		if uci_res then
-			for idx, user_list in pairs(uci_res) do
-				activated_set[user_list] = true;
-			end
-		else
-			nlog(NLOG_ERROR, "Updater config was not found in uci!");
-		end
-	else
-		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
-	end
+	local cursor = get_uci_cursor();
+	local activated_set = get_active_lists(cursor);
 	reset_uci_cursor();
 
 	for name, list in pairs(lists) do
@@ -181,6 +156,213 @@ function datastore:user_rpc(rpc)
 			info_badns = self.model_ns
 		};
 	end
+end
+
+local function remove_xml_header(xml_strdump)
+	local res, _  = xml_strdump:gsub('..xml version="1.0"..', "", 1);
+	return res;
+end
+
+function datastore:get_config()
+	local xml = xmlwrap.new_xml_doc('updater-config', self.model_ns);
+	local root = xml:root();
+	local lists_node = root:add_child('active-lists');
+
+	-- Load activated lists from uci
+	local cursor = get_uci_cursor();
+	local uci_ok, uci_res = pcall(
+		function() return get_uci_cursor():get("updater", "pkglists", "lists") end
+	)
+	if uci_ok then
+		if uci_res then
+			for idx, user_list in pairs(uci_res) do
+				local list_node = lists_node:add_child('user-list');
+				list_node:add_child('name'):set_text(user_list);
+			end
+		else
+			nlog(NLOG_ERROR, "Updater config was not found in uci!");
+		end
+	else
+		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
+	end
+	reset_uci_cursor();
+
+	return remove_xml_header(xml:strdump());
+end
+
+function datastore:set_config(config, defop, deferr)
+	local ops, err, current, operation = self:edit_config_ops(config, defop, deferr);
+	if err then
+		return err;
+	end
+
+	--[[
+	The file contains lua code, assigning the right table to lists variable.
+	That's why it looks like lists is never assigned in this code.
+	]]
+	local lists_ok, lists_error = pcall(loadfile('/usr/share/updater/definitions'))
+	if not lists_ok then
+		nlog(NLOG_ERROR, "Failed to load user list definitions: " .. lists_error .. ". file possibly not downloaded yet");
+		--lists = {};
+		lists = {};
+		--return;
+	end
+
+	local remove_set, append_set = {}, {};
+
+	name_descr = {
+		replace = {
+			msg="Can't replace name, replace the whole owner",
+			tag="operation-not-supported",
+			bad_elemname='name',
+			bad_elemns=self.model_ns
+		},
+		remove = {
+			msg="Can't delete mandatory node name",
+			tag="data-missing",
+			bad_elemname='name',
+			bad_elemns=self.model_ns
+		},
+		create = {
+			msg="Can't (directly) create node name",
+			tag="data-exists",
+			bad_elemname='name',
+			bad_elemns=self.model_ns
+		},
+		dbg = 'name'
+	}
+
+	local user_list_descr = {
+		create = function(node)
+			local list_name = node:first_child():text();
+			-- Is in downloaded list
+			if not lists[list_name] then
+				return {
+					msg = "List '" .. list_name .. "' in not a valid  user list.",
+					tag = "invalid-value",
+					info_badelem = 'user-list',
+					info_badns=self.model_ns
+				};
+			end
+			append_set[list_name] = true;
+		end,
+
+		remove = function(node)
+			remove_set[node:first_child():text()] = true;
+		end,
+
+		children = {
+			name = name_descr
+		},
+
+		dbg="user-list"
+	}
+
+	local active_list_replacing = false;
+	local replaced_set = {};
+	local active_lists_descr = {
+		remove = function()
+			return {
+				msg = "Deleting active-lists not possible",
+				tag = "operation-not-supported",
+				info_badelem = 'active-lists',
+				info_badns = self.model_ns
+			};
+		end,
+
+		create = function()
+			return {
+				msg = "Creating active-lists not possible",
+				tag = "operation-not-supported",
+				info_badelem = 'active-lists',
+				info_badns=self.model_ns
+			};
+		end,
+
+		 -- We don't do anything when replacing the config except recurse onto sections
+		replace = function(node)
+			for child_node in node:iterate() do
+				local list_name = child_node:first_child():text();
+				if not lists[list_name] then
+					return {
+						msg = "List '" .. list_name .. "' in not a valid user list.",
+						tag = "invalid-value",
+						info_badelem = 'user-list',
+						info_badns=self.model_ns
+					};
+				end
+				replaced_set[list_name] = true;
+			end
+			active_list_replacing = true;
+		end,
+
+		-- When we enter a config, we're going to change stuff inside, so schedule it for commit.
+		enter = function(operation)
+			commit_mark_dirty('updater');
+		end,
+
+		children = {
+			['user-list'] = user_list_descr
+		},
+		dbg = "active-lists"
+	};
+
+	local updater_descr = {
+		namespace = self.model_ns,
+		children = {
+			['updater-config'] = {
+				children = {
+					['active-lists'] = active_lists_descr
+				}
+			}
+		},
+		dbg = "updater-config"
+	};
+
+	local err = applyops(ops, updater_descr);
+	if err then
+		return err;
+	end
+
+
+	-- update uci
+	local cursor = get_uci_cursor();
+	local activated_set = get_active_lists(cursor);
+	local final_list = {};
+
+	for name, _ in pairs(lists) do
+		if active_list_replacing then
+			-- replacing all nodes
+			if replaced_set[name] then
+				table.insert(final_list, name);
+			end
+		else
+			-- keep existing (expect for the removed)
+			if activated_set[name] and not remove_set[name] then
+				table.insert(final_list, name);
+			end
+			-- add new
+			if append_set[name] then
+				table.insert(final_list, name);
+			end
+		end
+	end
+
+	if #final_list == 0 then
+		if not cursor:delete('updater', 'pkglists', 'lists') then
+			commit_execute(false);
+		else
+			commit_execute(true);
+		end
+	else
+		if not cursor:set('updater', 'pkglists', 'lists', final_list) then
+			nlog(NLOG_ERROR, "Failed to update updater user lists in uci!");
+			commit_execute(false);
+		else
+			commit_execute(true);
+		end
+	end
+	reset_uci_cursor();
 end
 
 register_datastore_provider(datastore)
