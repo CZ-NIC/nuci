@@ -74,7 +74,7 @@
       <leaf name='activated'>
         <type name='empty'/>
         <description>
-          <text>Is this pkg-list activated.</text>
+          <text>Describes whether this pkg-list is activated.</text>
         </description>
       </leaf>
       <leaf-list name='title'>
@@ -92,7 +92,6 @@
       <description>
         <text>List of available package lists the user might request to be installed. Each provides some kind of functionality (like NAS). To get one, it needs to be recorded in configuration and the updater run.</text>
       </description>
-      <!-- TODO: Make this activeable as configuration, inline? -->
     </list>
   </container>
   <typedef name="list-name">
