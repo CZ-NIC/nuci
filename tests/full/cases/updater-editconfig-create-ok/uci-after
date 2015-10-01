@@ -1,0 +1,3 @@
+updater.pkglists.configured=1
+updater.pkglists.lists=netutils nas honeypot
+updater.pkglists=pkglists
