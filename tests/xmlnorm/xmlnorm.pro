@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = 
+TARGET = xmlnorm
 DEPENDPATH += .
 INCLUDEPATH += .
 
