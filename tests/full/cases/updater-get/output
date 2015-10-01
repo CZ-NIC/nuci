@@ -1,0 +1,78 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
+ <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <updater xmlns="http://www.nic.cz/ns/router/updater">
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">luci-controls</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Several addional tabs and controls for the advanced LuCI interface.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">LuCI extensions</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">LuCI rozšíření</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">netutils</name>
+    <activated xmlns="http://www.nic.cz/ns/router/updater"/>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Podpora dalších protokolů a druhů připojení.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Support for additional protocols and connection types.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Extensions of network protocols</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Rozšíření síťové podpory</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">squid</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">HTTP cachující proxy Squid.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">HTTP caching proxy Squid.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Squid</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Squid</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">webcam</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Podpora pro snímání obrazu pomocí webové kamery.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Support to capture image with web camera.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Web camera</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Webová kamera</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">nas</name>
+    <activated xmlns="http://www.nic.cz/ns/router/updater"/>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Služby umožňující přiojit disk k routeru a používat jej jako síťové úložiště dat.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Services allowing to connect a disk to the router and use it as network data store.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">NAS</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">NAS</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">tor</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Služba umožňující zvýšení anonymity na internetu.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Service to increase anonymity on the Internet.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Tor</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Tor</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">smrt-support</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Podpora pro modem S.M.R.T.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Support for the S.M.R.T. modem.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">S.M.R.T.</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">S.M.R.T.</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">majordomo</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Software pro sledování spojení jednotlivých zařízení v síti.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Software for monitoring connections of devices in local network.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Majordomo</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Majordomo</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">printserver</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Služby umožňující připojit tiskárnu k routeru a používat ji pro tisk po síti.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Services allowing to connect a printer to the router and use it for remote printing.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Print server</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Tiskový server</title>
+   </pkg-list>
+   <pkg-list xmlns="http://www.nic.cz/ns/router/updater">
+    <name xmlns="http://www.nic.cz/ns/router/updater">honeypot</name>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">Past na roboty zkoušející hesla na SSH.</description>
+    <description xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">Trap for password-guessing robots on SSH.</description>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="en" xmlns:xml="http://www.w3.org/XML/1998/namespace">SSH Honeypot</title>
+    <title xmlns="http://www.nic.cz/ns/router/updater" xml:lang="cs" xmlns:xml="http://www.w3.org/XML/1998/namespace">SSH Honeypot</title>
+   </pkg-list>
+  </updater>
+ </data>
+</rpc-reply>
