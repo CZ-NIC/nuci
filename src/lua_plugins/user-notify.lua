@@ -59,7 +59,7 @@ function datastore:user_rpc(rpc, data)
 		end
 		if (not texts['-']) and (not (texts['cs'] and texts['en'])) then
 			return nil, {
-				msg = "Missing message body in at least one langugae",
+				msg = "Missing message body in at least one language",
 				app_tag = 'data-missing',
 				info_badelem = 'body',
 				info_badns = self.model_ns
