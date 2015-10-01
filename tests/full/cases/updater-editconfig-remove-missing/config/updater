@@ -1,0 +1,6 @@
+package updater
+
+config 'pkglists' 'pkglists'
+	option 'configured' '1'
+	list 'lists' 'nas'
+	list 'lists' 'netutils'

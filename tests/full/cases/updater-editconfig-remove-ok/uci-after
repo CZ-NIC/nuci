@@ -1,0 +1,3 @@
+updater.pkglists.configured=1
+updater.pkglists.lists=netutils
+updater.pkglists=pkglists

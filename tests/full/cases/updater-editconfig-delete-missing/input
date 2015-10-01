@@ -1,0 +1,14 @@
+<edit-config>
+  <target>
+    <running/>
+  </target>
+  <config>
+    <updater-config xmlns="http://www.nic.cz/ns/router/updater">
+      <active-lists>
+        <user-list xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="delete">
+          <name>non-existing</name>
+        </user-list>
+      </active-lists>
+    </updater-config>
+  </config>
+</edit-config>
