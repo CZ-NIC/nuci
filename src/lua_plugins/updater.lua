@@ -41,20 +41,6 @@ local function load_user_list_definitions()
 	end
 end
 
-local function get_text_from_name_node(node, ns)
-	local node_name = find_node_name_ns(node, 'name', ns);
-	if node_name then
-		return true, node_name:text();
-	else
-		return false, {
-			msg = "Invalid xml formt in '" .. node:name() .. ".",
-			tag = "bad-element",
-			info_badelem = node:name(),
-			info_badns=self.model_ns
-		};
-	end
-end
-
 local function get_active_lists(cursor, func)
 	-- Load activated lists from uci
 	local res;
@@ -66,13 +52,12 @@ local function get_active_lists(cursor, func)
 			for idx, user_list in pairs(uci_res) do
 				func(user_list);
 			end
+			res = true;
 		else
 			nlog(NLOG_WARN, "Uci updater user lists might be empty!");
-			res = false;
 		end
 	else
 		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
-		res = false;
 	end
 	return res;
 end
@@ -84,10 +69,10 @@ function datastore:get()
 	local root = xml:root();
 
 	-- First wipe out any outdated updater status.
-	--local code, stdout, stderr = run_command(nil, 'updater-wipe.sh');
-	--if code ~= 0 then
-	--	return nil, "Failed to wipe updater: " .. stderr;
-	--end
+	local code, stdout, stderr = run_command(nil, 'updater-wipe.sh');
+	if code ~= 0 then
+		return nil, "Failed to wipe updater: " .. stderr;
+	end
 
 	local failure_file = io.open(state_dir .. '/last_error');
 	local failure;
@@ -188,8 +173,7 @@ function datastore:get_config()
 	-- Load activated lists from uci
 	local cursor = get_uci_cursor();
 	get_active_lists(cursor, function (list_name)
-		local list_node = lists_node:add_child('user-list');
-		list_node:add_child('name'):set_text(list_name);
+		lists_node:add_child('user-list'):add_child('name'):set_text(list_name);
 	end);
 	reset_uci_cursor();
 
@@ -230,10 +214,9 @@ function datastore:set_config(config, defop, deferr)
 
 	local user_list_descr = {
 		create = function(node)
-			local res, list_name = get_text_from_name_node(node, self.model_ns);
-			if not res then
-				-- var list_name contains error
-				return list_name;
+			local list_name, err = extract_multi_texts(node, {'name'}, self.model_ns);
+			if not list_name then
+				return err;
 			end
 
 			-- Is this a valid list name? var lists contains all valid lists
@@ -249,11 +232,6 @@ function datastore:set_config(config, defop, deferr)
 		end,
 
 		remove = function(node)
-			local res, list_name = get_text_from_name_node(node, self.model_ns);
-			if not res then
-				-- var list_name contains error
-				return list_name;
-			end
 			remove_set[list_name] = true;
 		end,
 
