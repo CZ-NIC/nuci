@@ -229,11 +229,16 @@ function datastore:set_config(config, defop, deferr)
 					info_badns=self.model_ns
 				};
 			end
-			append_set[list_name] = true;
+			append_set[list_name[1]] = true;
 		end,
 
 		remove = function(node)
-			remove_set[list_name] = true;
+			local list_name, err = extract_multi_texts(node, {'name'}, self.model_ns);
+			if not list_name then
+				return err;
+			end
+
+			remove_set[list_name[1]] = true;
 		end,
 
 		children = {
