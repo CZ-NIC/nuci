@@ -1,0 +1,12 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
+ <rpc-error xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <error-type xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">application</error-type>
+  <error-tag xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">invalid-value</error-tag>
+  <error-severity xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">error</error-severity>
+  <error-message xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">List 'non-existing' in not a valid  user list.</error-message>
+  <error-info xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+   <bad-element xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">user-list</bad-element>
+   <bad-namespace xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">http://www.nic.cz/ns/router/updater</bad-namespace>
+  </error-info>
+ </rpc-error>
+</rpc-reply>

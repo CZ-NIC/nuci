@@ -1,0 +1,20 @@
+<edit-config>
+  <target>
+    <running/>
+  </target>
+  <config>
+    <updater-config xmlns="http://www.nic.cz/ns/router/updater">
+      <active-lists xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="replace">
+        <user-list>
+          <name>honeypot</name>
+        </user-list>
+        <user-list>
+          <name>nas</name>
+        </user-list>
+        <user-list>
+          <name>non-existing</name>
+        </user-list>
+      </active-lists>
+    </updater-config>
+  </config>
+</edit-config>

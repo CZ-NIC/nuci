@@ -1,0 +1,3 @@
+updater.pkglists.configured=1
+updater.pkglists.lists=nas netutils
+updater.pkglists=pkglists
