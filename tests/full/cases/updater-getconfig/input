@@ -1,0 +1,6 @@
+<get-config>
+  <source><running/></source>
+  <filter type='subtree'>
+    <updater-config xmlns='http://www.nic.cz/ns/router/updater'/>
+  </filter>
+</get-config>

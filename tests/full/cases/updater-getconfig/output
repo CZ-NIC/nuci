@@ -1,0 +1,14 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="ID">
+ <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <updater-config xmlns="http://www.nic.cz/ns/router/updater">
+   <active-lists xmlns="http://www.nic.cz/ns/router/updater">
+    <user-list xmlns="http://www.nic.cz/ns/router/updater">
+     <name xmlns="http://www.nic.cz/ns/router/updater">nas</name>
+    </user-list>
+    <user-list xmlns="http://www.nic.cz/ns/router/updater">
+     <name xmlns="http://www.nic.cz/ns/router/updater">netutils</name>
+    </user-list>
+   </active-lists>
+  </updater-config>
+ </data>
+</rpc-reply>
