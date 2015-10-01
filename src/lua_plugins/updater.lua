@@ -220,9 +220,9 @@ function datastore:set_config(config, defop, deferr)
 			end
 
 			-- Is this a valid list name? var lists contains all valid lists
-			if not lists[list_name] then
+			if not lists[list_name[1]] then
 				return {
-					msg = "List '" .. list_name .. "' in not a valid  user list.",
+					msg = "List '" .. list_name[1] .. "' in not a valid  user list.",
 					tag = "invalid-value",
 					info_badelem = 'user-list',
 					info_badns=self.model_ns
