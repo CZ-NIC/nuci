@@ -5,6 +5,7 @@ set -ex
 TMP=`tempfile`
 DIR="$1"
 CFG="$TMP.d"
+DEFIN_TMP="$TMP.definitions"
 if [ -e "$DIR/setup" ] ; then
 	. "$DIR/setup"
 fi
@@ -13,7 +14,11 @@ if [ -e "$DIR/cleanup" ] ; then
 fi
 mkdir -p "$DIR/config" # Some tests have empty config, make sure we have one.
 cp -r "$DIR/config" "$CFG"
+if [ -f "$DIR/updater-definitions" ]; then
+	cp "$DIR/updater-definitions" "$DEFIN_TMP"
+fi
 export NUCI_TEST_CONFIG_DIR="$CFG"
+export NUCI_UPDATER_DEFINITION_PATH="$DEFIN_TMP"
 export NUCI_DONT_RESTART=1
 (
 	cat <<ENDXML
@@ -51,4 +56,4 @@ test -e ./tests/xmlnorm/xmlnorm || (
 uci -c "$CFG" show | sort > "$CFG"/todiff1
 cat "$DIR"/uci-after | sort > "$CFG"/todiff2
 diff -u "$CFG"/todiff1 "$CFG"/todiff2
-rm -rf "$TMP" "$CFG"
+rm -rf "$TMP" "$CFG" "$DEFIN_TMP"
