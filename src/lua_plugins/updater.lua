@@ -53,14 +53,24 @@ local function get_active_lists(cursor, func)
 			for idx, user_list in pairs(uci_res) do
 				func(user_list);
 			end
-			res = true;
 		else
+			-- this might happen quite often and should not be considered as an error
 			nlog(NLOG_WARN, "Uci updater user lists might be empty!");
 		end
+		return true;
 	else
-		nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
+		if uci_res then
+			nlog(NLOG_ERROR, "Failed to load updater config: " .. uci_res);
+		else
+			nlog(NLOG_ERROR, "Failed to load updater config.");
+		end
+		return nil, {
+			msg = "Failed to use uci!",
+			tag = "operation-failed",
+			type = "application",
+			severity = "error",
+		};
 	end
-	return res;
 end
 
 function datastore:get()
@@ -129,8 +139,13 @@ function datastore:get()
 	-- Load activated lists from uci
 	local cursor = get_uci_cursor();
 	local activated_set = {};
-	get_active_lists(cursor, function (list_name) activated_set[list_name] = true; end);
+	local uci_res, uci_error = get_active_lists(cursor, function (list_name)
+		activated_set[list_name] = true;
+	end);
 	reset_uci_cursor();
+	if not uci_res then
+		return uci_res, uci_error;
+	end
 
 	for name, list in pairs(lists) do
 		local lnode = root:add_child('pkg-list');
@@ -173,10 +188,13 @@ function datastore:get_config()
 
 	-- Load activated lists from uci
 	local cursor = get_uci_cursor();
-	get_active_lists(cursor, function (list_name)
+	local uci_res, uci_error = get_active_lists(cursor, function (list_name)
 		lists_node:add_child('user-list'):add_child('name'):set_text(list_name);
 	end);
 	reset_uci_cursor();
+	if not uci_res then
+		return uci_res, uci_error;
+	end
 
 	return strip_xml_def(xml:strdump());
 end
@@ -305,7 +323,13 @@ function datastore:set_config(config, defop, deferr)
 	-- update uci
 	local cursor = get_uci_cursor();
 	local activated_set = {};
-	get_active_lists(cursor, function (list_name) activated_set[list_name] = true; end);
+	local uci_res, uci_error = get_active_lists(cursor, function (list_name)
+		activated_set[list_name] = true;
+	end);
+	if not uci_res then
+		reset_uci_cursor();
+		return uci_res, uci_error;
+	end
 	local final_list = {};
 
 	for name, _ in pairs(lists) do
@@ -319,21 +343,34 @@ function datastore:set_config(config, defop, deferr)
 		end
 	end
 
+	-- commit all into uci
+	local final_res, final_err_msg;
 	if #final_list == 0 then
-		if not cursor:delete('updater', 'pkglists', 'lists') then
-			commit_execute(false);
+		if #activated_set ~= 0 and not cursor:delete('updater', 'pkglists', 'lists') then
+			final_res = false;
 		else
-			commit_execute(true);
+			final_res = true;
 		end
 	else
 		if not cursor:set('updater', 'pkglists', 'lists', final_list) then
-			nlog(NLOG_ERROR, "Failed to update updater user lists in uci!");
-			commit_execute(false);
+			final_res = false;
 		else
-			commit_execute(true);
+			final_res = true;
 		end
 	end
+	commit_execute(final_res);
 	reset_uci_cursor();
+
+	if not final_res then
+		nlog(NLOG_ERROR, "Failed to update updater user lists in uci!");
+		return {
+			msg = "Failed to write into uci!",
+			tag = "operation-failed",
+			type = "application",
+			severity = "error",
+		};
+	end
+
 end
 
 register_datastore_provider(datastore)
