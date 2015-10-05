@@ -30,7 +30,7 @@ local tags = {
 };
 
 local function load_user_list_definitions()
-	definitions_file_path = os.getenv("NUCI_UPDATER_DEFINITION_PATH") or '/usr/share/updater/definitions'
+	local definitions_file_path = os.getenv("NUCI_UPDATER_DEFINITION_PATH") or '/usr/share/updater/definitions'
 	--[[
 	The file contains lua code, assigning the right table to lists variable.
 	That's why it looks like lists is never assigned in this code.
