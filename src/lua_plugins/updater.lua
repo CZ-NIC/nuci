@@ -327,7 +327,6 @@ function datastore:set_config(config, defop, deferr)
 		activated_set[list_name] = true;
 	end);
 	if not uci_res then
-		reset_uci_cursor();
 		return uci_res, uci_error;
 	end
 	local final_list = {};
@@ -358,8 +357,6 @@ function datastore:set_config(config, defop, deferr)
 			final_res = true;
 		end
 	end
-	commit_execute(final_res);
-	reset_uci_cursor();
 
 	if not final_res then
 		nlog(NLOG_ERROR, "Failed to update updater user lists in uci!");
