@@ -1,0 +1,26 @@
+lists = {
+['honeypot'] = {
+    description_cs = 'Past na roboty zkoušející hesla na SSH.',
+    description_en = 'Trap for password-guessing robots on SSH.',
+    title_cs = 'SSH Honeypot',
+    title_en = 'SSH Honeypot'
+},
+['luci-controls'] = {
+    description_cs = 'Mnoho rozšiřujících záložek a ovládacích prvků do pokročilého rozhraní LuCI.',
+    description_en = 'Several addional tabs and controls for the advanced LuCI interface.',
+    title_cs = 'LuCI rozšíření',
+    title_en = 'LuCI extensions'
+},
+['nas'] = {
+    description_cs = 'Služby umožňující přiojit disk k routeru a používat jej jako síťové úložiště dat.',
+    description_en = 'Services allowing to connect a disk to the router and use it as network data store.',
+    title_cs = 'NAS',
+    title_en = 'NAS'
+},
+['netutils'] = {
+    description_cs = 'Podpora dalších protokolů a druhů připojení.',
+    description_en = 'Support for additional protocols and connection types.',
+    title_cs = 'Rozšíření síťové podpory',
+    title_en = 'Extensions of network protocols'
+},
+};
