@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="neighbours"
+		xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+		xmlns:stats="http://www.nic.cz/ns/router/neighbours">
+	<yang-version value="1"/>
+	<namespace uri="http://www.nic.cz/ns/router/neighbours"/>
+	<prefix value="neighbours"/>
+	<container name="neighbours">
+		<description>
+			<text>Shows a list of neighbours (list of all connected devices).</text>
+		</description>
+		<config value="false"/>
+		<list name="neighbour">
+			<leaf name='mac-address'>
+				<type name='string'/>
+				<description>
+					<text>MAC address of the device.</text>
+				</description>
+			</leaf>
+			<list name='ip-address'>
+				<leaf-list name='ip'>
+					<type name='string'/>
+					<mandatory value='true'/>
+					<description>
+						<text>One of the ip addresses.</text>
+					</description>
+				</leaf-list>
+				<leaf name='connection-count'>
+					<type name="uint64"/>
+					<description>
+						<text>The count of the current connections related to this neighbour.</text>
+					</description>
+				</leaf>
+				<leaf name='nud'>
+					<type name="uint64"/>
+					<description>
+						<text>Neighbour Unreachability Detection State</text>
+					</description>
+				</leaf>
+				<leaf name='router'>
+					<type name="empty"/>
+					<description>
+						<text>Is this IP considered as router.</text>
+					</description>
+				</leaf>
+				<leaf name='dhcp-lease'>
+					<type name="uint64"/>
+					<description>
+						<text>Valid DHCP lease period.</text>
+					</description>
+				</leaf>
+				<leaf name='hostname'>
+					<type name='string'/>
+					<description>
+						<text>Hostaname of the device obtaitned from dhcp.</text>
+					</description>
+				</leaf>
+				<leaf name='interface'>
+					<type name='string'/>
+					<description>
+						<text>Name of the interface where the neighbour is located.</text>
+					</description>
+				</leaf>
+			</list>
+		</list>
+	</container>
+</module>
+

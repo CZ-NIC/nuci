@@ -12,7 +12,8 @@ NUCI_PLUGINS := \
 	smrt \
 	securris \
 	firewall \
-	nuci-tls
+	nuci-tls \
+	neighbours
 
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 
