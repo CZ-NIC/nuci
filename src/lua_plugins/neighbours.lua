@@ -30,6 +30,11 @@ local function parse_dhcp_lease_line(line)
 		table.insert(items, i);
 	end
 
+	-- check whether the table is not too small
+	if #items < 4 then
+		return nil
+	end
+
 	return {
 		lease = items[1],
 		mac = items[2],
@@ -54,6 +59,11 @@ local function parse_ip_neighbours_line(line)
 	-- put items into a table
 	for i in split(line) do
 		table.insert(items, i);
+	end
+
+	-- failed to parse
+	if #items < 2 then
+		return nil
 	end
 
 	-- get ip and nud
@@ -124,17 +134,26 @@ function datastore:get()
 		};
 	end
 	local res = {};
-	for line in lines(out) do
-		local data = parse_ip_neighbours_line(line);
-		-- insert only if the record has a mac address
-		if data.mac then
-			local ip_record = {nud = data.nud, router = data.router, dev = data.dev};
-			if res[data.mac] then
-				res[data.mac][data.ip] = ip_record;
-			else
-				res[data.mac] = {[data.ip] = ip_record};
+	if not pcall(function ()
+			for line in lines(out) do
+				local data = parse_ip_neighbours_line(line);
+				-- insert only if the record has a mac address
+				if data.mac then
+					local ip_record = {nud = data.nud, router = data.router, dev = data.dev};
+					if res[data.mac] then
+						res[data.mac][data.ip] = ip_record;
+					else
+						res[data.mac] = {[data.ip] = ip_record};
+					end
+				end
 			end
-		end
+		end) then
+		return nil, {
+			msg = "Failed to parse 'ip neighbour' command!",
+			tag = "operation-failed",
+			type = "application",
+			severity = "error"
+		};
 	end
 
 	-- read lease file from uci
@@ -147,6 +166,14 @@ function datastore:get()
 	if dhcp_file then
 		for line in dhcp_file:lines() do
 			local data = parse_dhcp_lease_line(line);
+			if not data then
+				return nil, {
+					msg = "Failed to parse dhcp lease file!",
+					tag = "operation-failed",
+					type = "application",
+					severity = "error"
+				};
+			end
 			local ip_record = {hostname = data.hostname, lease = data.lease};
 			if res[data.mac] then
 				if res[data.mac][data.ip] then
@@ -157,9 +184,6 @@ function datastore:get()
 				end
 			else
 				res[data.mac] = {[data.ip] = ip_record};
-			end
-			for k, v in pairs(data) do
-				print(k,v);
 			end
 		end
 		dhcp_file:close();
