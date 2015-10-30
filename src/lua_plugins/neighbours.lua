@@ -141,9 +141,10 @@ function datastore:get()
 				if data.mac then
 					local ip_record = {nud = data.nud, router = data.router, dev = data.dev};
 					if res[data.mac] then
-						res[data.mac][data.ip] = ip_record;
+						res[data.mac][data.dev] = {[data.ip] = ip_record};
 					else
-						res[data.mac] = {[data.ip] = ip_record};
+						res[data.mac] = {};
+						res[data.mac][data.dev] = {[data.ip] = ip_record};
 					end
 				end
 			end
@@ -176,14 +177,37 @@ function datastore:get()
 			end
 			local ip_record = {hostname = data.hostname, lease = data.lease};
 			if res[data.mac] then
-				if res[data.mac][data.ip] then
-					res[data.mac][data.ip].lease = data.lease;
-					res[data.mac][data.ip].hostname = data.hostname;
+				-- record with this mac was found
+				-- try to find a device for this combination of mac and ip
+				local used_dev = nil;
+				for dev, _ in pairs(res[data.mac]) do
+					for k,v in pairs(res[data.mac][dev]) do
+						print(k,v);
+					end
+					if res[data.mac][dev][data.ip] then
+						used_dev = dev;
+						break
+					end
+				end
+				if used_dev then
+					-- device was found -> extend existing record
+					res[data.mac][used_dev][data.ip].lease = data.lease;
+					res[data.mac][used_dev][data.ip].hostname = data.hostname;
 				else
-					res[data.mac][data.ip] = ip_record;
+					-- device was not found -> add record to 'false' device
+					if not res[data.mac][false] then
+						res[data.mac][false] = {};
+					end
+					if not res[data.mac][false][data.ip] then
+						res[data.mac][false][data.ip] = {};
+					end
+					res[data.mac][false][data.ip].lease = data.lease;
+					res[data.mac][false][data.ip].hostname = data.hostname;
 				end
 			else
-				res[data.mac] = {[data.ip] = ip_record};
+				-- mac address was not found add a whole record
+				res[data.mac] = {};
+				res[data.mac][false] = {[data.ip] = ip_record};
 			end
 		end
 		dhcp_file:close();
@@ -223,30 +247,32 @@ function datastore:get()
 
 	-- Create xml
 	for mac, data in pairs(res) do
-		local neighbour = root:add_child('neighbour');
-		neighbour:add_child('mac-address'):set_text(mac);
-		for ip, ip_record in pairs(data) do
-			local ip_dom = neighbour:add_child('ip-address');
-			ip_dom:add_child('ip'):set_text(ip);
-			if ip_record.dev then
-				ip_dom:add_child('interface'):set_text(ip_record.dev);
+		for dev, record in pairs(data) do
+			local neighbour = root:add_child('neighbour');
+			neighbour:add_child('mac-address'):set_text(mac);
+			if dev then
+				neighbour:add_child('interface'):set_text(dev);
 			end
-			if ip_counts[ip] then
-				ip_dom:add_child('connection-count'):set_text(ip_counts[ip]);
-			else
-				ip_dom:add_child('connection-count'):set_text("0");
-			end
-			if ip_record.nud then
-				ip_dom:add_child('nud'):set_text(ip_record.nud);
-			end
-			if ip_record.router then
-				ip_dom:add_child('router');
-			end
-			if ip_record.hostname and ip_record.hostname ~= "*" then
-				ip_dom:add_child('hostname'):set_text(ip_record.hostname);
-			end
-			if ip_record.lease then
-				ip_dom:add_child('dhcp-lease'):set_text(ip_record.lease);
+			for ip, ip_record in pairs(record) do
+				local ip_dom = neighbour:add_child('ip-address');
+				ip_dom:add_child('ip'):set_text(ip);
+				if ip_counts[ip] then
+					ip_dom:add_child('connection-count'):set_text(ip_counts[ip]);
+				else
+					ip_dom:add_child('connection-count'):set_text("0");
+				end
+				if ip_record.nud then
+					ip_dom:add_child('nud'):set_text(ip_record.nud);
+				end
+				if ip_record.router then
+					ip_dom:add_child('router');
+				end
+				if ip_record.hostname and ip_record.hostname ~= "*" then
+					ip_dom:add_child('hostname'):set_text(ip_record.hostname);
+				end
+				if ip_record.lease then
+					ip_dom:add_child('dhcp-lease'):set_text(ip_record.lease);
+				end
 			end
 		end
 	end

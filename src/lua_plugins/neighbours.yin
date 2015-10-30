@@ -17,6 +17,12 @@
 					<text>MAC address of the device.</text>
 				</description>
 			</leaf>
+			<leaf name='interface'>
+				<type name='string'/>
+				<description>
+					<text>Name of the interface where the neighbour is located.</text>
+				</description>
+			</leaf>
 			<list name='ip-address'>
 				<leaf-list name='ip'>
 					<type name='string'/>
@@ -53,12 +59,6 @@
 					<type name='string'/>
 					<description>
 						<text>Hostaname of the device obtaitned from dhcp.</text>
-					</description>
-				</leaf>
-				<leaf name='interface'>
-					<type name='string'/>
-					<description>
-						<text>Name of the interface where the neighbour is located.</text>
 					</description>
 				</leaf>
 			</list>
