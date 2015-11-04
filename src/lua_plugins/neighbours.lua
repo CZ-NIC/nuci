@@ -95,24 +95,19 @@ local function parse_ip_neighbours_line(line)
 	return res;
 end
 
-function read_dhcp_lease_path()
+function read_dhcp_lease_paths()
 	local cursor = get_uci_cursor();
-	local leasefile = nil;
+	local leasefiles = {};
 	cursor:foreach("dhcp", 'dnsmasq', function(section)
-		leasefile = section.leasefile;
+		table.insert(leasefiles, section.leasefile);
 	end);
 	reset_uci_cursor();
 
-	if leasefile then
-		return leasefile;
+	if #leasefiles > 0 then
+		return leasefiles;
 	else
-		nlog(NLOG_ERROR, "Failed to read uci config: dhcp.dnsmasq.leasefile");
-		return nil, {
-			msg = "Failed to read uci!",
-			tag = "operation-failed",
-			type = "application",
-			severity = "error",
-		};
+		nlog(NLOG_WARN, "Failed to read uci config: dhcp.dnsmasq.leasefile. Using default path (/tmp/dhcp.leases)");
+		return {'/tmp/dhcp.leases'};
 	end
 end
 
@@ -126,12 +121,7 @@ function datastore:get()
 	-- Parse ip neighbour command
 	local ret, out, err = run_command(nil, 'ip', 'neighbour');
 	if ret ~= 0 then
-		return nil, {
-			msg = "Failed to trigger 'ip neighbour' command!",
-			tag = "operation-failed",
-			type = "application",
-			severity = "error"
-		};
+		return nil, "Failed to trigger 'ip neighbour' command.";
 	end
 	local res = {};
 	if not pcall(function ()
@@ -143,86 +133,72 @@ function datastore:get()
 					if res[data.mac] then
 						res[data.mac][data.dev] = {[data.ip] = ip_record};
 					else
-						res[data.mac] = {};
-						res[data.mac][data.dev] = {[data.ip] = ip_record};
+						res[data.mac] = {[data.dev] = {[data.ip] = ip_record}};
 					end
 				end
 			end
 		end) then
-		return nil, {
-			msg = "Failed to parse 'ip neighbour' command!",
-			tag = "operation-failed",
-			type = "application",
-			severity = "error"
-		};
+		return nil, "Failed to parse 'ip neighbour' command.";
 	end
 
 	-- read lease file from uci
-	local dhcp_lease_path, err = read_dhcp_lease_path();
-	if not dhcp_lease_path then
-		return nil, err;
-	end
-	-- Parse dhcp leases
-	local dhcp_file = io.open(dhcp_lease_path);
-	if dhcp_file then
-		for line in dhcp_file:lines() do
-			local data = parse_dhcp_lease_line(line);
-			if not data then
-				return nil, {
-					msg = "Failed to parse dhcp lease file!",
-					tag = "operation-failed",
-					type = "application",
-					severity = "error"
-				};
-			end
-			local ip_record = {hostname = data.hostname, lease = data.lease};
-			if res[data.mac] then
-				-- record with this mac was found
-				-- try to find a device for this combination of mac and ip
-				local used_dev = nil;
-				for dev, _ in pairs(res[data.mac]) do
-					for k,v in pairs(res[data.mac][dev]) do
-						print(k,v);
-					end
-					if res[data.mac][dev][data.ip] then
-						used_dev = dev;
-						break
-					end
+	local dhcp_lease_paths = read_dhcp_lease_paths();
+
+	for _, path in pairs(dhcp_lease_paths) do
+		-- Parse dhcp leases
+		local dhcp_file, err_msg, err_code = io.open(path);
+		if dhcp_file then
+			for line in dhcp_file:lines() do
+				local data = parse_dhcp_lease_line(line);
+				if not data then
+					return nil, "Failed to parse dhcp lease file.";
 				end
-				if used_dev then
-					-- device was found -> extend existing record
-					res[data.mac][used_dev][data.ip].lease = data.lease;
-					res[data.mac][used_dev][data.ip].hostname = data.hostname;
+				if res[data.mac] then
+					-- record with this mac was found
+					-- try to find a device for this combination of mac and ip
+					local used_dev = nil;
+					for dev, _ in pairs(res[data.mac]) do
+						if res[data.mac][dev][data.ip] then
+							used_dev = dev;
+							break
+						end
+					end
+					if used_dev then
+						-- device was found -> extend existing record
+						res[data.mac][used_dev][data.ip]["dhcp-lease"] = data.lease;
+						res[data.mac][used_dev][data.ip].hostname = data.hostname;
+					else
+						-- device was not found -> add record to 'false' device
+						if not res[data.mac][false] then
+							res[data.mac][false] = {};
+						end
+						if not res[data.mac][false][data.ip] then
+							res[data.mac][false][data.ip] = {};
+						end
+						res[data.mac][false][data.ip]["dhcp-lease"] = data.lease;
+						res[data.mac][false][data.ip].hostname = data.hostname;
+					end
 				else
-					-- device was not found -> add record to 'false' device
-					if not res[data.mac][false] then
-						res[data.mac][false] = {};
-					end
-					if not res[data.mac][false][data.ip] then
-						res[data.mac][false][data.ip] = {};
-					end
-					res[data.mac][false][data.ip].lease = data.lease;
-					res[data.mac][false][data.ip].hostname = data.hostname;
+					local ip_record = {hostname = data.hostname, ["dhcp-lease"] = data.lease};
+					-- mac address was not found add a whole record
+					res[data.mac] = {
+						[false] = {[data.ip] = {hostname = data.hostname, ["dhcp-lease"] = data.lease}}
+					};
 				end
+			end
+			dhcp_file:close();
+		else
+			if err_code == 2 then
+				--file doesn't exist (dhcp might be turned off)
+				nlog(NLOG_WARN, "Lease file doesn't exists");
 			else
-				-- mac address was not found add a whole record
-				res[data.mac] = {};
-				res[data.mac][false] = {[data.ip] = ip_record};
+				return nil, "Failed to read dhcp lease file: " .. err_msg;
 			end
 		end
-		dhcp_file:close();
-	else
-		--error dhcp might be turned off
-		return nil, {
-			msg = "Failed to read dhcp lease file!",
-			tag = "operation-failed",
-			type = "application",
-			severity = "error"
-		};
 	end
 
 	-- Parse connections
-	local conntrack_file = io.open('/proc/net/nf_conntrack');
+	local conntrack_file, err_msg, err_code = io.open('/proc/net/nf_conntrack');
 	local ip_counts = {};
 	if conntrack_file then
 		for line in conntrack_file:lines() do
@@ -237,12 +213,7 @@ function datastore:get()
 		end
 		conntrack_file:close();
 	else
-		return nil, {
-			msg = "Failed to read conntrack file!",
-			tag = "operation-failed",
-			type = "application",
-			severity = "error"
-		};
+		return nil, "Failed to read conntrack file: " .. err_msg;
 	end
 
 	-- Create xml
@@ -256,22 +227,17 @@ function datastore:get()
 			for ip, ip_record in pairs(record) do
 				local ip_dom = neighbour:add_child('ip-address');
 				ip_dom:add_child('ip'):set_text(ip);
-				if ip_counts[ip] then
-					ip_dom:add_child('connection-count'):set_text(ip_counts[ip]);
-				else
-					ip_dom:add_child('connection-count'):set_text("0");
-				end
-				if ip_record.nud then
-					ip_dom:add_child('nud'):set_text(ip_record.nud);
-				end
-				if ip_record.router then
-					ip_dom:add_child('router');
-				end
-				if ip_record.hostname and ip_record.hostname ~= "*" then
-					ip_dom:add_child('hostname'):set_text(ip_record.hostname);
-				end
-				if ip_record.lease then
-					ip_dom:add_child('dhcp-lease'):set_text(ip_record.lease);
+				ip_dom:add_child('connection-count'):set_text(ip_counts[ip] or "0");
+				for _, key in pairs({'nud', 'dhcp-lease', 'hostname', 'router'}) do
+					if ip_record[key] then
+						if key == 'router' then
+							ip_dom:add_child('router');
+						elseif key == 'hostname' and record.hostname == "*" then
+							-- don't append * hostname
+						else
+							ip_dom:add_child(key):set_text(ip_record[key]);
+						end
+					end
 				end
 			end
 		end

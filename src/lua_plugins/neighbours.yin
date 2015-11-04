@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module name="neighbours"
-		xmlns="urn:ietf:params:xml:ns:yang:yin:1"
-		xmlns:stats="http://www.nic.cz/ns/router/neighbours">
+<module name="neighbours" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
 	<yang-version value="1"/>
 	<namespace uri="http://www.nic.cz/ns/router/neighbours"/>
 	<prefix value="neighbours"/>
@@ -12,7 +10,7 @@
 		<config value="false"/>
 		<list name="neighbour">
 			<leaf name='mac-address'>
-				<type name='string'/>
+				<type name='mac-address'/>
 				<description>
 					<text>MAC address of the device.</text>
 				</description>
@@ -25,7 +23,7 @@
 			</leaf>
 			<list name='ip-address'>
 				<leaf-list name='ip'>
-					<type name='string'/>
+					<type name='ip-address'/>
 					<mandatory value='true'/>
 					<description>
 						<text>One of the ip addresses.</text>
@@ -46,7 +44,7 @@
 				<leaf name='router'>
 					<type name="empty"/>
 					<description>
-						<text>Is this IP considered as router.</text>
+						<text>Is this IP considered a router.</text>
 					</description>
 				</leaf>
 				<leaf name='dhcp-lease'>
