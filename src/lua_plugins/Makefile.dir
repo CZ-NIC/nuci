@@ -10,7 +10,6 @@ NUCI_PLUGINS := \
 	network \
 	user-notify \
 	smrt \
-	securris \
 	firewall \
 	nuci-tls \
 	neighbours
