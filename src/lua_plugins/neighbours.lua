@@ -232,7 +232,7 @@ function datastore:get()
 					if ip_record[key] then
 						if key == 'router' then
 							ip_dom:add_child('router');
-						elseif key == 'hostname' and record.hostname == "*" then
+						elseif key == 'hostname' and ip_record.hostname == "*" then
 							-- don't append * hostname
 						else
 							ip_dom:add_child(key):set_text(ip_record[key]);
