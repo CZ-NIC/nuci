@@ -131,7 +131,11 @@ function datastore:get()
 				if data.mac then
 					local ip_record = {nud = data.nud, router = data.router, dev = data.dev};
 					if res[data.mac] then
-						res[data.mac][data.dev] = {[data.ip] = ip_record};
+						if res[data.mac][data.dev] then
+							res[data.mac][data.dev][data.ip] = ip_record;
+						else
+							res[data.mac][data.dev] = {[data.ip] = ip_record};
+						end
 					else
 						res[data.mac] = {[data.dev] = {[data.ip] = ip_record}};
 					end
