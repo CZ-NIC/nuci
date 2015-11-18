@@ -84,6 +84,12 @@ local function parse_ip_neighbours_line(line)
 		elseif last == "dev" then
 			res.dev = text;
 			last = nil;
+		elseif last == "used" then
+			-- split the string using '/'
+			local splitted = {};
+			for n in string.gmatch(text, "[^/]+") do table.insert(splitted, n) end
+			res.statistics = {used=splitted[1], confirmed=splitted[2], updated=splitted[3]};
+			last = nil;
 		elseif text == "router" then
 			res.router = true;
 			last = nil;
@@ -119,7 +125,7 @@ function datastore:get()
 
 
 	-- Parse ip neighbour command
-	local ret, out, err = run_command(nil, 'ip', 'neighbour');
+	local ret, out, err = run_command(nil, 'ip', '-s', 'neighbour');
 	if ret ~= 0 then
 		return nil, "Failed to trigger 'ip neighbour' command.";
 	end
@@ -129,7 +135,10 @@ function datastore:get()
 				local data = parse_ip_neighbours_line(line);
 				-- insert only if the record has a mac address
 				if data.mac then
-					local ip_record = {nud = data.nud, router = data.router, dev = data.dev};
+					local ip_record = {
+						nud = data.nud, router = data.router, dev = data.dev,
+						statistics = data.statistics
+					};
 					if res[data.mac] then
 						if res[data.mac][data.dev] then
 							res[data.mac][data.dev][data.ip] = ip_record;
@@ -244,6 +253,12 @@ function datastore:get()
 							ip_dom:add_child(key):set_text(ip_record[key]);
 						end
 					end
+				end
+				if ip_record['statistics'] then
+					local stat_dom = ip_dom:add_child('statistics');
+					stat_dom:add_child('used'):set_text(ip_record['statistics']['used']);
+					stat_dom:add_child('confirmed'):set_text(ip_record['statistics']['confirmed']);
+					stat_dom:add_child('updated'):set_text(ip_record['statistics']['updated']);
 				end
 			end
 		end

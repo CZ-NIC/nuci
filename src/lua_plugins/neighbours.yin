@@ -59,6 +59,26 @@
 						<text>Hostaname of the device obtaitned from dhcp.</text>
 					</description>
 				</leaf>
+				<container name="statistics">
+					<leaf name='used'>
+						<type name="uint64"/>
+						<description>
+							<text>Seconds since the record was used.</text>
+						</description>
+					</leaf>
+					<leaf name='confirmed'>
+						<type name="uint64"/>
+						<description>
+							<text>Seconds since the record was confirmed.</text>
+						</description>
+					</leaf>
+					<leaf name='updated'>
+						<type name="uint64"/>
+						<description>
+							<text>Seconds since the record was updated.</text>
+						</description>
+					</leaf>
+				</container>
 			</list>
 		</list>
 	</container>
