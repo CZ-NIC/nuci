@@ -227,6 +227,8 @@ function datastore:get()
 			neighbour:add_child('mac-address'):set_text(mac);
 			if dev then
 				neighbour:add_child('interface'):set_text(dev);
+			else
+				neighbour:add_child('interface'):set_text('unknown');
 			end
 			for ip, ip_record in pairs(record) do
 				local ip_dom = neighbour:add_child('ip-address');
