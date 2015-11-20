@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module name="network" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
-	<yang-version value="1"/>
-	<namespace uri="http://www.nic.cz/ns/router/network"/>
-	<prefix value="network"/>
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/network"/>
+  <prefix value="network"/>
+  <revision date="2014-01-29">
+    <description>Initial revision</description>
+  </revision>
   <rpc name='ping'>
     <description>
       <text>Ping a remote host. Block until the ping is done and report if it was successful, and if so, details. Note that failure to resolve or ping the host is not taken as a NETCONF-level error.</text>

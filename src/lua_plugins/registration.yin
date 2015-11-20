@@ -3,6 +3,9 @@
   <yang-version value="1"/>
   <namespace uri="http://www.nic.cz/ns/router/registration"/>
   <prefix value="registration"/>
+  <revision date="2014-01-20">
+    <description>Initial revision</description>
+  </revision>
   <rpc name='get'>
     <output>
       <leaf name='reg-num'>

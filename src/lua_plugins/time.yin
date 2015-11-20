@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module name="time" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
-	<yang-version value="1"/>
-	<namespace uri="http://www.nic.cz/ns/router/time"/>
-	<prefix value="time"/>
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/time"/>
+  <prefix value="time"/>
+  <revision date="2013-10-07">
+    <description>Initial revision</description>
+  </revision>
   <rpc name='set'>
     <input>
       <leaf name='time'>
