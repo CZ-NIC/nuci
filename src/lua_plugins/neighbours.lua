@@ -254,11 +254,11 @@ function datastore:get()
 						end
 					end
 				end
-				if ip_record['statistics'] then
+				if ip_record.statistics then
 					local stat_dom = ip_dom:add_child('statistics');
-					stat_dom:add_child('used'):set_text(ip_record['statistics']['used']);
-					stat_dom:add_child('confirmed'):set_text(ip_record['statistics']['confirmed']);
-					stat_dom:add_child('updated'):set_text(ip_record['statistics']['updated']);
+					stat_dom:add_child('used'):set_text(ip_record.statistics.used);
+					stat_dom:add_child('confirmed'):set_text(ip_record.statistics.confirmed);
+					stat_dom:add_child('updated'):set_text(ip_record.statistics.updated);
 				end
 			end
 		end
