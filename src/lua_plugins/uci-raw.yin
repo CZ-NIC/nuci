@@ -3,6 +3,9 @@
   <yang-version value="1"/>
   <namespace uri="http://www.nic.cz/ns/router/uci-raw"/>
   <prefix value="uci-raw"/>
+  <revision date="2013-09-04">
+    <description>Initial revision</description>
+  </revision>
   <typedef name="uci-name">
     <description>
       <text>Type for UCI identifiers and file names.</text>
