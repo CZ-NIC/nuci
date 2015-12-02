@@ -17,16 +17,90 @@
 #You should have received a copy of the GNU General Public License
 #along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 
+
+LOCKDIR=/tmp
+
+lock() {
+	local name="$1"
+	local check="$2"
+	if [ "$check" == "true" ] ; then
+		set -o noclobber
+	fi
+	echo $$ 2>/dev/null > "${LOCKDIR}/nuci-tls-${name}-generate"
+	if [ "$?" = 1 ] ; then
+		set +o noclobber
+		msg="Generating TLS certificate: failed to acquire the lock for the client $name"
+		echo "$msg" | logger -p daemon.error -t nuci
+		echo "$msg" >&2
+		return 1
+	fi
+	if [ "$check" == "true" ] ; then
+		set +o noclobber
+	fi
+	echo "Generating TLS certificate: lock acquired (${name}, pid $$)" | logger -p daemon.info -t nuci
+	return 0
+}
+
+unlock() {
+	local name="$1"
+	local lock_file="${LOCKDIR}/nuci-tls-${name}-generate"
+	rm "$lock_file"
+	echo "Generating TLS certificate: lock released (${name})" | logger -p daemon.info -t nuci
+}
+
+# parse command line
+for i in "$@"
+do
+	case "$i" in
+		-l)
+		CHECK_LOCK=true
+		;;
+		-b)
+		BACKGROUND=true
+		;;
+		*)
+		NAME="$i"
+		;;
+	esac
+done
+
+
+# check for the empty name
+if [ -z "$NAME" ] ; then
+	msg="The client name can't be empty!"
+	echo "$msg" | logger -p daemon.error -t nuci
+	echo "$msg" >&2
+	exit 1
+fi
+
+
+# lock if needed else error
+lock "$NAME" "$CHECK_LOCK" || exit 1
+
+# trigger unlock when signals occur
+trap 'unlock "${NAME}"' HUP INT QUIT TERM
+
 set -e
 
-cd /usr/share/nuci/tls/clients
+if [ "$BACKGROUND" = "true" ] ; then
+	# run without lock this program already has it
+	"$0" "$NAME" >/dev/null 2>&1 &
+	# don't unlock (child should override the lock)
+	exit 0
+else
+	# unlock on normal exit
+	trap 'unlock "${NAME}"' EXIT
 
-echo "Generating TLS certificate for client $1" | logger -p daemon.info -t nuci
+	# generate the token
+	cd /usr/share/nuci/tls/clients
 
-echo "$1" | openssl req -new -newkey rsa:4096 -keyout "$1".key -nodes -out "$1".csr -config ../openssl.cnf -extensions usr_client
-openssl ca -out "$1".cert -config ../openssl.cnf -batch -extensions usr_client -infiles "$1".csr
-rm "$1".csr
-cd ../ca
-openssl ca -gencrl -out ca.crl -config ../openssl.cnf
-cd ../clients
-cat "$1".cert "$1".key ../ca/ca.cert >"$1".token
+	echo "Generating TLS certificate for the client $NAME" | logger -p daemon.info -t nuci
+
+	echo "$1" | openssl req -new -newkey rsa:4096 -keyout "$1".key -nodes -out "$1".csr -config ../openssl.cnf -extensions usr_client
+		openssl ca -out "$1".cert -config ../openssl.cnf -batch -extensions usr_client -infiles "$1".csr
+	rm "$1".csr
+	cd ../ca
+	openssl ca -gencrl -out ca.crl -config ../openssl.cnf
+	cd ../clients
+	cat "$1".cert "$1".key ../ca/ca.cert >"$1".token
+fi

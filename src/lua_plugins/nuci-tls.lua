@@ -129,9 +129,17 @@ function datastore:user_rpc(rpc, data)
 				info_badns = self.model_ns
 			};
 		end
-		local ecode, stdout, stderr = run_command(nil, script_dir .. 'new_client', name);
+
+		local command = { script_dir .. 'new_client', '-l'};
+		-- add background flag if set
+		if find_node_name_ns(root, 'background', self.model_ns) then
+			table.insert(command, '-b')
+		end
+		table.insert(command, name);
+
+		local ecode, stdout, stderr = run_command(nil, unpack(command));
 		if ecode ~= 0 then
-			return "Failed to create new client: " .. stderr;
+			return nil, "Failed to create new client: " .. stderr;
 		end
 		return '<ok/>';
 	elseif rpc == 'revoke-client' then

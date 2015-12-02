@@ -58,6 +58,16 @@
           <text>The name of the client to create. It needs to be unique.</text>
         </description>
       </leaf>
+      <leaf name='background'>
+        <type name='empty'/>
+        <mandatory value='false'/>
+        <description>
+            <text>
+                Run the command in a background. It doesn't wait until the token generation is finished.
+                It reports no errors during the generation process. The token will we available for download later.
+            </text>
+        </description>
+      </leaf>
     </input>
   </rpc>
   <rpc name='get-token'>
