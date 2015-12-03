@@ -46,6 +46,18 @@
     <description>
       <text>Drop the whole CA (with authorized clients) and create a new one.</text>
     </description>
+    <input>
+      <leaf name='background'>
+        <type name='empty'/>
+        <mandatory value='false'/>
+        <description>
+            <text>
+                Run the command in a background. It doesn't wait until the CA generation is finished.
+                It reports no errors during the generation process. The CA will we available later.
+            </text>
+        </description>
+      </leaf>
+    </input>
   </rpc>
   <rpc name='new-client'>
     <description>

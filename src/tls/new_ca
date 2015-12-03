@@ -17,44 +17,118 @@
 #You should have received a copy of the GNU General Public License
 #along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 
+LOCKFILE="/tmp/nuci-tls-generate-CA"
+
+lock() {
+	local check="$1"
+	if [ "$check" == "true" ] ; then
+		set -o noclobber
+	fi
+	echo $$ 2>/dev/null > "${LOCKFILE}"
+	if [ "$?" = 1 ] ; then
+		set +o noclobber
+		msg="Generating CA: failed to acquire the lock"
+		echo "$msg" | logger -p daemon.error -t nuci
+		echo "$msg" >&2
+		return 1
+	fi
+	if [ "$check" == "true" ] ; then
+		set +o noclobber
+	fi
+	echo "Generating CA: lock acquired (pid $$)" | logger -p daemon.info -t nuci
+	return 0
+}
+
+unlock() {
+	rm "${LOCKFILE}"
+	echo "Generating CA: lock released" | logger -p daemon.info -t nuci
+}
+
+# parse command line
+for i in "$@"
+do
+	case "$i" in
+		-l)
+		CHECK_LOCK=true
+		;;
+		-b)
+		BACKGROUND=true
+		;;
+		-r)
+		RESTART=true
+		;;
+		-f)
+		FORCE=true
+		;;
+	esac
+done
+
+# lock if needed else error
+lock "$CHECK_LOCK" || exit 1
+
+# trigger unlock when signals occur
+trap "unlock" HUP INT QUIT TERM
+
 set -e
 
-cd /usr/share/nuci/tls/ca
+if [ "$BACKGROUND" = "true" ] ; then
+	# params
+	if [ "$RESTART" = "true" ] ; then
+		restart="-r"
+	fi
+	if [ "$FORCE" = "true" ] ; then
+		force="-f"
+	fi
+	# run without lock this program already has it
+	"$0" "$restart" "$force" >/dev/null 2>&1 &
+	# don't unlock (child should override the lock)
+	exit 0
+else
+	# unlock on normal exit
+	trap "unlock" EXIT
 
-if [ "$1" = "-f" ] ; then
-	rm -f * ../clients/*
-	shift
-fi
+	# generate the CA
+	cd /usr/share/nuci/tls/ca
 
-if [ -f local-dhparam.pem ] ; then
-	echo 'TLS CA ready' | logger -p daemon.info -t nuci
-	exit
-fi
+	if [ "$FORCE" = "true" ] ; then
+		rm -f * ../clients/*
+	fi
 
-if [ '!' -f ca.crl ] ; then
-	echo 'Creating TLS CA' | logger -p daemon.info -t nuci
+	if [ -f local-dhparam.pem ] ; then
+		echo 'TLS CA ready' | logger -p daemon.info -t nuci
+		exit
+	fi
 
-	rm -f *
-	touch index.txt
-	echo 01 >serial
-	echo 01 >crlnumber
-	echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes
-	( ip addr show dev br-lan | grep 'inet ' | sed -e 's/.*inet \([^\/]*\).*/\1/' || echo 'Turris' ) | openssl req -new -newkey rsa:4096 -keyout nuci.key -nodes -out nuci.csr -config ../openssl.cnf
-	openssl ca -out nuci.cert -config ../openssl.cnf -batch -infiles nuci.csr
-	rm -f nuci.csr
-	openssl ca -gencrl -out ca.crl -config ../openssl.cnf
-	ln -s ../provided-dhparam.pem dhparam.pem
+	if [ '!' -f ca.crl ] ; then
+		echo 'Creating TLS CA' | logger -p daemon.info -t nuci
 
-	echo 'Creation of TLS CA complete' | logger -p daemon.info -t nuci
-fi
+		rm -f *
+		touch index.txt
+		echo 01 >serial
+		echo 01 >crlnumber
+		echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes
+		( ip addr show dev br-lan | grep 'inet ' | sed -e 's/.*inet \([^\/]*\).*/\1/' || echo 'Turris' ) | openssl req -new -newkey rsa:4096 -keyout nuci.key -nodes -out nuci.csr -config ../openssl.cnf
+		openssl ca -out nuci.cert -config ../openssl.cnf -batch -infiles nuci.csr
+		rm -f nuci.csr
+		openssl ca -gencrl -out ca.crl -config ../openssl.cnf
+		ln -s ../provided-dhparam.pem dhparam.pem
 
-if [ '!' -f local-dhparam.pem ] ; then
-	echo 'Generating our own dhparams' | logger -p daemon.info -t nuci
-	(
-		openssl dhparam -out local-dhparam.pem 2048
-		rm dhparam.pem
-		ln -s local-dhparam.pem dhparam.pem
+		echo 'Creation of TLS CA complete' | logger -p daemon.info -t nuci
+	fi
+
+	if [ '!' -f local-dhparam.pem ] ; then
+		echo 'Generating our own dhparams' | logger -p daemon.info -t nuci
+		(
+			openssl dhparam -out local-dhparam.pem 2048
+			rm dhparam.pem
+			ln -s local-dhparam.pem dhparam.pem
+			/etc/init.d/nuci-tls restart
+			echo 'dhparams are ready' | logger -p daemon.info -t nuci
+		) >/dev/null 2>&1 &
+	fi
+
+	# The new CA was generated, restart the server
+	if [ "$RESTART" = "true" ] ; then
 		/etc/init.d/nuci-tls restart
-		echo 'dhparams are ready' | logger -p daemon.info -t nuci
-	) >/dev/null 2>&1 &
+	fi
 fi

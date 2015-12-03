@@ -150,13 +150,14 @@ function datastore:user_rpc(rpc, data)
 			info_badns = self.model_ns
 		};
 	elseif rpc == 'reset-CA' then
-		local ecode, stdout, stderr = run_command(nil, script_dir .. 'new_ca', '-f');
-		if ecode ~= 0 then
-			return "Failed to create new CA: " .. stderr;
+		local command = { script_dir .. 'new_ca', '-f', '-l', '-r'};
+		-- add background flag if set
+		if find_node_name_ns(root, 'background', self.model_ns) then
+			table.insert(command, '-b')
 		end
-		local ecode, stdout, stderr = run_command(nil, '/etc/init.d/nuci-tls', 'restart');
+		local ecode, stdout, stderr = run_command(nil, unpack(command));
 		if ecode ~= 0 then
-			return "Failed to restart nuci-tls for new CA: " .. stderr;
+			return nil, "Failed to create new CA: " .. stderr;
 		end
 		return '<ok/>';
 	else
