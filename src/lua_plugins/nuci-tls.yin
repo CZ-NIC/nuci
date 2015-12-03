@@ -53,7 +53,7 @@
         <description>
             <text>
                 Run the command in a background. It doesn't wait until the CA generation is finished.
-                It reports no errors during the generation process. The CA will we available later.
+                It reports no errors during the generation process. The CA will be available later.
             </text>
         </description>
       </leaf>
@@ -76,7 +76,7 @@
         <description>
             <text>
                 Run the command in a background. It doesn't wait until the token generation is finished.
-                It reports no errors during the generation process. The token will we available for download later.
+                It reports no errors during the generation process. The token will be available for download later.
             </text>
         </description>
       </leaf>
