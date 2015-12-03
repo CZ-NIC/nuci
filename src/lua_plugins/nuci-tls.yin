@@ -40,6 +40,13 @@
         </type>
       </leaf>
     </list>
+    <leaf name='generating'>
+      <type name='empty'/>
+      <mandatory value='false'/>
+      <description>
+        <text>When this tag is present CA is being generated. Note that some rpc calls may not be successful.</text>
+      </description>
+    </leaf>
     <config value='false'/>
   </container>
   <rpc name='reset-CA'>

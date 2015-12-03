@@ -30,9 +30,26 @@ local states = {
 	R = 'revoked'
 };
 
+
+function file_exists(path)
+	local file = io.open(path, "r");
+	if file then
+		file:close();
+		return true;
+	end
+	return nil;
+end
+
 function datastore:get()
 	local xml = xmlwrap.new_xml_doc('ca', self.model_ns);
 	local root = xml:root();
+
+	-- check the lockfile whether the CA is not being generated
+	if file_exists('/tmp/nuci-tls-generate-CA') then
+		root:add_child("generating");
+		return xml:strdump();
+	end
+
 	local index, err = io.open(index_file);
 	if not index then
 		nlog(NLOG_ERROR, "The nuci TLS CA is not ready: " .. err);
