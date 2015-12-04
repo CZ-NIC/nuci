@@ -183,3 +183,13 @@ function match_keysets(keys1, keys2)
 	]]
 	return check(keys1, keys2) and check(keys2, keys1);
 end
+
+-- check whether the file on a given path exists
+function file_exists(path)
+	local file = io.open(path, "r");
+	if file then
+		file:close();
+		return true;
+	end
+	return nil;
+end

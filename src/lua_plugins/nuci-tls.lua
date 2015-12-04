@@ -18,6 +18,7 @@ along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 require("datastore");
+require("nutils");
 
 local datastore = datastore("nuci-tls.yin");
 local dir = '/usr/share/nuci/tls/ca/';
@@ -29,16 +30,6 @@ local states = {
 	E = 'expired',
 	R = 'revoked'
 };
-
-
-function file_exists(path)
-	local file = io.open(path, "r");
-	if file then
-		file:close();
-		return true;
-	end
-	return nil;
-end
 
 function datastore:get()
 	local xml = xmlwrap.new_xml_doc('ca', self.model_ns);
