@@ -106,7 +106,7 @@ else
 		touch index.txt
 		echo 01 >serial
 		echo 01 >crlnumber
-		echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes
+		echo 'Turris CA' | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.cert -config ../openssl.cnf -nodes -days 3650
 		( ip addr show dev br-lan | grep 'inet ' | sed -e 's/.*inet \([^\/]*\).*/\1/' || echo 'Turris' ) | openssl req -new -newkey rsa:4096 -keyout nuci.key -nodes -out nuci.csr -config ../openssl.cnf
 		openssl ca -out nuci.cert -config ../openssl.cnf -batch -infiles nuci.csr
 		rm -f nuci.csr
