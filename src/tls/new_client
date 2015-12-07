@@ -97,7 +97,7 @@ else
 	echo "Generating TLS certificate for the client $NAME" | logger -p daemon.info -t nuci
 
 	echo "$1" | openssl req -new -newkey rsa:4096 -keyout "$1".key -nodes -out "$1".csr -config ../openssl.cnf -extensions usr_client
-		openssl ca -out "$1".cert -config ../openssl.cnf -batch -extensions usr_client -infiles "$1".csr
+	openssl ca -out "$1".cert -config ../openssl.cnf -batch -extensions usr_client -infiles "$1".csr
 	rm "$1".csr
 	cd ../ca
 	openssl ca -gencrl -out ca.crl -config ../openssl.cnf
