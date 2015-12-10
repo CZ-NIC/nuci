@@ -25,12 +25,17 @@ local board;
 
 local networks = {
 	Turris = {
-		eth0 = 'unused',
+		eth0 = 'internal',
 		eth1 = 'internal',
 		eth2 = 'external'
 	},
 	['TP-Link TL-WDR4900 v1'] = {
 		eth0 = 'internal'
+	},
+	['turris-omnia'] = {
+		eth0 = 'internal',
+		eth1 = 'external',
+		eth2 = 'internal'
 	}
 };
 networks['rtrs01'] = networks['Turris'];
@@ -57,7 +62,18 @@ local switch_ports = {
 			[3] = 'external',
 			[4] = 'external',
 			[5] = 'external',
-			[6] = 'unused'
+			[6] = 'internal'
+		}
+	},
+	['turris-omnia'] = {
+		switch0 = {
+			[0] = 'external',
+			[1] = 'external',
+			[2] = 'external',
+			[3] = 'external',
+			[4] = 'external',
+			[5] = 'internal',
+			[6] = 'internal',
 		}
 	}
 };
