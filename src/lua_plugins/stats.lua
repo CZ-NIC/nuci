@@ -24,7 +24,7 @@ require("nutils");
 local board;
 
 local networks = {
-	Turris = {
+	['Turris'] = {
 		eth0 = 'internal',
 		eth1 = 'internal',
 		eth2 = 'external'
@@ -43,7 +43,7 @@ networks['rtrs02'] = networks['Turris'];
 networks['turris'] = networks['Turris'];
 
 local switch_ports = {
-	Turris = {
+	['Turris'] = {
 		switch0 = {
 			[0] = 'internal',
 			[1] = 'external',
