@@ -123,10 +123,10 @@ function datastore:user_rpc(rpc, data)
 		local server_params = {};
 		for _, server in ipairs(servers) do
 			nlog(NLOG_TRACE, "NTP server: ", server);
-			table.extend(server_params, {'-p', server});
+			table.extend(server_params, {server});
 		end
 		-- Run the ntp
-		local code, stdout, stderr = run_command(nil, 'ntpd', '-n', '-q', unpack(server_params));
+		local code, stdout, stderr = run_command(nil, 'ntpdate', unpack(server_params));
 		if code == 0 then
 			return systohc();
 		else
