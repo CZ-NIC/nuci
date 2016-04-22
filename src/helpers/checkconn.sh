@@ -25,7 +25,7 @@ YEAR=$(date +%Y)
 
 if [ "$YEAR" -lt "2000" ] ; then
 	# The time is lost, we need NTP badly
-	ntpd -n -q -p 217.31.205.226 || true # If this fails due to network problems, don't abort the script just yet
+	ntpdate 217.31.202.100 || true # If this fails due to network problems, don't abort the script just yet
 fi
 
 /etc/init.d/unbound restart # Clean the cache
