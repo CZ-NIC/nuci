@@ -25,27 +25,97 @@ local datastore = datastore('registration.yin');
 -- Where we get the challenge
 local challenge_url = 'https://api.turris.cz/challenge.cgi';
 
-function datastore:user_rpc(rpc)
-	if rpc == 'get' then
-		--[[
-		Download the challenge and generate a response to it.
+-- Where registration lookup url
+local lookup_url = 'https://www.turris.cz/api/registration-lookup.json'
 
-		Notice that the challenge doesn't check certificate here. It is simply not needed.
-		If someone is able to MITM the communication, they'd be able to only prevent
-		generation of the correct response, but that would be possible with the
-		cert checking too.
-		]]
-		local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k ' .. challenge_url .. ' | atsha204cmd challenge-response');
-		if ecode ~= 0 then
-			return nil, "Can't generate challenge:" .. stderr;
+function get_registration_code()
+	--[[
+	Download the challenge and generate a response to it.
+
+	Notice that the challenge doesn't check certificate here. It is simply not needed.
+	If someone is able to MITM the communication, they'd be able to only prevent
+	generation of the correct response, but that would be possible with the
+	cert checking too.
+	]]
+	local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k ' .. challenge_url .. ' | atsha204cmd challenge-response');
+	if ecode ~= 0 then
+		return nil, "Can't generate challenge:" .. stderr;
+	end
+	return trimr(stdout:sub(1, 8))
+end
+
+function datastore:user_rpc(rpc, data)
+	local xml = xmlwrap.read_memory(data);
+	local root = xml:root();
+
+	if rpc == 'get' then
+		local registration_code, err_msg = get_registration_code()
+		if not registration_code then
+			return nil, err_msg
 		end
-		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. trimr(stdout:sub(1, 8)) .. "</reg-num>";
+		return "<reg-num xmlns='" .. self.model_ns .. "'>" .. registration_code .. "</reg-num>";
+
 	elseif rpc == 'serial' then
 		local ecode, stdout, stderr = run_command(nil, 'atsha204cmd', 'serial-number');
 		if ecode ~= 0 then
 			return nil, "Can't get serial numebr: " .. stderr;
 		end
 		return "<serial xmlns='" .. self.model_ns .. "'>" .. trimr(stdout) .. "</serial>";
+
+	elseif rpc == 'get-status' then
+		local email_node = find_node_name_ns(root, 'email', self.model_ns);
+		if not email_node then
+			return nil, {
+				msg = "Missing the <email> parameter, can't query the server without an email",
+				app_tag = 'data-missing',
+				info_badelem = 'email',
+				info_badns = self.model_ns
+			}
+		end
+		local language_node = find_node_name_ns(root, 'lang', self.model_ns);
+		local language = 'en';
+		if code_node and language_node:text():len() == 2 then  -- expect 2 letter for country code
+			language = language_node:text();
+		end
+		local registration_code, err_msg = get_registration_code();
+		if not registration_code then
+			return nil, err_msg;
+		end
+
+		-- query the server
+		local ecode, stdout, stderr = run_command(
+			nil, 'curl', '-f', '-s', '-L',  '-H', '"Accept-Language: ' .. language .. '"',
+			'-H', '"Accept: application/json"', '--cacert', '/etc/ssl/startcom.pem', '--crlfile',
+			'/etc/ssl/crl.pem',
+			lookup_url .. "?registration_code=" .. registration_code .. "&email=" .. email_node:text()
+		);
+		if ecode ~= 0 then
+			return nil, "The communication with the registration web failed:" .. stderr;
+		end
+
+		-- parse and check json
+		status = stdout:match('"status":[^"]*"([^"]*)"')
+		if not status then
+			return nil, "Mandatory status missing in the server response:" .. stdout;
+		end
+		if not(status == "free" or status == "owned" or status == "foreign") then
+			return nil, "Incorrect status obtained for the server:" .. status;
+		end
+		url = stdout:match('"url":[^"]*"([^"]*)"')
+		if not url and (status == "free" or status == "foreign") then
+			return nil, "Missing url in the server response:" .. stdout;
+		end
+
+		-- build xml response
+		local xml_response = xmlwrap.new_xml_doc("get-status", self.model_ns);
+		local node = xml_response:root();
+		node:add_child('status'):set_text(status);
+		if url then
+			node:add_child('url'):set_text(url);
+		end
+
+		return xml_response:strdump();
+
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",

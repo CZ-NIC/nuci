@@ -26,4 +26,45 @@
       <text>A request to provide serial number of the device (not part of statistics due to slow way of getting it).</text>
     </description>
   </rpc>
+  <rpc name='get-status'>
+    <description>
+      <text>Query the turris web and ask whether the current registration code is used with the selected email.</text>
+    </description>
+    <input>
+      <leaf name='email'>
+        <type name='string'/>
+        <description>
+          <text>Email to check the registration against.</text>
+        </description>
+        <mandatory value='true'/>
+      </leaf>
+      <leaf name='lang'>
+        <type name='string'/>
+        <description>
+          <text>Language modification of the turris web.</text>
+        </description>
+        <mandatory value='false'/>
+      </leaf>
+    </input>
+    <output>
+      <leaf name='status'>
+        <type name='enumeration'>
+          <enum name='owned'/>
+          <enum name='foreign'/>
+          <enum name='free'/>
+        </type>
+        <description>
+          <text>Status of the query.</text>
+        </description>
+        <mandatory value='true'/>
+      </leaf>
+      <leaf name='url'>
+        <type name='uri'/>
+        <description>
+          <text>Url where the router can be registered.</text>
+        </description>
+        <mandatory value='false'/>
+      </leaf>
+    </output>
+  </rpc>
 </module>
