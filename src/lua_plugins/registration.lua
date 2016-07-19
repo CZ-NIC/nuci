@@ -26,7 +26,9 @@ local datastore = datastore('registration.yin');
 local challenge_url = 'https://api.turris.cz/challenge.cgi';
 
 -- Where registration lookup url
-local lookup_url = 'https://www.turris.cz/api/registration-lookup.json'
+local lookup_url = 'https://www.turris.cz/api/registration-lookup.txt';
+
+local connection_timeout = 10
 
 function get_registration_code()
 	--[[
@@ -37,7 +39,7 @@ function get_registration_code()
 	generation of the correct response, but that would be possible with the
 	cert checking too.
 	]]
-	local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k ' .. challenge_url .. ' | atsha204cmd challenge-response');
+	local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k -m ' .. connection_timeout .. ' ' .. challenge_url .. ' | atsha204cmd challenge-response');
 	if ecode ~= 0 then
 		return nil, "Can't generate challenge:" .. stderr;
 	end
@@ -82,26 +84,30 @@ function datastore:user_rpc(rpc, data)
 			return nil, err_msg;
 		end
 
+		-- update crl
+		run_command(nil, 'get-api-crl');
+
 		-- query the server
 		local ecode, stdout, stderr = run_command(
 			nil, 'curl', '-f', '-s', '-L',  '-H', '"Accept-Language: ' .. language .. '"',
-			'-H', '"Accept: application/json"', '--cacert', '/etc/ssl/startcom.pem', '--crlfile',
-			'/etc/ssl/crl.pem',
+			'-H', '"Accept: plain/text"', '--cacert', '/etc/ssl/startcom.pem', '--crlfile',
+			'/etc/ssl/crl.pem', '-m', tostring(connection_timeout),
 			lookup_url .. "?registration_code=" .. registration_code .. "&email=" .. email_node:text()
 		);
 		if ecode ~= 0 then
 			return nil, "The communication with the registration web failed:" .. stderr;
 		end
 
-		-- parse and check json
-		status = stdout:match('"status":[^"]*"([^"]*)"')
+		-- parse the answer
+		status = stdout:match("status:%s*([^%s]+)")
+
 		if not status then
 			return nil, "Mandatory status missing in the server response:" .. stdout;
 		end
 		if not(status == "free" or status == "owned" or status == "foreign") then
 			return nil, "Incorrect status obtained for the server:" .. status;
 		end
-		url = stdout:match('"url":[^"]*"([^"]*)"')
+		url = stdout:match("url:%s*([^%s]+)")
 		if not url and (status == "free" or status == "foreign") then
 			return nil, "Missing url in the server response:" .. stdout;
 		end
