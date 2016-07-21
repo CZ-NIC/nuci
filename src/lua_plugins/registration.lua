@@ -119,6 +119,7 @@ function datastore:user_rpc(rpc, data)
 		if url then
 			node:add_child('url'):set_text(url);
 		end
+		node:add_child('reg-num'):set_text(registration_code);
 
 		return xml_response:strdump();
 
