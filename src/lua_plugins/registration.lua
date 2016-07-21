@@ -41,7 +41,7 @@ function get_registration_code()
 	]]
 	local ecode, stdout, stderr = run_command(nil, 'sh', '-c', 'curl -k -m ' .. connection_timeout .. ' ' .. challenge_url .. ' | atsha204cmd challenge-response');
 	if ecode ~= 0 then
-		return nil, "Can't generate challenge:" .. stderr;
+		return nil, "Can't generate challenge: " .. stderr;
 	end
 	return trimr(stdout:sub(1, 8))
 end
@@ -60,7 +60,7 @@ function datastore:user_rpc(rpc, data)
 	elseif rpc == 'serial' then
 		local ecode, stdout, stderr = run_command(nil, 'atsha204cmd', 'serial-number');
 		if ecode ~= 0 then
-			return nil, "Can't get serial numebr: " .. stderr;
+			return nil, "Can't get serial number: " .. stderr;
 		end
 		return "<serial xmlns='" .. self.model_ns .. "'>" .. trimr(stdout) .. "</serial>";
 
@@ -89,27 +89,46 @@ function datastore:user_rpc(rpc, data)
 
 		-- query the server
 		local ecode, stdout, stderr = run_command(
-			nil, 'curl', '-f', '-s', '-L',  '-H', '"Accept-Language: ' .. language .. '"',
+			nil, 'curl', '-s', '-S', '-L', '-H', '"Accept-Language: ' .. language .. '"',
 			'-H', '"Accept: plain/text"', '--cacert', '/etc/ssl/startcom.pem', '--crlfile',
-			'/etc/ssl/crl.pem', '-m', tostring(connection_timeout),
+			'/etc/ssl/crl.pem', '-m', tostring(connection_timeout), '-w', "\ncode: %{http_code}",
 			lookup_url .. "?registration_code=" .. registration_code .. "&email=" .. email_node:text()
 		);
 		if ecode ~= 0 then
-			return nil, "The communication with the registration web failed:" .. stderr;
+			return nil, "The communication with the registration web failed: " .. stderr;
+		end
+
+		-- test for errors
+		local err = stdout:match("^error:%s*([^\n]+)")
+		if err then
+			return nil, {
+				msg = "Error occured: " .. err .. ' (registration_code=' .. registration_code .. ', email=' .. email_node:text() .. ')',
+				app_tag = 'operation-failed',
+			}
+		end
+
+		-- read the http code - the last occurence of `code:`
+		-- (it should be appended by curl)
+		local http_code = stdout:match(".*code:%s*(%d+)")
+		if http_code ~= "200" then
+			return nil, {
+				msg = "Unexpected http status occured: " .. http_code .. ' (registration_code=' .. registration_code .. ', email=' .. email_node:text() .. ')',
+				app_tag = 'operation-failed',
+			}
 		end
 
 		-- parse the answer
-		status = stdout:match("status:%s*([^%s]+)")
+		local status = stdout:match("status:%s*([^\n]+)")
 
 		if not status then
-			return nil, "Mandatory status missing in the server response:" .. stdout;
+			return nil, "Mandatory status missing in the server response: " .. stdout;
 		end
 		if not(status == "free" or status == "owned" or status == "foreign") then
-			return nil, "Incorrect status obtained for the server:" .. status;
+			return nil, "Incorrect status obtained for the server: " .. status;
 		end
-		url = stdout:match("url:%s*([^%s]+)")
+		url = stdout:match("url:%s*([^\n]+)")
 		if not url and (status == "free" or status == "foreign") then
-			return nil, "Missing url in the server response:" .. stdout;
+			return nil, "Missing url in the server response: " .. stdout;
 		end
 
 		-- build xml response
