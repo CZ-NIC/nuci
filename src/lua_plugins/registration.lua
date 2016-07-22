@@ -30,6 +30,12 @@ local lookup_url = 'https://www.turris.cz/api/registration-lookup.txt';
 
 local connection_timeout = 10
 
+function simple_escape(str)
+	return str:gsub("[ :/?#%[%]@!$&'()*+,;=]", function (char)
+	    return string.format('%%%02X', string.byte(char))
+	end)
+end
+
 function get_registration_code()
 	--[[
 	Download the challenge and generate a response to it.
@@ -92,7 +98,7 @@ function datastore:user_rpc(rpc, data)
 			nil, 'curl', '-s', '-S', '-L', '-H', '"Accept-Language: ' .. language .. '"',
 			'-H', '"Accept: plain/text"', '--cacert', '/etc/ssl/startcom.pem', '--crlfile',
 			'/etc/ssl/crl.pem', '-m', tostring(connection_timeout), '-w', "\ncode: %{http_code}",
-			lookup_url .. "?registration_code=" .. registration_code .. "&email=" .. email_node:text()
+			lookup_url .. "?registration_code=" .. registration_code .. "&email=" .. simple_escape(email_node:text())
 		);
 		if ecode ~= 0 then
 			return nil, "The communication with the registration web failed: " .. stderr;
