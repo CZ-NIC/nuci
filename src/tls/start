@@ -18,6 +18,6 @@
 #along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 
 set -e
-/usr/share/nuci/tls/new_ca
+/usr/share/nuci/tls/new_ca -l
 cd /
 exec socat OPENSSL-LISTEN:6513,fork,method=TLS1.2,cert=/usr/share/nuci/tls/ca/nuci.cert,key=/usr/share/nuci/tls/ca/nuci.key,cafile=/usr/share/nuci/tls/ca/ca.cert,dhparam=/usr/share/nuci/tls/ca/dhparam.pem,reuseaddr,forever,pf=ip6,ipv6only=0 EXEC:/usr/bin/nuci
