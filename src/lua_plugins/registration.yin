@@ -65,6 +65,13 @@
         </description>
         <mandatory value='false'/>
       </leaf>
+      <leaf name='reg-num'>
+        <type name='string'/>
+        <description>
+          <text>Registration code.</text>
+        </description>
+        <mandatory value='true'/>
+      </leaf>
     </output>
   </rpc>
 </module>
