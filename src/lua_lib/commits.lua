@@ -75,9 +75,9 @@ local restart_overrides = {
 	-- Some things in the network config need full restart instead of reload
 	-- Reload dnsmasq after network change, as it may be sitting on the old network setup
 	network = {'sh', '-c', '/etc/init.d/network restart && /etc/init.d/dnsmasq reload'},
-	-- Clean cache of unbound by explicit restart instead of reload.
+	-- Clean cache of resolver by explicit restart instead of reload.
 	-- The resolving might change and the old values could be wrong.
-	unbound = {'/etc/init.d/unbound', 'restart'}
+	resolver = {'/etc/init.d/resolver', 'restart'}
 };
 
 local function restart_daemons()
