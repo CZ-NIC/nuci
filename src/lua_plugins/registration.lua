@@ -49,7 +49,7 @@ function get_registration_code()
 	if ecode ~= 0 then
 		return nil, "Can't generate challenge: " .. stderr;
 	end
-	return trimr(stdout:sub(1, 8))
+	return trimr(stdout:sub(1, 16))
 end
 
 function datastore:user_rpc(rpc, data)
