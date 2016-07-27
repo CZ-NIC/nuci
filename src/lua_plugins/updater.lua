@@ -88,7 +88,7 @@ function datastore:get()
 	local failure_file = io.open(state_dir .. '/last_error');
 	local failure;
 	if failure_file then
-		failure = trimr(failure_file:lines()());
+		failure = trimr(failure_file:read("*a"));
 		failure_file:close();
 	end
 	local state_file = io.open(state_dir .. '/state');
