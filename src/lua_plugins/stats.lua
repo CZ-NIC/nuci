@@ -470,6 +470,9 @@ local commands = {
 					phy = node:add_child('phy');
 					phy:add_child('name'):set_text(name);
 					parse = false;
+				elseif line:match('\s*VHT Capabilities.*') then
+					phy:add_child('vht-capabilities');
+					parse = false;
 				elseif line:match('Frequencies:$') then
 					parse = true;
 				elseif line:match(':$') then
