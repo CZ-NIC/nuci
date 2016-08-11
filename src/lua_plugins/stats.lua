@@ -32,7 +32,7 @@ local networks = {
 	['TP-Link TL-WDR4900 v1'] = {
 		eth0 = 'internal'
 	},
-	['turris-omnia'] = {
+	['rtrom01'] = {
 		eth0 = 'internal',
 		eth1 = 'external',
 		eth2 = 'internal'
@@ -65,7 +65,7 @@ local switch_ports = {
 			[6] = 'internal'
 		}
 	},
-	['turris-omnia'] = {
+	['rtrom01'] = {
 		switch0 = {
 			[0] = 'external',
 			[1] = 'external',
@@ -469,6 +469,9 @@ local commands = {
 				if name then
 					phy = node:add_child('phy');
 					phy:add_child('name'):set_text(name);
+					parse = false;
+				elseif line:match('\s*VHT Capabilities.*') then
+					phy:add_child('vht-capabilities');
 					parse = false;
 				elseif line:match('Frequencies:$') then
 					parse = true;
