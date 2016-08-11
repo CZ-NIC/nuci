@@ -120,7 +120,7 @@ function datastore:user_rpc(rpc, data)
 			};
 		end
 		-- Construct the param table
-		local server_params = {};
+		local server_params = {'-u'};
 		for _, server in ipairs(servers) do
 			nlog(NLOG_TRACE, "NTP server: ", server);
 			table.extend(server_params, {server});
