@@ -36,7 +36,7 @@ GATEWAY6=$(route -n -A inet6 | grep '^::/0' | sed -e 's/^::\/0 *//;s/ *$//g;s/ .
 IP6='2001:1488:0:3::2 2001:500:3::42 2001:500:2d::d 2606:2800:220:6d:26bf:1447:1097:aa7'
 NAMES='api.turris.cz www.nic.cz c.root-servers.net'
 BAD_NAMES='www.rhybar.cz' # Any others?
-TIME=2
+TIME=6
 
 do_check() {
 	MESSAGE="$1"
@@ -58,7 +58,7 @@ do_check_dns() {
 	for ADDRESS in "$@" ; do
 		(
 			if busybox ping -q -w"$TIME" "$ADDRESS" 2>/dev/null | grep -q "^PING $ADDRESS ([0-9a-fA-F.:]*)" >/dev/null 2>&1 ; then
-				echo "$MESSAGE"
+				[ -z "$MESSAGE" ] || echo "$MESSAGE"
 			fi
 		) &
 		KILL="$KILL $!"
@@ -70,7 +70,7 @@ do_check_dns() {
 KILL=$$
 run_timer() {
 	(
-		sleep 3 && kill $KILL
+		sleep "`expr $TIME + 1`" && kill $KILL
 	) &
 }
 
@@ -78,6 +78,10 @@ do_check V4 $IP
 do_check V6 $IP6
 do_check GATE4 $GATEWAY
 do_check GATE6 $GATEWAY6
+# HACK to work around knot taking too long to resolve, so we fill the cache first and test later
+do_check_dns "" $NAMES
+do_check_dns "" $BAD_NAMES
+sleep $TIME
 do_check_dns DNS $NAMES
 do_check_dns BADSEC $BAD_NAMES
 
