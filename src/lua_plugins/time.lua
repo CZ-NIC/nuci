@@ -127,9 +127,9 @@ function datastore:user_rpc(rpc, data)
 		end
 		-- Run the ntp and enable sysntp
 		local code, stdout, stderr = run_command(nil, 'ntpdate', unpack(server_params));
+		local code_null, stdout_null, stderr_null = run_command(nil, '/etc/init.d/sysntpd', 'enable');
+		code_null, stdout_null, stderr_null = run_command(nil, '/etc/init.d/sysntpd', 'start');
 		if code == 0 then
-			code, local_time, stderr = run_command(nil, '/etc/init.d/sysntpd', 'enable');
-			code, local_time, stderr = run_command(nil, '/etc/init.d/sysntpd', 'start');
 			return systohc();
 		else
 			return nil, "Failed to run ntp: " .. stderr;
