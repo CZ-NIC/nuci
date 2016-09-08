@@ -1,5 +1,5 @@
 --[[
-Copyright 2013-2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2013-2016, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -159,6 +159,40 @@ function datastore:get()
 			node:set_text(value);
 			node:set_attribute('xml:lang', lang);
 		end
+	end
+
+
+	local current_req_file = io.open('/usr/share/updater/need_approval');
+	local current_req_hash;
+	if current_req_file then
+		current_req_hash = trimr(current_req_file:read('*l') or '');
+	end
+
+	local req_file = io.open('/usr/share/updater/approvals');
+	if req_file then
+		for line in req_file:lines() do
+			local hash, status, time = line:match('(%S+)%s+(%S+)%s+(%S+)');
+			local node = root:add_child('approval-request');
+			node:add_child('id'):set_text(hash);
+			node:add_child('status'):set_text(status);
+			node:add_child('time'):set_text(time);
+			if current_req_hash == hash then
+				node:add_child('current');
+				-- Safe to call :lines() here, current_req_file must exist as we read the hash from there so it can be same as the one we process
+				for pkg in current_req_file:lines() do
+					local op, version, name = pkg:match('(%S+)%s+(%S+)%s+(%S+)');
+					if version ~= '-' then
+						name = name .. ' ' .. version;
+					end
+					node:add_child(op):set_text(name);
+				end
+			end
+		end
+		req_file:close();
+	end
+
+	if current_req_file then
+		current_req_file:close();
 	end
 
 	return xml:strdump();
