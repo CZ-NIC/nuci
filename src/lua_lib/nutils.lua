@@ -141,6 +141,11 @@ function iter2list(iter)
 	return result;
 end
 
+-- Like split, but returns the values as multiple results instead of iterator
+function words(str)
+	return unpack(iter2list(split(str)))
+end
+
 --[[
 Drop the <?xml …?> at the beginning of string.
 ]]
