@@ -1,5 +1,5 @@
 --[[
-Copyright 2013-2015, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2013-2016, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -22,6 +22,7 @@ require("datastore");
 local datastore = datastore("updater.yin");
 
 local state_dir = '/tmp/update-state';
+local approval_file_name = '/usr/share/updater/approvals';
 
 local tags = {
 	I = 'install',
@@ -161,14 +162,93 @@ function datastore:get()
 		end
 	end
 
+
+	local current_req_file = io.open('/usr/share/updater/need_approval');
+	local current_req_hash;
+	if current_req_file then
+		current_req_hash = trimr(current_req_file:read('*l') or '');
+	end
+
+	local req_file = io.open(approval_file_name);
+	if req_file then
+		for line in req_file:lines() do
+			local hash, status, time = words(line);
+			local node = root:add_child('approval-request');
+			node:add_child('id'):set_text(hash);
+			node:add_child('status'):set_text(status);
+			node:add_child('time'):set_text(time);
+			if current_req_hash == hash then
+				node:add_child('current');
+				-- Safe to call :lines() here, current_req_file must exist as we read the hash from there so it can be same as the one we process
+				for pkg in current_req_file:lines() do
+					local op, version, name = words(pkg);
+					if version ~= '-' then
+						name = name .. ' ' .. version;
+					end
+					node:add_child(op):set_text(name);
+				end
+			end
+		end
+		req_file:close();
+	end
+
+	if current_req_file then
+		current_req_file:close();
+	end
+
 	return xml:strdump();
 end
 
-function datastore:user_rpc(rpc)
+function datastore:user_rpc(rpc, data)
 	if rpc == 'check' then
 		local code, stdout, stderr = run_command(nil, 'updater.sh', '-b', '-n');
 		if code ~= 0 then
 			return nil, "Failed to run the updater: " .. stderr;
+		end
+		return '<ok/>';
+	elseif rpc == 'grant' or rpc == 'deny' then
+		local nst;
+		if rpc == 'grant' then
+			nst = 'granted'
+		else
+			nst = 'denied'
+		end
+		local xml = xmlwrap.read_memory(data);
+		local root = xml:root();
+		local ids = {}
+		for child in root:iterate() do
+			local name, ns = child:name();
+			if ns == self.model_ns and name == 'id' then
+				ids[child:text()] = true
+			end
+		end
+		if not next(ids) then
+			return nil, {
+				msg = "Missing at least one <id> element",
+				app_tag = "data-missing",
+				info_badelem = 'id',
+				info_badns = self.model_ns
+			}
+		end
+		local ifile = io.open(approval_file_name)
+		if ifile then -- If the file doesn't exist, there are no approvals, so nothing for us to change.
+			local ofile, err = io.open(approval_file_name .. '.tmp', 'w')
+			if not ofile then return err end
+			for l in ifile:lines() do
+				local hash, status, time = words(l)
+				if ids[hash] then
+					status = nst
+				end
+				ofile:write(table.concat({hash, status, time}, ' ') .. "\n")
+			end
+			ifile:close()
+			ofile:close()
+			--[[
+			Yes, there's a race condition, someone could have written into ifile in between.
+			But the chance seems so slight that we don't want to complicate the code with
+			real locking (which everyone would have to do anyway).
+			]]
+			os.rename(approval_file_name .. '.tmp', approval_file_name)
 		end
 		return '<ok/>';
 	else

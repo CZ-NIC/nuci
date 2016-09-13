@@ -6,9 +6,44 @@
   <revision date="2015-09-25">
     <description>Initial revision</description>
   </revision>
+  <revision date="2016-09-09">
+    <description>Delayed updates support</description>
+  </revision>
   <rpc name='check'>
     <description>
       <text>Start the updater and check for new updates. No parameters or result (eg. the &lt;ok/&gt; is sent in answer)</text>
+    </description>
+  </rpc>
+  <rpc name='grant'>
+    <input>
+      <leaf-list name='id'>
+        <type name='string'>
+          <pattern value='[a-f0-9]+'/>
+        </type>
+        <min-elements value='1'/>
+        <description>
+          <text>The ID of the approval request to grant.</text>
+        </description>
+      </leaf-list>
+    </input>
+    <description>
+      <text>Allow the updater to perform the listed operations.</text>
+    </description>
+  </rpc>
+  <rpc name='deny'>
+    <input>
+      <leaf-list name='id'>
+        <type name='string'>
+          <pattern value='[a-f0-9]+'/>
+        </type>
+        <min-elements value='1'/>
+        <description>
+          <text>The ID of the approval request to deny.</text>
+        </description>
+      </leaf-list>
+    </input>
+    <description>
+      <text>Forbid the updater to perform the listed operations.</text>
     </description>
   </rpc>
   <container name='updater'>
@@ -94,6 +129,54 @@
       </leaf-list>
       <description>
         <text>List of available package lists the user might request to be installed. Each provides some kind of functionality (like NAS). To get one, it needs to be recorded in configuration and the updater run.</text>
+      </description>
+    </list>
+    <list name='approval-request'>
+      <key name='id'/>
+      <leaf name='id'>
+        <type name='string'>
+          <pattern value='[a-f0-9]+'/>
+        </type>
+        <description>
+          <text>An opaque identifier of this approval request.</text>
+        </description>
+      </leaf>
+      <leaf name='status'>
+        <type name='enumeration'>
+          <enum name='asked'/>
+          <enum name='granted'/>
+          <enum name='denied'/>
+        </type>
+        <description>
+          <text>The decision about this request.</text>
+        </description>
+      </leaf>
+      <leaf name='time'>
+        <type name='uint64'/>
+        <description>
+          <text>The time when the request was asked, in number of seconds since epoch, UTC.</text>
+        </description>
+      </leaf>
+      <leaf name='current'>
+        <type name='empty'/>
+        <description>
+          <text>When present, this is the latest request asked by the updater. It makes little sense to approva older requests and only the latest one has a description of its content. Note that the latest one does not have to exist, as it may have been used up by the updater. In such case, none of the requests is marked as current.</text>
+        </description>
+      </leaf>
+      <leaf-list name='install'>
+        <type name='string'/>
+        <description>
+          <text>A package to be installed. Version is included in the name of the package, separated by a single space. Only present when &lt;current&gt; is present.</text>
+        </description>
+      </leaf-list>
+      <leaf-list name='remove'>
+        <type name='string'/>
+        <description>
+          <text>A package to be removed from system. Only present when &lt;current&gt; is present.</text>
+        </description>
+      </leaf-list>
+      <description>
+        <text>A request to approve updater's plan of action. It can be granted or denied by corresponding RPC.</text>
       </description>
     </list>
   </container>
