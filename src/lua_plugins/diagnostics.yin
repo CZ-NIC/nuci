@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="neighbours" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+	<yang-version value="1"/>
+	<namespace uri="http://www.nic.cz/ns/router/diagnostics"/>
+	<prefix value="diagnostics"/>
+	<revision date="2016-09-26">
+		<description>Initial revision</description>
+	</revision>
+	<rpc name="prepare">
+		<description>
+			<text>Get a list of diagnostics which will help to debug the router in case of any problems.</text>
+		</description>
+		<input>
+			<leaf-list name='module'>
+				<type name='string'/>
+				<description>
+					<text>The name of the module which collects the info.</text>
+				</description>
+			</leaf-list>
+		</input>
+		<output>
+			<leaf name='diag-id'>
+				<type name='string'/>
+				<description>
+					<text>The id which matches the output data.</text>
+				</description>
+			</leaf>
+		</output>
+	</rpc>
+	<rpc name="get-prepared">
+		<input>
+			<leaf name='diag-id'>
+				<type name='string'/>
+				<description>
+					<text>The id which matches the output data.</text>
+				</description>
+				<mandatory value='true'/>
+			</leaf>
+		</input>
+		<output>
+			<container name='diagnostics'>
+				<description>
+					<text>Diagnostics data</text>
+				</description>
+				<leaf name="status">
+					<type name='enumeration'>
+						<enum name='missing'/>
+						<enum name='preparing'/>
+						<enum name='ready'/>
+					</type>
+					<description>
+						<text>The status of the output data.</text>
+					</description>
+				</leaf>
+				<list name='module'>
+					<description>
+						<text>Data collected from a single diagnostics module.</text>
+					</description>
+					<key name='name'/>
+					<leaf name='name'>
+						<type name='string'/>
+						<description>
+							<text>The name of the module.</text>
+						</description>
+					</leaf>
+					<leaf name='output'>
+						<type name='string'/>
+						<description>
+							<text>The output of the module.</text>
+						</description>
+					</leaf>
+				</list>
+			</container>
+		</output>
+	</rpc>
+</module>
+
