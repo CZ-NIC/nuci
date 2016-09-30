@@ -102,7 +102,24 @@ function datastore:user_rpc(rpc, data)
 		end
 
 		return new_xml:strdump();
+
+	elseif rpc == 'list-modules' then
+
+		-- response xml
+		local new_xml = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
+		local new_root = new_xml:root();
+
+		local ecode, stdout, stderr = run_command(nil, "sh", "-c", "ls -1 /usr/share/diagnostics/modules/*.module");
+		if ecode ~= 0 then
+			return nil, "Error getting diagnostics modules: " .. stderr;
+		end
+		for line in lines(stdout) do
+			new_root:add_child("module"):set_text(line:match("\/([^\/]+).module$"));
+		end
+
+		return new_xml:strdump();
 	end
+
 end
 
 

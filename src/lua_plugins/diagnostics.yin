@@ -73,5 +73,18 @@
 			</container>
 		</output>
 	</rpc>
+	<rpc name="list-modules">
+		<description>
+			<text>Get a list of diagnostics modules</text>
+		</description>
+		<output>
+			<leaf-list name='module'>
+				<type name='string'/>
+				<description>
+					<text>The name of the module which collects the info.</text>
+				</description>
+			</leaf-list>
+		</output>
+	</rpc>
 </module>
 
