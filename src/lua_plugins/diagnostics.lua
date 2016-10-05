@@ -24,6 +24,24 @@ local datastore = datastore("diagnostics.yin");
 
 local binary_path = "/usr/share/diagnostics/diagnostics.sh";
 
+function read_modules(stdout, root, dir_path)
+	local finished_modules = {};
+	for line in lines(stdout) do
+		if not line:match("\.preparing$") then
+			local file = io.open(dir_path .. '/' .. line);
+			if file then
+				local node = root:add_child("module");
+				-- module.out -> module
+				node:add_child("name"):set_text(line:match("(.*)\.out"));
+				node:add_child("output"):set_text(file:read("*all"));
+				file:close();
+				table.insert(finished_modules, line);
+			end
+		end
+	end
+	return finished_modules;
+end
+
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
@@ -42,8 +60,8 @@ function datastore:user_rpc(rpc, data)
 		-- get random id
 		math.randomseed(os.time());
 		local diag_id = string.format("%08x", math.random(1, 0x7fffffff));
-		local diag_path = '/tmp/diagnostics-' .. diag_id .. '.out';
-		local ecode, stdout, stderr = run_command(nil, binary_path, '-b', '-o', diag_path, unpack(modules));
+		local diag_dir_path = '/tmp/diagnostics-' .. diag_id;
+		local ecode, stdout, stderr = run_command(nil, binary_path, '-b', '-O', diag_dir_path, unpack(modules));
 		if ecode ~= 0 then
 			return nil, "Error performing diagnostics: " .. stderr;
 		end
@@ -61,43 +79,36 @@ function datastore:user_rpc(rpc, data)
 		-- trim id
 		diag_id = diag_id:match("^%s*(.*[^%s])%s*$") or ""
 
-		local path = '/tmp/diagnostics-' .. diag_id .. '.out';
+		local diag_dir_path = '/tmp/diagnostics-' .. diag_id;
 
 		-- response xml
 		local new_xml = xmlwrap.new_xml_doc(self.model_name, self.model_ns);
 		local new_root = new_xml:root();
 		local status_node = new_root:add_child("status");
 
-		if io.open(path .. '.preparing') then
-			status_node:set_text('preparing');
-		else
-			local file = io.open(path);
-			if file then
-				status_node:set_text('ready');
-				-- parse the file
-				local store = false;
-				local tmp = "";
-				for line in file:lines() do
-					local start = line:match("^############## (%w+)");
-					local stop = line:match("^%*%*%*%*%*%*%*%*%*%*%*%*%*%* (%w+)");
-					if start then
-						store = true;
-					elseif stop then
-						local node = new_root:add_child("module");
-						node:add_child("name"):set_text(stop);
-						node:add_child("output"):set_text(tmp);
-						tmp = "";
-						store = false;
-					elseif store then
-						tmp = tmp .. line .. "\n";
-					end
-				end
-
-				-- unlink the file after success
-				file:close();
-				os.remove(path);
-			else
+		-- first try to read directory.preparing
+		local ecode, stdout, stderr = run_command(nil, 'ls', '-1', diag_dir_path .. '.preparing/');
+		if ecode ~= 0 then
+			-- try to read the final directory
+			local ecode, stdout, stderr = run_command(nil, 'ls', '-1', diag_dir_path .. '/');
+			if ecode ~= 0 then
 				status_node:set_text('missing');
+			else
+				status_node:set_text('ready');
+				read_modules(stdout, new_root, diag_dir_path);
+				-- remove the entire directory after complete read
+				run_command(nil, 'rm', '-rf', diag_dir_path);
+			end
+		else
+			-- read the preparing directory
+			status_node:set_text('preparing');
+			local finished = read_modules(stdout, new_root, diag_dir_path .. '.preparing/');
+			-- remove the output of processed modules from both dicrectory and directory.preparing
+			for _, module_path in pairs(finished) do
+				run_command(nil, 'rm', '-rf',
+					diag_dir_path .. '/' .. module_path,
+					diag_dir_path .. '.preparing/' .. module_path
+				);
 			end
 		end
 
