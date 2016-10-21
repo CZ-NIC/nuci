@@ -172,7 +172,7 @@ function datastore:get()
 		local ok, dirs = pcall(function() return dir_content(dir) end);
 		if not ok then
 			nlog(NLOG_WARN, "The directory " .. dir .. " can't be scanned ‒ it probably doesn't exist: " .. dirs);
-			return '';
+			return nil, "Couldn't read notification storage.";
 		end
 		local result = '';
 		local xml = xmlwrap.new_xml_doc('messages', self.model_ns);
