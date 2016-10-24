@@ -177,16 +177,21 @@ function datastore:get()
 			node:add_child('id'):set_text(hash);
 			node:add_child('status'):set_text(status);
 			node:add_child('time'):set_text(time);
+			local reboot = false
 			if current_req_hash == hash then
 				node:add_child('current');
 				-- Safe to call :lines() here, current_req_file must exist as we read the hash from there so it can be same as the one we process
 				for pkg in current_req_file:lines() do
-					local op, version, name = words(pkg);
+					local op, version, name, reboot_local = words(pkg);
+					reboot = reboot or reboot_local == "immediate" or reboot_local == "finished"
 					if version ~= '-' then
 						name = name .. ' ' .. version;
 					end
-					node:add_child(op):set_text(name);
+					if reboot then
+						node:add_child('reboot');
+					end
 				end
+				node:add_child('reboot'):set_text(tostring(reboot))
 			end
 		end
 		req_file:close();
