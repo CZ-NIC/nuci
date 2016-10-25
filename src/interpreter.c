@@ -401,6 +401,9 @@ static int dir_content(lua_State *lua) {
 		// Some info about the file
 		struct stat buffer;
 		if (stat(filename, &buffer) == -1) {
+			if (errno == ENOENT)
+				// The thing just disappeared before we could have a look ‒ omit it, but keep going, that is OK (mostly)
+				continue;
 			return luaL_error(lua, strerror(errno));
 		}
 		lua_pushliteral(lua, "type");
