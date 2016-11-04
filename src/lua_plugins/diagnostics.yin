@@ -6,6 +6,16 @@
 	<revision date="2016-09-26">
 		<description>Initial revision</description>
 	</revision>
+	<typedef name='status'>
+		<description>
+			<text>The status of the output data.</text>
+		</description>
+		<type name='enumeration'>
+			<enum name='missing'/>
+			<enum name='preparing'/>
+			<enum name='ready'/>
+		</type>
+	</typedef>
 	<rpc name="prepare">
 		<description>
 			<text>Get a list of diagnostics which will help to debug the router in case of any problems.</text>
@@ -43,33 +53,14 @@
 					<text>Diagnostics data</text>
 				</description>
 				<leaf name="status">
-					<type name='enumeration'>
-						<enum name='missing'/>
-						<enum name='preparing'/>
-						<enum name='ready'/>
-					</type>
+					<type name='status'/>
+					<mandatory value='true'/>
+				</leaf>
+				<leaf name="output">
 					<description>
-						<text>The status of the output data.</text>
+						<text>Gzipped base64 encoded output from all modules.</text>
 					</description>
 				</leaf>
-				<list name='module'>
-					<description>
-						<text>Data collected from a single diagnostics module.</text>
-					</description>
-					<key name='name'/>
-					<leaf name='name'>
-						<type name='string'/>
-						<description>
-							<text>The name of the module.</text>
-						</description>
-					</leaf>
-					<leaf name='output'>
-						<type name='string'/>
-						<description>
-							<text>The output of the module.</text>
-						</description>
-					</leaf>
-				</list>
 			</container>
 		</output>
 	</rpc>
@@ -85,6 +76,37 @@
 				</description>
 			</leaf-list>
 		</output>
+	</rpc>
+	<rpc name="list-diagnostics">
+		<description>
+			<text>Displayes the IDs of generated diagnostics.</text>
+		</description>
+		<output>
+			<list name='diagnostic'>
+				<leaf name='diag-id'>
+					<type name='string'/>
+					<description>
+						<text>Id of diagnostic</text>
+					</description>
+					<mandatory value='true'/>
+				</leaf>
+				<leaf name="status">
+					<type name='status'/>
+					<mandatory value='true'/>
+				</leaf>
+			</list>
+		</output>
+	</rpc>
+	<rpc name="remove-diagnostic">
+		<input>
+			<leaf name='diag-id'>
+				<type name='string'/>
+				<description>
+					<text>The id which matches the output data.</text>
+				</description>
+				<mandatory value='true'/>
+			</leaf>
+		</input>
 	</rpc>
 </module>
 
