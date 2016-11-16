@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright 2014, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+# Copyright 2014,2016 CZ.NIC z.s.p.o. (http://www.nic.cz/)
 #
 # This file is part of NUCI configuration server.
 #
@@ -31,4 +31,11 @@ cp -r "$SRC" config
 cd ..
 uci -c "$DIR"/etc/config delete foris.auth.password
 uci -c "$DIR"/etc/config commit
+if [ -d /etc/updater ] ; then
+	# Back up the updater options (mostly lists of packages)
+	cp -r /etc/updater "$DIR"/etc
+	# But exclude things coming from packages not marked as configs
+	rm -rf "$DIR"/etc/updater/keys
+	rm -rf "$DIR"/etc/updater/hook_*
+fi
 tar c etc/config | bzip2 -9c | base64
