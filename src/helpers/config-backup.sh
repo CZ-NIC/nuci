@@ -27,13 +27,13 @@ fi
 mkdir -p "$DIR"/etc
 trap 'rm -rf "$DIR"' EXIT INT QUIT TERM ABRT
 cd "$DIR"/etc
-cp -r "$SRC" config
+cp -a "$SRC" config
 cd ..
 uci -c "$DIR"/etc/config delete foris.auth.password
 uci -c "$DIR"/etc/config commit
 if [ -d /etc/updater ] ; then
 	# Back up the updater options (mostly lists of packages)
-	cp -r /etc/updater "$DIR"/etc
+	cp -a /etc/updater "$DIR"/etc
 	# But exclude things coming from packages not marked as configs
 	rm -rf "$DIR"/etc/updater/keys
 	rm -rf "$DIR"/etc/updater/hook_*
