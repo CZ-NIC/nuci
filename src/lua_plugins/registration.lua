@@ -96,8 +96,8 @@ function datastore:user_rpc(rpc, data)
 		-- query the server
 		local ecode, stdout, stderr = run_command(
 			nil, 'curl', '-s', '-S', '-L', '-H', '"Accept-Language: ' .. language .. '"',
-			'-H', '"Accept: plain/text"', '--cacert', '/etc/ssl/www_turris_cz_ca.pem', '--crlfile',
-			'/etc/ssl/crl.pem', '-m', tostring(connection_timeout), '-w', "\ncode: %{http_code}",
+			'-H', '"Accept: plain/text"', '--cacert', '/etc/ssl/www_turris_cz_ca.pem', '--cert-status',
+			'-m', tostring(connection_timeout), '-w', "\ncode: %{http_code}",
 			lookup_url .. "?registration_code=" .. registration_code .. "&email=" .. simple_escape(email_node:text())
 		);
 		if ecode ~= 0 then
