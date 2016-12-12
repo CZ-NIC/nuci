@@ -38,4 +38,10 @@ if [ -d /etc/updater ] ; then
 	rm -rf "$DIR"/etc/updater/keys
 	rm -rf "$DIR"/etc/updater/hook_*
 fi
-tar c etc/config | bzip2 -9c | base64
+uci -q -d '
+' get backups.generate.dirs | while read dir ; do
+	DNAME=$(dirname "$dir")
+	mkdir -p "$DIR"/"$DNAME"
+	cp -a "$dir" "$DIR"/"$DNAME"/
+done
+tar c . | bzip2 -9c | base64

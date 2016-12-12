@@ -20,7 +20,7 @@
 set -e
 
 DIR=/tmp/restore-$$
-DEST='/etc/config'
+DEST='/'
 if [ "$NUCI_TEST_CONFIG_DIR" ] ; then
 	DEST="$NUCI_TEST_CONFIG_DIR"
 fi
@@ -35,7 +35,7 @@ base64 -d | bzip2 -cd | tar xp
 PASSWD="$(uci -c $DEST get foris.auth.password)"
 uci -c "$DIR/etc/config" set foris.auth.password="$PASSWD"
 uci -c "$DIR/etc/config" commit
-cp -rf "$DIR/etc/config"/* "$DEST"
+cp -rf "$DIR/"* "$DEST"
 cd /
 rm -rf "$DIR"
 trap - EXIT INT QUIT TERM ABRT
