@@ -1,5 +1,5 @@
 --[[
-Copyright 2013, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2013,2016, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -133,9 +133,9 @@ function list2map(list)
 	return result;
 end
 
-function iter2list(iter)
+function iter2list(...)
 	local result = {};
-	for i in iter do
+	for i in ... do
 		table.insert(result, i);
 	end
 	return result;
@@ -197,4 +197,16 @@ function file_exists(path)
 		return true;
 	end
 	return nil;
+end
+
+-- Get content of file or nil, error
+function slurp(path)
+	local file, err = io.open(path, "r");
+	if file then
+		local data = file:read("*a");
+		file:close();
+		return data;
+	else
+		return nil, err
+	end
 end

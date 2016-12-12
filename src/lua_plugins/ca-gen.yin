@@ -27,7 +27,7 @@
         <description>
           <text>Identifier of the CA and also the CN of the root certificate.</text>
         </description>
-        <type name='client-name'/>
+        <type name='cert-name'/>
       </leaf>
       <list name='cert'>
         <key value='serial'/>
@@ -44,6 +44,7 @@
           <description>
             <text>The CN of the certificate. This does not have to be unique. It is also used as a part of the file name where the certificate is stored.</text>
           </description>
+          <type name='cert-name'/>
         </leaf>
         <leaf name='type'>
           <description>
