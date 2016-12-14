@@ -57,7 +57,7 @@ function datastore:user_rpc(rpc, data)
 
 		-- get random id
 		math.randomseed(os.time());
-		local diag_id = string.format("%08x", math.random(1, 0x7fffffff));
+		local diag_id = os.date("%Y-%m-%d") .. '_' .. string.format("%08x", math.random(1, 0x7fffffff));
 		local diag_path = '/tmp/diagnostics-' .. diag_id .. '.out';
 		local ecode, stdout, stderr = run_command(nil, binary_path, '-b', '-o', diag_path, unpack(modules));
 		if ecode ~= 0 then
