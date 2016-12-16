@@ -162,4 +162,131 @@ function datastore:get()
 	return xml:strdump();
 end
 
+local function verify_name(name)
+	return name:match('^[a-zA-Z0-9_.%-]+$');
+end
+
+local function notes_parse(path, name)
+	local content, err = slurp(path);
+	if err then return nil, err end
+	local result = {
+		['--'] = {
+			kind = 'root',
+			name = name,
+			fname = 'ca'
+		}
+	};
+	for line in lines(content) do
+		local serial, kind, name = line:match('^([^%s]+)%s+([^%s]+)%s+(.*)');
+		if serial then
+			local fname = kind .. '-' .. name
+			result[serial] = {
+				kind = kind,
+				name = name,
+				fname = fname
+			};
+		else
+			return nil, "Broken notes line in " .. name .. ": " .. line;
+		end
+	end
+	return result;
+end
+
+function datastore:download_cert(ca_path, notes, output, cert)
+	local serial = find_node_name_ns(cert, 'serial', self.model_ns);
+	if not serial then
+		return {
+			msg = "Missing <serial>",
+			app_tag = 'data-missing',
+			info_badelem = 'serial',
+			info_badns = self.model_ns
+		};
+	end
+	serial = serial:text();
+	if not notes[serial] then
+		return {
+			msg = "Missing certificate " .. serial,
+			app_tag = 'invalid-value',
+			info_badelem = 'serial',
+			info_badns = self.model_ns
+		};
+	end
+	local o = output:add_child('cert');
+	o:add_child('serial'):set_text(serial);
+	local basename = ca_path .. '/' .. notes[serial].fname;
+	o:add_child('cert'):set_text(slurp(basename .. '.crt'));
+	if find_node_name_ns(cert, 'key', self.model_ns) then
+		o:add_child('key'):set_text(slurp(basename .. '.key'));
+	end
+end
+
+function datastore:download_ca(ca)
+	local output = xmlwrap.new_xml_doc('ca', self.model_ns)
+	local root = output:root();
+	local name = find_node_name_ns(ca, 'name', self.model_ns)
+	if not name then
+		return nil, {
+			msg = "Missing <name>",
+			app_tag = 'data-missing',
+			info_badelem = 'name',
+			info_badns = self.model_ns
+		};
+	end
+	name = name:text();
+	if not verify_name(name) then
+		return nil, {
+			msg = "Invalid CA name: " .. name,
+			app_tag = 'invalid-value',
+			info_badelem = 'name',
+			info_badns = self.model_ns
+		}
+	end
+	local path = ca_dir .. '/' .. name;
+	root:add_child('name'):set_text(name);
+	local parsed, err = notes_parse(path .. '/notes.txt', name);
+	if err then return nil, err end
+	for cert in ca:iterate() do
+		local cname, cns = cert:name();
+		if cns == self.model_ns and cname == 'cert' then
+			local err = self:download_cert(path, parsed, root, cert);
+		end
+	end
+	local crlfile = path .. '/ca.crl';
+	if find_node_name_ns(ca, 'crl', self.model_ns) and file_exists(crlfile) then
+		root:add_child('crl'):set_text(slurp(crlfile));
+	end
+	local dhfile = path .. '/dhparam.pem';
+	if find_node_name_ns(ca, 'dhparams', self.model_ns) and file_exists(dhfile) then
+		root:add_child('dhparams'):set_text(slurp(dhfile));
+	end
+	return output;
+end
+
+function datastore:user_rpc(rpc, data)
+	local xml = xmlwrap.read_memory(data);
+	local root = xml:root();
+	if rpc == 'download' then
+		-- Unfortunately, we return part of XML and this one wouldn't have single root, so we build each one separately and concatenate as strings. We are supposted to return string anyway.
+		local output = ''
+		for ca_child in root:iterate() do
+			local name, ns = ca_child:name();
+			if ns == self.model_ns and name == 'ca' then
+				local out, err = self:download_ca(ca_child);
+				if err then
+					return err;
+				end
+				output = output .. strip_xml_def(out:strdump());
+			end
+		end
+		return output
+	else
+		return nil, {
+			msg = "Command '" .. rpc .. "' not known",
+			app_tag = 'unknown-element',
+			info_badelem = rpc,
+			info_badns = self.model_ns
+		};
+	end
+end
+
 register_datastore_provider(datastore)
