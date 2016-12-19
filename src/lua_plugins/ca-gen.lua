@@ -22,6 +22,8 @@ require("nutils");
 
 local datastore = datastore("ca-gen.yin");
 local ca_dir = '/etc/ssl/ca'
+local script_dir = '/usr/share/nuci/ca/';
+local script = script_dir .. 'gen';
 
 local states = {
 	V = 'active',
@@ -220,10 +222,8 @@ function datastore:download_cert(ca_path, notes, output, cert)
 	end
 end
 
-function datastore:download_ca(ca)
-	local output = xmlwrap.new_xml_doc('ca', self.model_ns)
-	local root = output:root();
-	local name = find_node_name_ns(ca, 'name', self.model_ns)
+function datastore:name_get(from)
+	local name = find_node_name_ns(from, 'name', self.model_ns)
 	if not name then
 		return nil, {
 			msg = "Missing <name>",
@@ -240,6 +240,16 @@ function datastore:download_ca(ca)
 			info_badelem = 'name',
 			info_badns = self.model_ns
 		}
+	end
+	return name
+end
+
+function datastore:download_ca(ca)
+	local output = xmlwrap.new_xml_doc('ca', self.model_ns)
+	local root = output:root();
+	local name, err = self:name_get(ca);
+	if not name then
+		return nil, err;
 	end
 	local path = ca_dir .. '/' .. name;
 	root:add_child('name'):set_text(name);
@@ -262,6 +272,57 @@ function datastore:download_ca(ca)
 	return output;
 end
 
+local function append(into, what)
+	for _, v in ipairs(what) do
+		table.insert(into, v)
+	end
+end
+
+function datastore:ca_gen_params(ca)
+	local params = {}
+	local name, err = self:name_get(ca);
+	if not name then
+		return nil, err;
+	end
+	if find_node_name_ns(ca, 'new', self.model_ns) then
+		append(params, {'new_ca', name, 'gen_ca', name});
+	else
+		append(params, {'switch', name});
+	end
+	if find_node_name_ns(ca, 'dhparams', self.model_ns) then
+		table.insert(params, 'gen_dh');
+	end
+	for cert in ca:iterate() do
+		local cname, cns = cert:name();
+		if cns == self.model_ns and cname == 'cert' then
+			local name, err = self:name_get(cert);
+			if not name then
+				return nil, err;
+			end
+			local kind = find_node_name_ns(cert, 'type', self.model_ns);
+			if not kind then
+				return nil, {
+					msg = "Missing <type>",
+					app_tag = 'data-missing',
+					info_badelem = 'type',
+					info_badns = self.model_ns
+				};
+			end
+			kind = kind:text();
+			if kind ~= 'server' and kind ~= 'client' then
+				return nil, {
+					msg = 'Invalid cert type: ' .. kind,
+					app_tag = 'invalid-value',
+					info_badelem = 'type',
+					info_badns = self.model_ns
+				};
+			end
+			append(params, {'gen_' .. kind, name});
+		end
+	end
+	return params;
+end
+
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
@@ -279,6 +340,29 @@ function datastore:user_rpc(rpc, data)
 			end
 		end
 		return output
+	elseif rpc == 'generate' then
+		local params = {}
+		-- Do we want to run in the background?
+		if find_node_name_ns(root, 'background', self.model_ns) then
+			table.insert(params, 'background')
+		end
+		-- Go through all the CAs and their internal requests
+		for ca_child in root:iterate() do
+			local name, ns = ca_child:name();
+			if ns == self.model_ns and name == 'ca' then
+				local ca_params, err = self:ca_gen_params(ca_child);
+				if err then
+					return nil, err;
+				end
+				append(params, ca_params);
+			end
+		end
+		local ecode, stdout, stderr = run_command(nil, script, unpack(params));
+		if ecode == 0 then
+			return '<ok/>';
+		else
+			return nil, stderr;
+		end
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
