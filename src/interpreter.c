@@ -388,24 +388,27 @@ static int dir_content(lua_State *lua) {
 		if (strcmp(".", dirent->d_name) == 0 || strcmp("..", dirent->d_name) == 0) {
 			continue; // These are special directories „self“ and „up“. Don't include in output.
 		}
-		lua_pushinteger(lua, index++); // Prepare the index where to put the next value
-		lua_createtable(lua, 0, 3); // local t = {};
-		// Compute and set the file name
-		lua_pushliteral(lua, "filename");
 		size_t len = strlen(path) + strlen(dirent->d_name) + 2; // One for '\0', one for '/'.
 		char filename[len];
 		size_t print_len = snprintf(filename, len, "%s/%s", path, dirent->d_name);
 		assert(len == print_len + 1 /* '\0' is not counted in result of snprintf */);
+		struct stat buffer;
+		if (stat(filename, &buffer) == -1) {
+			if (errno == ENOENT) {
+				errno = 0;
+				// The thing just disappeared before we could have a look ‒ omit it, but keep going, that is OK (mostly)
+				continue;
+			}
+			closedir(dir);
+			return luaL_error(lua, strerror(errno));
+		}
+		lua_pushinteger(lua, index++); // Prepare the index where to put the next value
+		lua_createtable(lua, 0, 3); // local t = {};
+		// Compute and set the file name
+		lua_pushliteral(lua, "filename");
 		lua_pushstring(lua, filename);
 		lua_settable(lua, -3); // t.filename = filename;
 		// Some info about the file
-		struct stat buffer;
-		if (stat(filename, &buffer) == -1) {
-			if (errno == ENOENT)
-				// The thing just disappeared before we could have a look ‒ omit it, but keep going, that is OK (mostly)
-				continue;
-			return luaL_error(lua, strerror(errno));
-		}
 		lua_pushliteral(lua, "type");
 		char ftype[2] = "?";
 		unsigned typeflag = buffer.st_mode & S_IFMT;
