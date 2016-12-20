@@ -363,6 +363,29 @@ function datastore:user_rpc(rpc, data)
 		else
 			return nil, stderr;
 		end
+	elseif rpc == 'delete-ca' then
+		local params = {}
+		for ca_child in root:iterate() do
+			local name, ns = ca_child:name();
+			if ns == self.model_ns and name == 'ca' then
+				local ca_name = ca_child:text();
+				if not verify_name(ca_name) then
+					return nil, {
+						msg = "Invalid CA name: " .. ca_name,
+						app_tag = 'invalid-value',
+						info_badelem = 'ca',
+						info_badns = self.model_ns
+					};
+				end
+				append(params, {'drop_ca', ca_name});
+			end
+		end
+		local ecode, stdout, stderr = run_command(nil, script, unpack(params));
+		if ecode == 0 then
+			return '<ok/>';
+		else
+			return nil, stderr;
+		end
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
