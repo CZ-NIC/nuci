@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="openvpn-client" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/openvpn-client"/>
+  <prefix value="openvpn-client"/>
+  <revision date="2016-12-27">
+    <description>Initial revision</description>
+  </revision>
+  <rpc name='download-config'>
+    <description>
+      <text>Downloads the client configuration for the openvpn client, which can be used against the current openvpn server which is running on the router.</text>
+    </description>
+    <input>
+      <leaf name='cert-name'>
+        <type name='string'/>
+        <description>
+          <text>Name of the client's certificate.</text>
+        </description>
+        <mandatory value='true'/>
+      </leaf>
+    </input>
+    <output>
+      <leaf name='configuration'>
+        <description>
+          <text>All-in-one openvpn client configuration.</text>
+        </description>
+        <type name='string'/>
+      </leaf>
+    </output>
+  </rpc>
+</module>
