@@ -88,6 +88,7 @@ do_gen_ca() {
 	[ '!' -f "ca.crt" ] # Make sure it is not yet created
 	echo "-- root $CA" >generating
 	echo "$CA" | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.crt -config "$SCRIPT_DIR"/openssl.cnf -nodes -days 3650
+	chmod 0400 ca.key
 	do_gen_crl
 	rm generating
 }
@@ -104,6 +105,7 @@ do_gen_server() {
 	echo "server $1" >generating
 	echo "$1" | openssl req -new -newkey rsa:4096 -keyout server-"$1".key -nodes -out server-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_cert
 	openssl ca -out server-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_cert -infiles server-"$1".csr
+	chmod 0400 server-"$1".key
 	rm generating
 }
 
@@ -113,6 +115,7 @@ do_gen_client() {
 	echo "client $1" >generating
 	echo "$1" | openssl req -new -newkey rsa:4096 -keyout client-"$1".key -nodes -out client-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_client
 	openssl ca -out client-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_client -infiles client-"$1".csr
+	chmod 0400 client-"$1".key
 	rm generating
 }
 
