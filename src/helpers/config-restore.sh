@@ -32,7 +32,7 @@ base64 -d | bzip2 -cd | tar xp
 # password, as potentially confusing action. So we unpack the backed-up configuration,
 # extract the current password and implant it into the configuration. Then we just copy
 # the configs and overwrite the current ones.
-PASSWD="$(uci -c $DEST get foris.auth.password)"
+PASSWD="$(uci -c "${DEST%/}/etc/config" get foris.auth.password)"
 uci -c "$DIR/etc/config" set foris.auth.password="$PASSWD"
 uci -c "$DIR/etc/config" commit
 cp -rf "$DIR/"* "$DEST"
@@ -40,7 +40,7 @@ cd /
 rm -rf "$DIR"
 trap - EXIT INT QUIT TERM ABRT
 # It is legal for the address not to be there, so don't fail on it
-uci -c "$DEST" get network.lan.ipaddr || true
+uci -c "${DEST%/}/etc/config" get network.lan.ipaddr || true
 
 if [ "$NUCI_TEST_CONFIG_DIR" ] ; then
 	exit
