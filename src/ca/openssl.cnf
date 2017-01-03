@@ -80,6 +80,8 @@ commonName_max			= 64
 basicConstraints=CA:FALSE
 
 nsCertType			= server
+extendedKeyUsage = serverAuth
+keyUsage = digitalSignature, keyEncipherment
 
 [ usr_client ]
 
