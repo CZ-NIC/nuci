@@ -22,7 +22,8 @@ set -e
 DIR=/tmp/restore-$$
 DEST='/'
 if [ "$NUCI_TEST_CONFIG_DIR" ] ; then
-	DEST="$NUCI_TEST_CONFIG_DIR"
+	# The variable contains path to UCI configuration dir - strip trailing "/etc/config"
+	DEST="${NUCI_TEST_CONFIG_DIR%/etc/config}"
 fi
 mkdir -p "$DIR"
 trap 'rm -rf "$DIR"' EXIT INT QUIT TERM ABRT
