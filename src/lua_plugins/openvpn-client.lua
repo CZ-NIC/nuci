@@ -223,10 +223,25 @@ function datastore:user_rpc(rpc, data)
 		end
 		local cert_name = cert_name_node:text();
 
+		-- get config name
+		local config_name_node = find_node_name_ns(root, 'config-name', self.model_ns);
+		if not config_name_node then
+			return nil, {
+				msg = "Missing the <config-name> parameter.",
+				app_tag = 'data-missing',
+				info_badelem = 'config-name',
+				info_badns = self.model_ns
+			}
+		end
+		local config_name = config_name_node:text();
+
 		local settings = {};
 		-- read uci
 		cursor = get_uci_cursor();
-		uci_data = cursor:get_all('openvpn', 'sample_server');
+		uci_data = cursor:get_all('openvpn', config_name);
+		if not uci_data then
+			return nil, "Server configuration is missing. (" .. config_name .. ")"
+		end
 		settings.dev = uci_data.dev;
 		settings.proto = uci_data.proto;
 		settings.ca_path = uci_data.ca;

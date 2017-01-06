@@ -18,6 +18,13 @@
         </description>
         <mandatory value='true'/>
       </leaf>
+      <leaf name='config-name'>
+        <type name='string'/>
+        <description>
+          <text>The name of the openvpn server configuration present in uci.</text>
+        </description>
+        <mandatory value='true'/>
+      </leaf>
     </input>
     <output>
       <leaf name='configuration'>
