@@ -103,8 +103,8 @@ do_gen_server() {
 	[ "$CA" ] # Make sure we've chosen one
 	echo "$(cat serial) server $1" >>notes.txt
 	echo "server $1" >generating
-	echo "$1" | openssl req -new -newkey rsa:4096 -keyout server-"$1".key -nodes -out server-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_cert
-	openssl ca -out server-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_cert -infiles server-"$1".csr
+	echo "$1" | openssl req -new -newkey rsa:4096 -keyout server-"$1".key -nodes -out server-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_server
+	openssl ca -out server-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_server -infiles server-"$1".csr
 	chmod 0400 server-"$1".key
 	rm generating
 }

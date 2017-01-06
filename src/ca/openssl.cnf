@@ -24,7 +24,7 @@ crl		= $dir/crl.pem
 private_key	= $dir/ca.key
 RANDFILE	= $dir/.rand
 
-x509_extensions	= usr_cert		# The extentions to add to the cert
+x509_extensions	= usr_server		# The extentions to add to the cert
 
 # Comment out the following two lines for the "traditional"
 # (and highly broken) format.
@@ -75,7 +75,7 @@ commonName_max			= 64
 
 [ req_attributes ]
 
-[ usr_cert ]
+[ usr_server ]
 
 basicConstraints=CA:FALSE
 
