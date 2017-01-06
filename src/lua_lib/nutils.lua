@@ -199,8 +199,8 @@ function file_exists(path)
 	return nil;
 end
 
--- Get content of file or nil, error
-function slurp(path)
+-- Get content of a file or nil, error
+function file_content(path)
 	local file, err = io.open(path, "r");
 	if file then
 		local data = file:read("*a");

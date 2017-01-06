@@ -19,6 +19,7 @@ along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 
 require("datastore");
 require("nutils");
+require("cert");
 
 local datastore = datastore("ca-gen.yin");
 local ca_dir = '/etc/ssl/ca'
@@ -35,9 +36,9 @@ local function get_ca(dir, cas)
 	-- Try to read the CA data from files.
 	local path = dir .. '/';
 	local name = dir:match('[^/]+$');
-	local gen, gen_err = slurp(path .. 'generating');
-	local index, index_err = slurp(path .. 'index.txt');
-	local notes, notes_err = slurp(path .. 'notes.txt');
+	local gen, gen_err = file_content(path .. 'generating');
+	local index, index_err = file_content(path .. 'index.txt');
+	local notes, notes_err = file_content(path .. 'notes.txt');
 	local ca_done = file_exists(path .. 'ca.crt');
 	local dh_done = file_exists(path .. 'dhparam.pem');
 	local crl_done = file_exists(path .. 'ca.crl');
@@ -164,12 +165,8 @@ function datastore:get()
 	return xml:strdump();
 end
 
-local function verify_name(name)
-	return name:match('^[a-zA-Z0-9_.%-]+$');
-end
-
 local function notes_parse(path, name)
-	local content, err = slurp(path);
+	local content, err = file_content(path);
 	if err then return nil, err end
 	local result = {
 		['--'] = {
@@ -216,9 +213,9 @@ function datastore:download_cert(ca_path, notes, output, cert)
 	local o = output:add_child('cert');
 	o:add_child('serial'):set_text(serial);
 	local basename = ca_path .. '/' .. notes[serial].fname;
-	o:add_child('cert'):set_text(slurp(basename .. '.crt'));
+	o:add_child('cert'):set_text(file_content(basename .. '.crt'));
 	if find_node_name_ns(cert, 'key', self.model_ns) then
-		o:add_child('key'):set_text(slurp(basename .. '.key'));
+		o:add_child('key'):set_text(file_content(basename .. '.key'));
 	end
 end
 
@@ -233,7 +230,7 @@ function datastore:name_get(from)
 		};
 	end
 	name = name:text();
-	if not verify_name(name) then
+	if not verify_cert_name(name) then
 		return nil, {
 			msg = "Invalid CA name: " .. name,
 			app_tag = 'invalid-value',
@@ -263,11 +260,11 @@ function datastore:download_ca(ca)
 	end
 	local crlfile = path .. '/ca.crl';
 	if find_node_name_ns(ca, 'crl', self.model_ns) and file_exists(crlfile) then
-		root:add_child('crl'):set_text(slurp(crlfile));
+		root:add_child('crl'):set_text(file_content(crlfile));
 	end
 	local dhfile = path .. '/dhparam.pem';
 	if find_node_name_ns(ca, 'dhparams', self.model_ns) and file_exists(dhfile) then
-		root:add_child('dhparams'):set_text(slurp(dhfile));
+		root:add_child('dhparams'):set_text(file_content(dhfile));
 	end
 	return output;
 end
@@ -369,7 +366,7 @@ function datastore:user_rpc(rpc, data)
 			local name, ns = ca_child:name();
 			if ns == self.model_ns and name == 'ca' then
 				local ca_name = ca_child:text();
-				if not verify_name(ca_name) then
+				if not verify_cert_name(ca_name) then
 					return nil, {
 						msg = "Invalid CA name: " .. ca_name,
 						app_tag = 'invalid-value',

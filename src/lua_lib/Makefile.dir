@@ -7,5 +7,6 @@ NUCI_LIBRARIES := \
 	stacktraceplus \
 	tableutils \
 	views_supervisor \
-	dumper
+	dumper \
+	cert
 LUA += $(addprefix src/lua_lib/, $(NUCI_LIBRARIES))
