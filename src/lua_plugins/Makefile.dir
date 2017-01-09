@@ -12,7 +12,8 @@ NUCI_PLUGINS := \
 	smrt \
 	firewall \
 	nuci-tls \
-	neighbours
+	neighbours \
+	ca-gen
 
 LUA_PLUGINS += $(addprefix src/lua_plugins/, $(NUCI_PLUGINS))
 

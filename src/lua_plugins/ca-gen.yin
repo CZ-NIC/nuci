@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="ca-gen" xmlns="urn:ietf:params:xml:ns:yang:yin:1">
+  <yang-version value="1"/>
+  <namespace uri="http://www.nic.cz/ns/router/ca-gen"/>
+  <prefix value="ca-gen"/>
+  <revision date="2016-12-07">
+    <description>Initial revision</description>
+  </revision>
+  <typedef name="cert-name">
+    <description>
+      <text>What is allowed as a name of certificate. It is embedded in the certificate as CN, as well as part of the file name in which it is stored.</text>
+    </description>
+    <type name="string">
+      <pattern value="[a-zA-Z0-9_.-]+"/>
+    </type>
+  </typedef>
+  <container name='cas'>
+    <description>
+      <text>Container for all the CAs present in the system.</text>
+    </description>
+    <list name='ca'>
+      <key value='name'/>
+      <description>
+        <text>Single certification authority and its status.</text>
+      </description>
+      <leaf name='name'>
+        <description>
+          <text>Identifier of the CA and also the CN of the root certificate.</text>
+        </description>
+        <type name='cert-name'/>
+      </leaf>
+      <list name='cert'>
+        <key value='serial'/>
+        <description>
+          <text>A single certificate that relates to the authority (either issued by the CA or part of the CA itself).</text>
+        </description>
+        <leaf name='serial'>
+          <description>
+            <text>The serial of the certificate. The serial is the certificate's unique identifier. In case of the root of the CA, it is '--', otherwise it is a number.</text>
+          </description>
+          <type name='string'/>
+        </leaf>
+        <leaf name='name'>
+          <description>
+            <text>The CN of the certificate. This does not have to be unique. It is also used as a part of the file name where the certificate is stored.</text>
+          </description>
+          <type name='cert-name'/>
+        </leaf>
+        <leaf name='type'>
+          <description>
+            <text>The type of the certificate.</text>
+          </description>
+          <type name='enumeration'>
+            <enum name='root'/> <!-- The root of the CA itself. -->
+            <enum name='server'/> <!-- A certificate for a server. -->
+            <enum name='client'/> <!-- A certificate to authenticate a client. -->
+          </type>
+        </leaf>
+        <leaf name='status'>
+          <description>
+            <text>The status of the certificate.</text>
+          </description>
+          <type name='enumeration'>
+            <enum name='generating'/> <!-- The certificate is being generated and is not ready yet. -->
+            <enum name='active'/>
+            <enum name='lost'/> <!-- Like active, but the certificate file has been overwritten by another with the same name. If a client or server has its own copy, it can still be used (and it can be revoked), but it is no longer possible to download from here. -->
+            <enum name='revoked'/>
+            <enum name='expired'/> <!-- Unlikely to happen, with 10 years of validity -->
+          </type>
+        </leaf>
+        <leaf name='cert'>
+          <description>
+            <text>A path to the file containing the certificate. This is present only for active certificates.</text>
+          </description>
+          <type name='string'/>
+          <mandatory value='false'/>
+        </leaf>
+        <leaf name='key'>
+          <description>
+            <text>A path to the file containing the key to the corresponding certificate. This is present only for active non-root certificates.</text>
+          </description>
+          <type name='string'/>
+          <mandatory value='false'/>
+        </leaf>
+      </list>
+      <container name='dhparams'>
+        <description>
+          <text>Information about DH parameters generated together with the CA. It is not strictly needed to have DH parameters, but many uses for CA have a use for DH parameters as well, so it is included. If this is not present, no DH parameters were generated for the CA.</text>
+        </description>
+        <leaf name='file'>
+          <description>
+            <text>A path to the file containing the DH parameters. Only present if the DH parameteres are already generated.</text>
+          </description>
+          <type name='string'/>
+          <mandatory value='false'/>
+        </leaf>
+        <leaf name='generating'>
+          <description>
+            <text>Present in case the DH parameters are being generated now.</text>
+          </description>
+          <type name='empty'/>
+          <mandatory value='false'/>
+        </leaf>
+      </container>
+      <leaf name='crl'>
+        <description>
+          <text>File name of the CRL, if one is present. It is present if the CA was successfully generated.</text>
+        </description>
+        <type name='string'/>
+        <mandatory value='false'/>
+      </leaf>
+    </list>
+  </container>
+  <rpc name='generate'>
+    <description>
+      <text>Generate something. It may generate multiple things at once.</text>
+    </description>
+    <input>
+      <leaf name='background'>
+        <type name='empty'/>
+        <mandatory value='false'/>
+        <description>
+          <text>Run the command in a background. It doesn't wait until the generation is finished. It reports no errors during the generation process. The generated items will be available later.</text>
+        </description>
+      </leaf>
+      <list name='ca'>
+        <key name='name'/>
+        <description>
+          <text>A CA. It is generated if a &lt;new&gt; flag is passed. Otherwise it works only as a container for certificates and DH parameters. Even a new CA may directly generate certificates in the same RPC.</text>
+        </description>
+        <leaf name='name'>
+          <description>
+            <text>The name of the CA. Used both as an unique identifier in the system and as the CN of the root certificate.</text>
+          </description>
+          <type name='cert-name'/>
+        </leaf>
+        <leaf name='new'>
+          <type name='empty'/>
+          <mandatory value='false'/>
+          <description>
+            <text>Please generate a new CA. Will fail if such CA already exists.</text>
+          </description>
+        </leaf>
+        <leaf name='dhparams'>
+          <type name='empty'/>
+          <mandatory value='false'/>
+          <description>
+            <text>Please generate a new DH parameters as part of this CA. If some already exist, they are overwritten.</text>
+          </description>
+        </leaf>
+        <list name='cert'>
+          <description>
+            <text>Generate a new certificate. If an older certificate with the same name and type exists, a new one will be generated. The old one will still work, but it won't be possible to download any more.
+            </text>
+          </description>
+          <leaf name='name'>
+            <type name='cert-name'/>
+            <mandatory value='true'/>
+            <description>
+              <text>The name and the CN of the certificate.</text>
+            </description>
+          </leaf>
+          <leaf name='type'>
+            <type name='enumeration'>
+              <enum name='server'/>
+              <enum name='client'/>
+            </type>
+            <mandatory value='true'/>
+            <description>
+              <text>The type of the certificate. There are some flags set according to this. Also, certificates with the same name but different type doesn't overwrite each other.</text>
+            </description>
+          </leaf>
+        </list>
+      </list>
+    </input>
+  </rpc>
+  <rpc name='delete-ca'>
+    <description>
+      <text>Delete the whole CA (or multiple ones). Note that if you use the CA on some other device (you copied the root certificate there), this won't make it defunct and all the certificates will still work. Note that this stops on the first encountered error. Deleting a CA that does not exist is not considered an error.</text>
+    </description>
+    <input>
+      <leaf-list name='name'>
+        <description>
+          <text>The ID of the CA.</text>
+        </description>
+        <type name='cert-name'/>
+      </leaf-list>
+    </input>
+  </rpc>
+  <rpc name='revoke'>
+    <description>
+      <text>Revoke some certificates. If the user of the CA uses the CRL, the certificate will stop working.</text>
+    </description>
+    <input>
+      <list name='ca'>
+        <key name='name'/>
+        <description>
+          <text>Identify the CA with the certificates to revoke. There may be multiple CAs specified, if certificates from multiple CAs are to be revoked at once.</text>
+        </description>
+        <leaf name='name'>
+          <description>
+            <text>The name of the CA.</text>
+          </description>
+          <type name='cert-name'/>
+        </leaf>
+        <leaf-list name='cert'>
+          <description>
+            <text>The serial of the certificate to revoke. It makes sense to revoke only active or lost certificates, but revoking an already revoked or expired one is not considered an error.</text>
+          </description>
+          <type name='string'/>
+        </leaf-list>
+      </list>
+    </input>
+  </rpc>
+  <rpc name='download'>
+    <description>
+      <text>Download some certificates and other info.</text>
+    </description>
+    <input>
+      <list name='ca'>
+        <key name='name'/>
+        <description>
+          <text>Identify the CA containing the certificate.</text>
+        </description>
+        <leaf name='name'>
+          <description>
+            <text>The name of the CA.</text>
+          </description>
+          <type name='cert-name'/>
+        </leaf>
+        <list name='cert'>
+          <key name='serial'/>
+          <description>
+            <text>The requested certificate.</text>
+          </description>
+          <leaf name='serial'>
+            <description>
+              <text>The serial number of the certificate.</text>
+            </description>
+          </leaf>
+          <leaf name='key'>
+            <description>
+              <text>Please also include the key.</text>
+            </description>
+            <type name='empty'/>
+            <mandatory value='false'/>
+          </leaf>
+        </list>
+        <leaf name='crl'>
+          <description>
+            <text>Also download the CA's CRL.</text>
+          </description>
+          <type name='empty'/>
+          <mandatory value='false'/>
+        </leaf>
+        <leaf name='dhparams'>
+          <description>
+            <text>Also download the DH parameters.</text>
+          </description>
+          <type name='empty'/>
+          <mandatory value='false'/>
+        </leaf>
+      </list>
+    </input>
+    <output>
+      <list name='ca'>
+        <key name='name'/>
+        <description>
+          <text>Identify the CA containing the certificate.</text>
+        </description>
+        <leaf name='name'>
+          <description>
+            <text>The name of the CA.</text>
+          </description>
+          <type name='cert-name'/>
+        </leaf>
+        <list name='cert'>
+          <key name='serial'/>
+          <description>
+            <text>The requested certificate.</text>
+          </description>
+          <leaf name='serial'>
+            <description>
+              <text>The serial of the certificate.</text>
+            </description>
+            <type name='string'/>
+          </leaf>
+          <leaf name='cert'>
+            <description>
+              <text>The certificate in a PEM format. In case the certificate doesn't exist (or is lost), this isn't present, but it doesn't produce an error.</text>
+            </description>
+            <type name='string'/>
+            <mandatory value='false'/>
+          </leaf>
+          <leaf name='key'>
+            <description>
+              <text>The key, if requested, in PEM format.</text>
+            </description>
+            <type name='string'/>
+            <mandatory value='false'/>
+          </leaf>
+        </list>
+        <leaf name='crl'>
+          <description>
+            <text>The CA's CLR, in PEM format (if requested and it exists). If it doesn't exist, this node is not present, but it doesn't produce an error.</text>
+          </description>
+          <type name='string'/>
+          <mandatory value='false'/>
+        </leaf>
+        <leaf name='dhparams'>
+          <description>
+            <text>The DH parameters, if requested and present.</text>
+          </description>
+          <type name='string'/>
+          <mandatory value='false'/>
+        </leaf>
+      </list>
+    </output>
+  </rpc>
+</module>
