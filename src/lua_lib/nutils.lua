@@ -210,3 +210,8 @@ function file_content(path)
 		return nil, err
 	end
 end
+
+-- return the directory name of the file
+function file_dirname(path)
+	return path:match("^(.*)/");
+end

@@ -24,20 +24,6 @@ require("uci");
 
 local datastore = datastore('openvpn-client.yin');
 
-function dirname(path)
-	return path:match("^(.*)/");
-end
-
-function read_file(path)
-	local file, err = io.open(path);
-	if not file then
-		return nil, err;
-	end
-	local content = file:read("*a");
-	file:close();
-	return content;
-end
-
 function get_device_ip(device)
 	local ecode, stdout, stderr = run_command(nil, 'ip',  'addr',  'show', 'dev', device);
 	if ecode == 0 then
@@ -271,21 +257,21 @@ function datastore:user_rpc(rpc, data)
 		settings.remote = get_device_ip(wan_device) .. " " .. settings.port;
 
 		-- read ca
-		local ca_content, err = read_file(settings.ca_path);
+		local ca_content, err = file_content(settings.ca_path);
 		if not ca_content then
 			return nil, err;
 		end
 		settings.ca = ca_content;
 
 		-- read client cert
-		local cert_content, err = read_file(dirname(settings.ca_path) .. "/client-" .. cert_name .. ".crt");
+		local cert_content, err = file_content(file_dirname(settings.ca_path) .. "/client-" .. cert_name .. ".crt");
 		if not cert_content then
 			return nil, err;
 		end
 		settings.cert = cert_content;
 
 		-- read key
-		local key_content, err = read_file(dirname(settings.ca_path) .. "/client-" .. cert_name .. ".key");
+		local key_content, err = file_content(file_dirname(settings.ca_path) .. "/client-" .. cert_name .. ".key");
 		if not key_content then
 			return nil, err;
 		end
@@ -293,7 +279,7 @@ function datastore:user_rpc(rpc, data)
 
 		-- read tls_auth if set
 		if settings.tls_auth_path then
-			local tls_auth_content, err = read_file(settings.tls_auth_path);
+			local tls_auth_content, err = file_content(settings.tls_auth_path);
 			if not tls_auth_content then
 				return nil, err;
 			end
