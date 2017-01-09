@@ -17,9 +17,10 @@ You should have received a copy of the GNU General Public License
 along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+require("cert");
 require("datastore");
 require("nutils");
-require('uci');
+require("uci");
 
 local datastore = datastore('openvpn-client.yin');
 
@@ -222,6 +223,15 @@ function datastore:user_rpc(rpc, data)
 			}
 		end
 		local cert_name = cert_name_node:text();
+		-- validate cert_name
+		if not verify_cert_name(cert_name) then
+			return nil, {
+			msg = "Invalid cert-name",
+			app_tag = 'invalid-value',
+			info_badelem = 'name',
+			info_badns = self.model_ns
+			}
+		end
 
 		-- get config name
 		local config_name_node = find_node_name_ns(root, 'config-name', self.model_ns);
