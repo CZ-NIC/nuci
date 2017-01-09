@@ -17,6 +17,6 @@ You should have received a copy of the GNU General Public License
 along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
-local function verify_cert_name(name)
+function verify_cert_name(name)
 	return name:match('^[a-zA-Z0-9_.%-]+$');
 end
