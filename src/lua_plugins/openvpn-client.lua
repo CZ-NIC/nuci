@@ -143,7 +143,7 @@ verb 3
 		'<ca>\n' .. settings.ca .. '</ca>',
 		'<cert>\n' .. settings.cert .. '</cert>',
 		'<key>\n' .. settings.key .. '</key>',
-		cond_true_false(settings.tls_auth, '<tls-auth>\n' .. (settings.tls_auth or '') .. '</tls_auth>', ''),
+		cond_true_false(settings.tls_auth, 'key-direction 1\n<tls-auth>\n' .. (settings.tls_auth or '') .. '</tls_auth>', ''),
 		cond_true_false(settings.cipher, 'cipher ' .. (settings.cipher or ''), ''),
 		cond_true_false(settings.comp_lzo, 'comp-lzo', '')
 	)
