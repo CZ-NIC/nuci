@@ -137,6 +137,16 @@ do_refresh() {
 	done
 }
 
+do_revoke() {
+	[ "$CA" ]
+	if grep '^R' index.txt | cut -f4 | grep -q -F "$1" ; then
+		: already revoked
+	else
+		openssl ca -revoke "$1".pem -config "$SCRIPT_DIR"/openssl.cnf
+	fi
+	do_gen_crl
+}
+
 while [ "$1" ] ; do
 	CMD="$1"
 	shift
@@ -176,6 +186,10 @@ while [ "$1" ] ; do
 			;;
 		refresh)
 			do_refresh
+			;;
+		revoke)
+			do_revoke "$1"
+			shift
 			;;
 	esac
 done
