@@ -237,6 +237,7 @@
             <description>
               <text>The serial number of the certificate.</text>
             </description>
+            <type name='string'/>
           </leaf>
           <leaf name='key'>
             <description>

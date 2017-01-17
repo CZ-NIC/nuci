@@ -1,5 +1,5 @@
 --[[
-Copyright 2016, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+Copyright 2016,2017, CZ.NIC z.s.p.o. (http://www.nic.cz/)
 
 This file is part of NUCI configuration server.
 
@@ -320,6 +320,30 @@ function datastore:ca_gen_params(ca)
 	return params;
 end
 
+function datastore:revoke_params(ca)
+	local name, err = self:name_get(ca);
+	if not name then
+		return nil, err;
+	end
+	local params = {'switch', name}
+	for cert in ca:iterate() do
+		local cname, cns = cert:name();
+		if cns == self.model_ns and cname == 'cert' then
+			local serial = cert:text();
+			if not serial or not serial:match('^%x+$') then
+				return nil, {
+					msg = 'Invalid cert serial: ' .. (serial or ""),
+					app_tag = 'invalid-value',
+					info_badelem = 'type',
+					info_badns = self.model_ns
+				};
+			end
+			append(params, {'revoke', serial});
+		end
+	end
+	return params;
+end
+
 function datastore:user_rpc(rpc, data)
 	local xml = xmlwrap.read_memory(data);
 	local root = xml:root();
@@ -375,6 +399,20 @@ function datastore:user_rpc(rpc, data)
 					};
 				end
 				append(params, {'drop_ca', ca_name});
+			end
+		end
+		local ecode, stdout, stderr = run_command(nil, script, unpack(params));
+		if ecode == 0 then
+			return '<ok/>';
+		else
+			return nil, stderr;
+		end
+	elseif rpc == 'revoke' then
+		local params = {}
+		for ca_child in root:iterate() do
+			local name, ns = ca_child:name();
+			if ns == self.model_ns and name == 'ca' then
+				append(params, self:revoke_params(ca_child));
 			end
 		end
 		local ecode, stdout, stderr = run_command(nil, script, unpack(params));

@@ -18,5 +18,5 @@ along with NUCI.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 function verify_cert_name(name)
-	return name:match('^[a-zA-Z0-9_.%-]+$');
+	return name and name:match('^[a-zA-Z0-9_.%-]+$');
 end
