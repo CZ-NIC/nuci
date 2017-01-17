@@ -1,6 +1,6 @@
 #!/bin/ash
 
-#Copyright 2016, CZ.NIC z.s.p.o. (http://www.nic.cz/)
+#Copyright 2016,2017 CZ.NIC z.s.p.o. (http://www.nic.cz/)
 #
 #This file is part of NUCI configuration server.
 #
@@ -106,6 +106,7 @@ do_gen_server() {
 	echo "$1" | openssl req -new -newkey rsa:4096 -keyout server-"$1".key -nodes -out server-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_server
 	openssl ca -out server-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_server -infiles server-"$1".csr
 	chmod 0400 server-"$1".key
+	do_gen_crl
 	rm generating
 }
 
@@ -116,6 +117,7 @@ do_gen_client() {
 	echo "$1" | openssl req -new -newkey rsa:4096 -keyout client-"$1".key -nodes -out client-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_client
 	openssl ca -out client-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_client -infiles client-"$1".csr
 	chmod 0400 client-"$1".key
+	do_gen_crl
 	rm generating
 }
 
@@ -125,6 +127,14 @@ do_drop_ca() {
 	lock "$CA_DIR"/"$1"/lock
 	rm -rf "$CA_DIR"/"$1"
 	LOCKFILE=
+}
+
+do_refresh() {
+	cd "$CA_DIR"
+	ls | while read CA_NAME ; do
+		do_switch "$CA_NAME"
+		do_gen_crl
+	done
 }
 
 while [ "$1" ] ; do
@@ -163,6 +173,9 @@ while [ "$1" ] ; do
 		drop_ca)
 			do_drop_ca "$1"
 			shift
+			;;
+		refresh)
+			do_refresh
 			;;
 	esac
 done
