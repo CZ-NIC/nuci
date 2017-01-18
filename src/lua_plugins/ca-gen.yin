@@ -63,7 +63,6 @@
           <type name='enumeration'>
             <enum name='generating'/> <!-- The certificate is being generated and is not ready yet. -->
             <enum name='active'/>
-            <enum name='lost'/> <!-- Like active, but the certificate file has been overwritten by another with the same name. If a client or server has its own copy, it can still be used (and it can be revoked), but it is no longer possible to download from here. -->
             <enum name='revoked'/>
             <enum name='expired'/> <!-- Unlikely to happen, with 10 years of validity -->
           </type>
@@ -288,7 +287,7 @@
           </leaf>
           <leaf name='cert'>
             <description>
-              <text>The certificate in a PEM format. In case the certificate doesn't exist (or is lost), this isn't present, but it doesn't produce an error.</text>
+              <text>The certificate in a PEM format. In case the certificate doesn't exist, this isn't present, but it doesn't produce an error.</text>
             </description>
             <type name='string'/>
             <mandatory value='false'/>

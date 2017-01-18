@@ -55,9 +55,6 @@ local function get_ca(dir, cas)
 			fname = 'ca';
 		}
 	end
-	local files = {
-		ca = '--'
-	}
 	local indexes = {};
 	if not gen:match('^-- root ') then
 		indexes['--'] = 'active'; -- TODO: Do we want to actually parse the CA cert to decide if it expired?
@@ -66,13 +63,11 @@ local function get_ca(dir, cas)
 	for line in lines(notes) do
 		local serial, kind, name = line:match('^([^%s]+)%s+([^%s]+)%s+(.*)');
 		if serial then
-			local fname = kind .. '-' .. name
 			notes_parsed[serial] = {
 				kind = kind,
 				name = name,
-				fname = fname
+				fname = serial
 			};
-			files[fname] = serial;
 		else
 			return "Broken notes line in " .. name .. ": " .. line;
 		end
@@ -111,10 +106,6 @@ local function get_ca(dir, cas)
 				nlog(NLOG_WARN, "Generation not running, but " .. idx .. " not present");
 				return
 			end;
-		end
-		if status == 'active' and files[note.fname] ~= idx then
-			-- Overwritten by something else
-			status = 'lost';
 		end
 		local cert = ca:add_child('cert');
 		cert:add_child('serial'):set_text(idx);

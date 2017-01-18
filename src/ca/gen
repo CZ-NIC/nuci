@@ -101,22 +101,24 @@ do_gen_dh() {
 
 do_gen_server() {
 	[ "$CA" ] # Make sure we've chosen one
-	echo "$(cat serial) server $1" >>notes.txt
-	echo "server $1" >generating
-	echo "$1" | openssl req -new -newkey rsa:4096 -keyout server-"$1".key -nodes -out server-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_server
-	openssl ca -out server-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_server -infiles server-"$1".csr
-	chmod 0400 server-"$1".key
+	SERIAL=$(cat serial)
+	echo "$SERIAL server $1" >>notes.txt
+	echo "$SERIAL server $1" >generating
+	echo "$1" | openssl req -new -newkey rsa:4096 -keyout "$SERIAL".key -nodes -out "$SERIAL".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_server
+	openssl ca -out "$SERIAL".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_server -infiles "$SERIAL".csr
+	chmod 0400 "$SERIAL".key
 	do_gen_crl
 	rm generating
 }
 
 do_gen_client() {
 	[ "$CA" ] # Make sure we've chosen one
-	echo "$(cat serial) client $1" >>notes.txt
-	echo "client $1" >generating
-	echo "$1" | openssl req -new -newkey rsa:4096 -keyout client-"$1".key -nodes -out client-"$1".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_client
-	openssl ca -out client-"$1".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_client -infiles client-"$1".csr
-	chmod 0400 client-"$1".key
+	SERIAL=$(cat serial)
+	echo "$SERIAL client $1" >>notes.txt
+	echo "$SERIAL client $1" >generating
+	echo "$1" | openssl req -new -newkey rsa:4096 -keyout "$SERIAL".key -nodes -out "$SERIAL".csr -config "$SCRIPT_DIR"/openssl.cnf -extensions usr_client
+	openssl ca -out "$SERIAL".crt -config "$SCRIPT_DIR"/openssl.cnf -batch -extensions usr_client -infiles "$SERIAL".csr
+	chmod 0400 "$SERIAL".key
 	do_gen_crl
 	rm generating
 }
