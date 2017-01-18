@@ -91,7 +91,6 @@ local function get_ca(dir, cas)
 	ca:add_child('name'):set_text(name)
 	-- Add a certificate into the output
 	local function add_cert(idx)
-		local gen_exp;
 		local note = notes_parsed[idx];
 		if not note then
 			return "Missing info about certificate " .. idx;
