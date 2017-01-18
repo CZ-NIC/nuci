@@ -74,12 +74,13 @@ local function get_ca(dir, cas)
 			};
 			files[fname] = serial;
 		else
-			return nil, "Broken notes line in " .. name .. ": " .. line;
+			return "Broken notes line in " .. name .. ": " .. line;
 		end
 	end
 	local now = os.date("%y%m%d%H%M%S"); -- It is so ordered that we can compare just as a number. We don't care about the time zone, the error would be small enough to not matter.
 	for line in lines(index) do
-		local status, date, serial = line:match('([VER])%s+(%d+)Z%s+(%d+)');
+		--local status, date, revoked, serial = line:match("([VER])%s(%d+)Z%s%(.-)%s(%S+)");
+		local status, date, revoked, serial = line:match("^([VER])%s(%d+)Z%s([Z%d]-)%s(%S+)");
 		if status then
 			if now > date then
 				-- Handle the case when the expiration passed, but the index haven't been updated yet
@@ -87,7 +88,7 @@ local function get_ca(dir, cas)
 			end
 			indexes[serial] = states[status]
 		else
-			return nil, "Broken index line in " .. name .. ": " .. line;
+			return "Broken index line in " .. name .. ": " .. line;
 		end
 	end
 	-- Once we have read it, add the CA into the XML
@@ -156,7 +157,7 @@ function datastore:get()
 			if ca.type == 'd' then
 				local ca_result = get_ca(ca.filename, cas);
 				if ca_result then
-					return nil, 'ca ' .. ca .. ': ' .. ca_result;
+					return nil, 'ca ' .. ca.filename .. ': ' .. ca_result;
 				end
 			end
 		end
