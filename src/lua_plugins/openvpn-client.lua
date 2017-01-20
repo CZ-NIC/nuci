@@ -24,12 +24,12 @@ require("uci");
 
 local datastore = datastore('openvpn-client.yin');
 
-function get_device_ip(device)
-	local ecode, stdout, stderr = run_command(nil, 'ip',  'addr',  'show', 'dev', device);
+function get_wan_ip()
+	local ecode, stdout, stderr = run_command(
+		nil, '/bin/ubus', '-S', 'call', 'network.interface.wan', 'status');
 	if ecode == 0 then
-		-- try to guess the ip address
 		-- note that this doesn't have to be so accurate
-		local ip = stdout:match("inet (%d+%.%d+%.%d+%.%d+)");
+		local ip = stdout:match('"ipv4%-address":%[[^%]]*"address":"(%d+%.%d+%.%d+%.%d+)"');
 		if ip then
 			return ip;
 		end
@@ -201,7 +201,6 @@ function datastore:user_rpc(rpc, data)
 		settings.cipher = uci_data.cipher;
 		settings.comp_lzo = uci_data.comp_lzo;
 		settings.port = uci_data.port;
-		local wan_device = cursor:get('network', 'wan', 'ifname');
 		reset_uci_cursor();
 
 		-- check settings
@@ -210,7 +209,7 @@ function datastore:user_rpc(rpc, data)
 		end
 
 		-- try to get server ip
-		settings.remote = get_device_ip(wan_device) .. " " .. settings.port;
+		settings.remote = get_wan_ip(wan_device) .. " " .. settings.port;
 
 		-- read ca
 		local ca_content, err = file_content(settings.ca_path);
