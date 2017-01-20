@@ -48,9 +48,9 @@ function build_config(settings)
 # router Turris based on Sample client-side  #
 # OpenVPN 2.0 config file                    #
 #                                            #
-# This configuration can be used by multiple #
-# clients. It uses the same cert and key     #
-# files.                                     #
+# This configuration can be used only on     #
+# a single client.                           #
+#                                            #
 #                                            #
 # On Windows, you might want to rename this  #
 # file so it has a .ovpn extension           #
