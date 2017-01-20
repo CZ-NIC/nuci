@@ -11,10 +11,10 @@
       <text>Downloads the client configuration for the openvpn client, which can be used against the current openvpn server which is running on the router.</text>
     </description>
     <input>
-      <leaf name='cert-name'>
+      <leaf name='cert-serial'>
         <type name='string'/>
         <description>
-          <text>Name of the client's certificate.</text>
+          <text>Serial number of the client's certificate.</text>
         </description>
         <mandatory value='true'/>
       </leaf>

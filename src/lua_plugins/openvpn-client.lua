@@ -155,22 +155,22 @@ function datastore:user_rpc(rpc, data)
 
 	if rpc == 'download-config' then
 		-- get certificate name
-		local cert_name_node = find_node_name_ns(root, 'cert-name', self.model_ns);
-		if not cert_name_node then
+		local cert_serial_node = find_node_name_ns(root, 'cert-serial', self.model_ns);
+		if not cert_serial_node then
 			return nil, {
-				msg = "Missing the <cert-name> parameter.",
+				msg = "Missing the <cert-serial> parameter.",
 				app_tag = 'data-missing',
-				info_badelem = 'cert-name',
+				info_badelem = 'cert-serial',
 				info_badns = self.model_ns
 			}
 		end
-		local cert_name = cert_name_node:text();
-		-- validate cert_name
-		if not verify_cert_name(cert_name) then
+		local cert_serial = cert_serial_node:text();
+		-- validate serial
+		if not cert_serial or not cert_serial:match('^%x+$') then
 			return nil, {
-			msg = "Invalid cert-name",
+			msg = "Invalid cert-serial",
 			app_tag = 'invalid-value',
-			info_badelem = 'name',
+			info_badelem = 'cert-serial',
 			info_badns = self.model_ns
 			}
 		end
@@ -220,14 +220,14 @@ function datastore:user_rpc(rpc, data)
 		settings.ca = ca_content;
 
 		-- read client cert
-		local cert_content, err = file_content(file_dirname(settings.ca_path) .. "/client-" .. cert_name .. ".crt");
+		local cert_content, err = file_content(file_dirname(settings.ca_path) .. "/" .. cert_serial.. ".crt");
 		if not cert_content then
 			return nil, err;
 		end
 		settings.cert = cert_content;
 
 		-- read key
-		local key_content, err = file_content(file_dirname(settings.ca_path) .. "/client-" .. cert_name .. ".key");
+		local key_content, err = file_content(file_dirname(settings.ca_path) .. "/" .. cert_serial .. ".key");
 		if not key_content then
 			return nil, err;
 		end
