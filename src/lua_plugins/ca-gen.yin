@@ -178,7 +178,7 @@
       <text>Delete the whole CA (or multiple ones). Note that if you use the CA on some other device (you copied the root certificate there), this won't make it defunct and all the certificates will still work. Note that this stops on the first encountered error. Deleting a CA that does not exist is not considered an error.</text>
     </description>
     <input>
-      <leaf-list name='name'>
+      <leaf-list name='ca'>
         <description>
           <text>The ID of the CA.</text>
         </description>
