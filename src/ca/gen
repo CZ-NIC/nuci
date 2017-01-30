@@ -56,7 +56,9 @@ cleanup() {
 
 lock() {
 	set -o noclobber
-	echo $$ 2>/dev/null >"$1"
+	while ! echo $$ 2>/dev/null >"$1" ; do
+		sleep 1
+	done
 	LOCKFILE="$1"
 	set +o noclobber
 }
@@ -66,7 +68,8 @@ trap cleanup HUP INT QUIT TERM EXIT
 do_switch() {
 	cleanup
 	cd "$CA_DIR"/"$1"
-	lock "$CA_DIR"/"$1"/lock
+	lock /tmp/ca-lock-"$1"
+	rm -f generating
 	CA="$1"
 }
 
@@ -126,8 +129,9 @@ do_gen_client() {
 do_drop_ca() {
 	[ "$CA" != "$1" ] # Can't delete active CA
 	unlock
-	lock "$CA_DIR"/"$1"/lock
+	lock /tmp/ca-lock-"$1"
 	rm -rf "$CA_DIR"/"$1"
+	rm -f "$LOCKFILE"
 	LOCKFILE=
 }
 
