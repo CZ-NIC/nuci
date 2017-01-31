@@ -6,6 +6,9 @@
   <revision date="2014-01-20">
     <description>Initial revision</description>
   </revision>
+  <revision date='2017-01-30'>
+    <description>Adding query for expiration of the contract.</description>
+  </revision>
   <rpc name='get'>
     <output>
       <leaf name='reg-num'>
@@ -47,30 +50,49 @@
       </leaf>
     </input>
     <output>
+      <container name='get-status'>
+        <leaf name='status'>
+          <type name='enumeration'>
+            <enum name='owned'/>
+            <enum name='foreign'/>
+            <enum name='free'/>
+          </type>
+          <description>
+            <text>Status of the query.</text>
+          </description>
+          <mandatory value='true'/>
+        </leaf>
+        <leaf name='url'>
+          <type name='uri'/>
+          <description>
+            <text>Url where the router can be registered.</text>
+          </description>
+          <mandatory value='false'/>
+        </leaf>
+        <leaf name='reg-num'>
+          <type name='string'/>
+          <description>
+            <text>Registration code.</text>
+          </description>
+          <mandatory value='true'/>
+        </leaf>
+      </container>
+    </output>
+  </rpc>
+  <rpc name='contract'>
+    <description>
+      <text>Info about the contract about this router.</text>
+    </description>
+    <output>
       <leaf name='status'>
         <type name='enumeration'>
-          <enum name='owned'/>
-          <enum name='foreign'/>
-          <enum name='free'/>
+          <enum name='valid'/> <!-- The contract is still valid. -->
+          <enum name='expired'/> <!-- The contract was once valid bud is no more -->
+          <enum name='none'/> <!-- There is and was no contract regarding this router -->
+          <enum name='code'/> <!-- The provided registration code is unknown -->
+          <enum name='no-date'/> <!-- The contract has no date associated with it -->
+          <enum name='unknown'/> <!-- Can't check now, likely because the router is not connected to the internet. -->
         </type>
-        <description>
-          <text>Status of the query.</text>
-        </description>
-        <mandatory value='true'/>
-      </leaf>
-      <leaf name='url'>
-        <type name='uri'/>
-        <description>
-          <text>Url where the router can be registered.</text>
-        </description>
-        <mandatory value='false'/>
-      </leaf>
-      <leaf name='reg-num'>
-        <type name='string'/>
-        <description>
-          <text>Registration code.</text>
-        </description>
-        <mandatory value='true'/>
       </leaf>
     </output>
   </rpc>
