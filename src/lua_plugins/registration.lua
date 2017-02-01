@@ -27,6 +27,8 @@ local challenge_url = 'https://api.turris.cz/challenge.cgi';
 
 -- Where registration lookup url
 local lookup_url = 'https://www.turris.cz/api/registration-lookup.txt';
+-- Contract url
+local contract_url = 'https://www.turris.cz/api/contract-valid.txt';
 
 local connection_timeout = 10
 
@@ -90,9 +92,6 @@ function datastore:user_rpc(rpc, data)
 			return nil, err_msg;
 		end
 
-		-- update crl
-		run_command(nil, 'get-api-crl');
-
 		-- query the server
 		local ecode, stdout, stderr = run_command(
 			nil, 'curl', '-s', '-S', '-L', '-H', '"Accept-Language: ' .. language .. '"',
@@ -147,7 +146,39 @@ function datastore:user_rpc(rpc, data)
 		node:add_child('reg-num'):set_text(registration_code);
 
 		return xml_response:strdump();
+	elseif rpc == 'contract' then
+		local registration_code, err_msg = get_registration_code();
+		if not registration_code then
+			return nil, err_msg;
+		end
 
+		-- query the server
+		local ecode, stdout, stderr = run_command(
+			nil, 'curl', '-s', '-S', '-L',
+			'-H', '"Accept: plain/text"',
+			'--cacert', '/etc/ssl/www_turris_cz_ca.pem', '--cert-status',
+			'-m', tostring(connection_timeout),
+			contract_url .. "?registration_code=" .. registration_code);
+		--[[
+		--  We ignore errors here ‒ they'd result in no result line in the output
+		--  and therefore 'unknown' answer.
+		--]]
+
+		local answer = 'unknown';
+
+		-- parse the answer
+		local result = stdout:match("result:%s*([^\n]+)")
+		if result == 'valid' or result == 'expired' then
+			answer = result;
+		elseif result == 'not_found' then
+			answer = 'code';
+		elseif result == 'no_contract' then
+			answer = 'none';
+		elseif result == 'no_sign_date' then
+			answer = 'no-date';
+		end
+
+		return "<status xmlns='" .. self.model_ns .. "'>" .. answer .. "</status>";
 	else
 		return nil, {
 			msg = "Command '" .. rpc .. "' not known",
