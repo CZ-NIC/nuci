@@ -1,4 +1,4 @@
-HELPERS := config-restore config-backup checkconn
+HELPERS := config-restore config-backup checkconn autocollect
 SCRIPTS += $(addprefix src/helpers/nuci-helper-,$(HELPERS))
 
 define HELPER_VAR
