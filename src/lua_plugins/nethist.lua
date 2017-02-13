@@ -51,13 +51,12 @@ local function parse_file(file, node)
 			if prev_time ~= items[1] then
 				snap_node = node:add_child('snapshot');
 				snap_node:add_child('time'):set_text(items[1]);
+				prev_item = nil;
 			end
 
 			if items[2] == "cpu" then
-				prev_item = items[2];
 				snap_node:add_child('cpu'):add_child('load'):set_text(items[3]);
 			elseif items[2] == "memory" then
-				prev_item = items[2];
 				local mem_node = snap_node:add_child('memory');
 				mem_node:add_child('memtotal'):set_text(items[3]);
 				mem_node:add_child('memfree'):set_text(items[4]);
@@ -67,22 +66,20 @@ local function parse_file(file, node)
 				if prev_item ~= items[2] then
 					net_node = snap_node:add_child('network');
 				end
-				prev_item = items[2];
 				local iface_node = net_node:add_child('interface');
 				iface_node:add_child('name'):set_text(items[3]);
 				iface_node:add_child('rx'):set_text(items[4]);
 				iface_node:add_child('tx'):set_text(items[5]);
 			elseif items[2] == "temperature" then
-				prev_item = items[2];
 				local temp_node = snap_node:add_child('temperature');
 				temp_node:add_child('board'):set_text(items[3]);
 				temp_node:add_child('cpu'):set_text(items[4]);
 			elseif items[2] == "fs" then
-				prev_item = items[2];
 				local temp_node = snap_node:add_child('rootfs');
 				temp_node:add_child('used'):set_text(items[3]);
 				temp_node:add_child('available'):set_text(items[4]);
 			end
+			prev_item = items[2];
 		end
 
 		prev_time = items[1];
