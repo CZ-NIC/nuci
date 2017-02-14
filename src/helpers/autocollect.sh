@@ -39,7 +39,7 @@ RESULT=$(curl -s -S -L -H "Accept: plain/text" --cacert "$CA_FILE" --cert-status
 
 if [ "$RESULT" = "valid" ] ; then
 	if uci -d'
-' get updater.pkglists.lists | grep -q -v -F i_agree_datacollect ; then
+' get updater.pkglists.lists | grep -q -F i_agree_datacollect ; then
 		: # Already there
 	else
 		echo "The contract is still valid, force-adding i_agree_datacollect user list" | logger -t nuci -p daemon.warning
