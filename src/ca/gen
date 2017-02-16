@@ -26,6 +26,18 @@ CA_DIR=/etc/ssl/ca/
 LOCKFILE=
 CA=
 
+send_notification() {
+	local action="$1"
+	local status="$2"
+	local ca="$3"
+	local params="$4"
+	if [ -n "$params" ]; then
+		params=", \"params\": [ $params ]"
+	fi
+	# send notification to ubus (best effort)
+	ubus send ca-gen "{ \"action\": \"$action\", \"status\": \"$status\", \"ca\": \"$ca\" $params }" || true
+}
+
 do_restart() {
 	[ '!' "$CA" ]
 	[ '!' "$LOCKFILE" ]
@@ -89,21 +101,26 @@ do_gen_crl() {
 do_gen_ca() {
 	[ "$CA" ] # Make sure we've chosen one
 	[ '!' -f "ca.crt" ] # Make sure it is not yet created
+	send_notification gen_ca started "$CA"
 	echo "-- root $CA" >generating
 	echo "$CA" | openssl req -new -x509 -extensions v3_ca -keyout ca.key -out ca.crt -config "$SCRIPT_DIR"/openssl.cnf -nodes -days 3650
 	chmod 0400 ca.key
 	do_gen_crl
 	rm generating
+	send_notification gen_ca finished "$CA"
 }
 
 do_gen_dh() {
+	send_notification gen_dh started "$CA"
 	echo 'dhparams' >generating
 	openssl dhparam -out dhparam.pem 2048
 	rm generating
+	send_notification gen_dh finished "$CA"
 }
 
 do_gen_server() {
 	[ "$CA" ] # Make sure we've chosen one
+	send_notification gen_server started "$CA" "\"$1\""
 	SERIAL=$(cat serial)
 	echo "$SERIAL server $1" >>notes.txt
 	echo "$SERIAL server $1" >generating
@@ -112,10 +129,12 @@ do_gen_server() {
 	chmod 0400 "$SERIAL".key
 	do_gen_crl
 	rm generating
+	send_notification gen_server finished "$CA" "\"$1\""
 }
 
 do_gen_client() {
 	[ "$CA" ] # Make sure we've chosen one
+	send_notification gen_client started "$CA" "\"$1\""
 	SERIAL=$(cat serial)
 	echo "$SERIAL client $1" >>notes.txt
 	echo "$SERIAL client $1" >generating
@@ -124,33 +143,40 @@ do_gen_client() {
 	chmod 0400 "$SERIAL".key
 	do_gen_crl
 	rm generating
+	send_notification gen_client finished "$CA" "\"$1\""
 }
 
 do_drop_ca() {
 	[ "$CA" != "$1" ] # Can't delete active CA
+	send_notification drop_ca started "" "\"$1\""
 	unlock
 	lock /tmp/ca-lock-"$1"
 	rm -rf "$CA_DIR"/"$1"
 	rm -f "$LOCKFILE"
 	LOCKFILE=
+	send_notification drop_ca finished "" "\"$1\""
 }
 
 do_refresh() {
+	send_notification refresh started
 	cd "$CA_DIR"
 	ls | while read CA_NAME ; do
 		do_switch "$CA_NAME"
 		do_gen_crl
 	done
+	send_notification refresh finished
 }
 
 do_revoke() {
 	[ "$CA" ]
+	send_notification revoke started "$CA" "\"$1\""
 	if grep '^R' index.txt | cut -f4 | grep -q -F "$1" ; then
 		: already revoked
 	else
 		openssl ca -revoke "$1".pem -config "$SCRIPT_DIR"/openssl.cnf
 	fi
 	do_gen_crl
+	send_notification revoke finished "$CA" "\"$1\""
 }
 
 while [ "$1" ] ; do
