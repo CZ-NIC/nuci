@@ -160,10 +160,12 @@ do_drop_ca() {
 do_refresh() {
 	send_notification refresh started
 	cd "$CA_DIR"
-	ls | while read CA_NAME ; do
+	ls >/tmp/tmp.$$
+	while read CA_NAME ; do
 		do_switch "$CA_NAME"
 		do_gen_crl
-	done
+	done < /tmp/tmp.$$
+	rm /tmp/tmp.$$
 	send_notification refresh finished
 }
 
