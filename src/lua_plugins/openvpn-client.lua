@@ -187,6 +187,10 @@ function datastore:user_rpc(rpc, data)
 		end
 		local config_name = config_name_node:text();
 
+		-- try to obtain the server address
+		local server_address_node = find_node_name_ns(root, 'server-address', self.model_ns);
+		local server_address = server_address_node and server_address_node:text();
+
 		local settings = {};
 		-- read uci
 		cursor = get_uci_cursor();
@@ -209,7 +213,7 @@ function datastore:user_rpc(rpc, data)
 		end
 
 		-- try to get server ip
-		settings.remote = get_wan_ip(wan_device) .. " " .. settings.port;
+		settings.remote = (server_address or get_wan_ip(wan_device)) .. " " .. settings.port;
 
 		-- read ca
 		local ca_content, err = file_content(settings.ca_path);
