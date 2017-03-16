@@ -46,4 +46,24 @@ if [ "$RESULT" = "valid" ] ; then
 		uci add_list updater.pkglists.lists=i_agree_datacollect
 		uci commit updater
 	fi
+
+	# update contract if needed
+	if uci show -q foris | grep -q "foris.contract.valid='1'" ; then
+		: # Already there
+	else
+		echo "Mark that contract is valid." | logger -t nuci -p daemon.warning
+		uci set foris.contract=config
+		uci set foris.contract.valid=1
+		uci commit foris
+	fi
+else
+	# update contract if needed
+	if uci show -q foris | grep -q "foris.contract.valid='0'" ; then
+		: # Already there
+	else
+		echo "Mark that contract is invalid." | logger -t nuci -p daemon.warning
+		uci set foris.contract=config
+		uci set foris.contract.valid=0
+		uci commit foris
+	fi
 fi

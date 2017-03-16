@@ -79,21 +79,9 @@
       </container>
     </output>
   </rpc>
-  <rpc name='contract'>
+  <rpc name='contract-update'>
     <description>
-      <text>Info about the contract about this router.</text>
+      <text>Update info about the contract of this router.</text>
     </description>
-    <output>
-      <leaf name='status'>
-        <type name='enumeration'>
-          <enum name='valid'/> <!-- The contract is still valid. -->
-          <enum name='expired'/> <!-- The contract was once valid bud is no more -->
-          <enum name='none'/> <!-- There is and was no contract regarding this router -->
-          <enum name='code'/> <!-- The provided registration code is unknown -->
-          <enum name='no-date'/> <!-- The contract has no date associated with it -->
-          <enum name='unknown'/> <!-- Can't check now, likely because the router is not connected to the internet. -->
-        </type>
-      </leaf>
-    </output>
   </rpc>
 </module>
