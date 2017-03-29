@@ -135,6 +135,21 @@ verb 3
 
 # Silence repeating messages
 ;mute 20
+
+# To enable to process DNS push request from the server on linux machines (non systemd-resolved)
+# note that you might need to have resolvconf program installed
+;script-security 2
+;up /etc/openvpn/update-resolv-conf
+;down /etc/openvpn/update-resolv-conf
+
+# To enable to process DNS push request from the server on linux machines (systemd-resolved)
+# see https://github.com/jonathanio/update-systemd-resolved
+;script-security 2
+;setenv PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+;up /etc/openvpn/update-systemd-resolved
+;down /etc/openvpn/update-systemd-resolved
+;down-pre
+
 ]];
 	return text:format(
 		'dev ' .. settings.dev,
