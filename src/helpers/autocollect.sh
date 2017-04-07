@@ -48,7 +48,7 @@ if [ "$RESULT" = "valid" ] ; then
 	fi
 
 	# update contract if needed
-	if uci show -q foris | grep -q "foris.contract.valid='1'" ; then
+	if uci -q show foris | grep -q "foris.contract.valid='1'" ; then
 		: # Already there
 	else
 		echo "Mark that contract is valid." | logger -t nuci -p daemon.warning
@@ -58,7 +58,7 @@ if [ "$RESULT" = "valid" ] ; then
 	fi
 else
 	# update contract if needed
-	if uci show -q foris | grep -q "foris.contract.valid='0'" ; then
+	if uci -q show foris | grep -q "foris.contract.valid='0'" ; then
 		: # Already there
 	else
 		echo "Mark that contract is invalid." | logger -t nuci -p daemon.warning
