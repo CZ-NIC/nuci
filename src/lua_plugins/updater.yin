@@ -175,12 +175,12 @@
           <text>A package to be removed from system. Only present when &lt;current&gt; is present.</text>
         </description>
       </leaf-list>
-      <leaf-list name='reboot'>
+      <leaf name='reboot'>
         <type name='empty'/>
         <description>
           <text>Only present when &lt;current&gt; is present and when reboot is going to be performed durring update.</text>
         </description>
-      </leaf-list>
+      </leaf>
       <description>
         <text>A request to approve updater's plan of action. It can be granted or denied by corresponding RPC.</text>
       </description>

@@ -187,11 +187,11 @@ function datastore:get()
 					if version ~= '-' then
 						name = name .. ' ' .. version;
 					end
-					if reboot then
-						node:add_child('reboot');
-					end
+					node:add_child(op):set_text(name);
 				end
-				node:add_child('reboot'):set_text(tostring(reboot))
+				if reboot then
+					node:add_child('reboot')
+				end
 			end
 		end
 		req_file:close();
