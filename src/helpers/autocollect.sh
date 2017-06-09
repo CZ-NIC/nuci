@@ -54,6 +54,8 @@ if [ "$RESULT" = "valid" ] ; then
 		echo "Mark that contract is valid." | logger -t nuci -p daemon.warning
 		uci set foris.contract=config
 		uci set foris.contract.valid=1
+		uci set foris.eula=config
+		uci set foris.eula.agreed_collect=1
 		uci commit foris
 	fi
 else
