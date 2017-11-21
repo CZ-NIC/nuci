@@ -31,7 +31,7 @@ set -e
 TIMEOUT=120
 CA_FILE=/etc/ssl/www_turris_cz_ca.pem
 CHALLENGE_URL=https://api.turris.cz/challenge.cgi
-CONTRACT_URL='https://www.turris.cz/api/contract-valid.txt?registration_code='
+CONTRACT_URL='https://project.turris.cz/api/contract-valid.txt?registration_code='
 # Get today's registration code
 CODE=$(curl -k -m $TIMEOUT "$CHALLENGE_URL" | atsha204cmd challenge-response | head -c 16)
 # Ask for the status of the contract

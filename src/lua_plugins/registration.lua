@@ -26,9 +26,9 @@ local datastore = datastore('registration.yin');
 local challenge_url = 'https://api.turris.cz/challenge.cgi';
 
 -- Where registration lookup url
-local lookup_url = 'https://www.turris.cz/api/registration-lookup.txt';
+local lookup_url = 'https://project.turris.cz/api/registration-lookup.txt';
 -- Contract url
-local contract_url = 'https://www.turris.cz/api/contract-valid.txt';
+local contract_url = 'https://project.turris.cz/api/contract-valid.txt';
 
 local connection_timeout = 10
 
