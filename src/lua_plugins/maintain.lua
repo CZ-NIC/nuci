@@ -33,7 +33,7 @@ function datastore:user_rpc(rpc, data)
 		end
 		return '<ok/>';
 	elseif rpc == 'config-backup' then
-		local ecode, stdout, stderr = run_command(nil, 'nuci-helper-config-backup');
+		local ecode, stdout, stderr = run_command(nil, 'maintain-config-backup');
 		if ecode ~= 0 then
 			return nil, "Failed to create backup: " .. stderr;
 		end
@@ -42,7 +42,7 @@ function datastore:user_rpc(rpc, data)
 		nlog(NLOG_INFO, "Restoring config");
 		local data_node = find_node_name_ns(root, 'data', self.model_ns);
 		local data = data_node:text();
-		local ecode, stdout, stderr = run_command(data, 'nuci-helper-config-restore');
+		local ecode, stdout, stderr = run_command(data, 'maintain-config-restore');
 		if ecode ~= 0 then
 			return nil, "Failed to restore backup: " .. stderr;
 		end
